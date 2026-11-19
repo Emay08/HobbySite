@@ -1,0 +1,9 @@
+<% const sp = fmt.sparkline(points, 110, 28, 2, 'price'); %>
+<% if (sp) { const up = sp.last.price >= sp.first.price; %>
+  <svg class="mini-spark <%= up ? 'up' : 'down' %>" viewBox="0 0 110 28" preserveAspectRatio="none" role="img"
+       aria-label="<%= fmt.tix(sp.first.price) %> on <%= fmt.date(sp.first.date) %> to <%= fmt.tix(sp.last.price) %>">
+    <path d="<%= sp.line %>" vector-effect="non-scaling-stroke"/>
+  </svg>
+<% } else { %>
+  <span class="muted small">building…</span>
+<% } %>

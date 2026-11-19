@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= title %> · Vault</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : '' %>">
+<% if (user) { %>
+<header class="topbar">
+  <a class="brand" href="/home">
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8.5 5v10L12 22 3.5 17V7z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7l4.3 2.5v5L12 17l-4.3-2.5v-5z" fill="currentColor"/></svg>
+    Vault
+  </a>
+  <% if (path && path.startsWith('/mtgo') || (typeof section !== 'undefined' && section === 'mtgo')) { %>
+  <nav class="subnav">
+    <% const navItems = [['/mtgo', 'Highlights', true], ['/mtgo/collection', 'Collection'], ['/mtgo/watch/short', 'Short watch'], ['/mtgo/watch/long', 'Long watch'], ['/mtgo/targets', 'Targets'], ['/mtgo/swaps', 'Swaps'], ['/mtgo/upload', 'Update']]; %>
+    <% for (const [href, label, exact] of navItems) { const active = exact ? (path === href || path === href + '/') : path.startsWith(href); %>
+      <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>
+    <% } %>
+  </nav>
+  <% } %>
+  <form method="post" action="/logout" class="logout">
+    <button type="submit" class="link">Sign out</button>
+  </form>
+</header>
+<% } %>
+<main class="<%= user ? 'container' : '' %>">

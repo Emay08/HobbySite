@@ -1,0 +1,143 @@
+<%- include('../partials/head') %>
+<%
+  const spark = fmt.sparkline(history);
+  const maxSet = bySet.length ? bySet[0].value || 1 : 1;
+  const qs = (overrides) => {
+    const p = new URLSearchParams({ q: query.q, set: query.set, sort: query.sort, page: query.page, ...overrides });
+    for (const [k, v] of [...p.entries()]) if (!v || (k === 'page' && v === '1') || (k === 'sort' && v === 'value')) p.delete(k);
+    const s = p.toString();
+    return '/mtgo/collection' + (s ? '?' + s : '');
+  };
+%>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO</p>
+    <h1>Collection</h1>
+  </div>
+  <a href="/mtgo/upload" class="btn">Upload new export</a>
+</div>
+
+<% if (summary.uniqueCards === 0) { %>
+  <div class="card empty-card">
+    <p><strong>No collection loaded.</strong></p>
+    <p class="muted">Export your collection from the MTGO client as CSV, then <a href="/mtgo/upload">drop it here</a>.</p>
+  </div>
+<% } else { %>
+
+<div class="stats">
+  <div class="stat stat-hero">
+    <span class="stat-label">Total value</span>
+    <span class="stat-value"><%= fmt.tix(summary.totalValue) %></span>
+    <% if (spark) { const delta = spark.last.totalValue - spark.first.totalValue; %>
+      <span class="stat-sub <%= delta >= 0 ? 'up' : 'down' %>"><%= delta >= 0 ? '▲' : '▼' %> <%= fmt.tix(Math.abs(delta)) %> since <%= fmt.date(spark.first.date) %></span>
+    <% } %>
+  </div>
+  <div class="stat"><span class="stat-label">Cards</span><span class="stat-value"><%= fmt.int(summary.totalCards) %></span></div>
+  <div class="stat"><span class="stat-label">Unique</span><span class="stat-value"><%= fmt.int(summary.uniqueCards) %></span></div>
+  <div class="stat"><span class="stat-label">In foils</span><span class="stat-value"><%= fmt.tix(summary.foilValue) %></span></div>
+</div>
+
+<% if (summary.unpriced > 0) { %>
+  <p class="small muted note"><%= fmt.int(summary.unpriced) %> entries have no price yet<%= summary.pricesUpdatedAt ? '' : ' — the price sync function has not run' %>. Prices updated <%= fmt.ago(summary.pricesUpdatedAt) %>.</p>
+<% } %>
+
+<% if (spark) { %>
+<section class="card">
+  <h3>Value over time</h3>
+  <svg class="spark" viewBox="0 0 <%= spark.width %> <%= spark.height %>" preserveAspectRatio="none" role="img" aria-label="Collection value from <%= fmt.tix(spark.first.totalValue) %> to <%= fmt.tix(spark.last.totalValue) %>">
+    <path d="<%= spark.area %>" class="spark-area"/>
+    <path d="<%= spark.line %>" class="spark-line" vector-effect="non-scaling-stroke"/>
+  </svg>
+  <div class="spark-axis small muted"><span><%= fmt.date(spark.first.date) %></span><span>low <%= fmt.tix(spark.min) %> · high <%= fmt.tix(spark.max) %></span><span><%= fmt.date(spark.last.date) %></span></div>
+</section>
+<% } %>
+
+<div class="layout-2">
+  <section class="card">
+    <h3>Most valuable cards</h3>
+    <table class="table compact">
+      <thead><tr><th>Card</th><th>Set</th><th class="num">Price</th><th class="num">Qty</th><th class="num">Total</th></tr></thead>
+      <tbody>
+      <% topByPrice.forEach((c, i) => { %>
+        <tr>
+          <td><span class="rank"><%= i + 1 %></span><%= c.name %><% if (c.foil) { %> <span class="foil" title="Foil">✦</span><% } %></td>
+          <td><a href="<%= qs({ set: c.set, page: 1 }) %>" class="setcode"><%= c.set %></a></td>
+          <td class="num"><%= fmt.tix(c.price) %></td>
+          <td class="num"><%= c.qty %></td>
+          <td class="num strong"><%= fmt.tix(c.value) %></td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table>
+  </section>
+
+  <aside>
+    <section class="card">
+      <h3>Value by set</h3>
+      <ul class="bars">
+        <% for (const s of bySet) { %>
+          <li>
+            <a href="<%= qs({ set: s._id || '', page: 1 }) %>" class="setcode"><%= s._id || '—' %></a>
+            <svg class="bar" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect width="<%= Math.max(1, (s.value / maxSet) * 100).toFixed(1) %>" height="8" rx="2"/></svg>
+            <span class="num small"><%= fmt.tix(s.value) %></span>
+          </li>
+        <% } %>
+      </ul>
+    </section>
+    <section class="card">
+      <h3>By rarity</h3>
+      <table class="table compact">
+        <tbody>
+        <% for (const r of byRarity) { %>
+          <tr><td><%= r._id || '—' %></td><td class="num"><%= fmt.int(r.cards) %></td><td class="num"><%= fmt.tix(r.value) %></td></tr>
+        <% } %>
+        </tbody>
+      </table>
+    </section>
+  </aside>
+</div>
+
+<section class="card" id="browse">
+  <div class="browse-head">
+    <h3>Browse</h3>
+    <form method="get" action="/mtgo/collection#browse" class="filters">
+      <input type="search" name="q" value="<%= query.q %>" placeholder="Card name…" aria-label="Search card name">
+      <input type="text" name="set" value="<%= query.set %>" placeholder="Set" aria-label="Set code" class="narrow">
+      <select name="sort" aria-label="Sort">
+        <option value="value" <%= query.sort === 'value' ? 'selected' : '' %>>Total value</option>
+        <option value="price" <%= query.sort === 'price' ? 'selected' : '' %>>Unit price</option>
+        <option value="qty" <%= query.sort === 'qty' ? 'selected' : '' %>>Quantity</option>
+        <option value="name" <%= query.sort === 'name' ? 'selected' : '' %>>Name</option>
+      </select>
+      <button class="btn" type="submit">Filter</button>
+      <% if (query.q || query.set) { %><a class="link small" href="/mtgo/collection#browse">Clear</a><% } %>
+    </form>
+  </div>
+
+  <p class="small muted"><%= fmt.int(list.total) %> entries</p>
+  <table class="table">
+    <thead><tr><th>Card</th><th>Set</th><th>Rarity</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr></thead>
+    <tbody>
+    <% for (const c of list.rows) { %>
+      <tr>
+        <td><%= c.name %><% if (c.foil) { %> <span class="foil" title="Foil">✦</span><% } %></td>
+        <td><span class="setcode"><%= c.set %></span><% if (c.collectorNumber) { %> <span class="muted small">#<%= c.collectorNumber %></span><% } %></td>
+        <td class="small"><%= c.rarity %></td>
+        <td class="num"><%= c.qty %></td>
+        <td class="num"><%= fmt.tix(c.price) %></td>
+        <td class="num strong"><%= c.price === null ? '—' : fmt.tix(c.value) %></td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+
+  <% if (pages > 1) { %>
+    <nav class="pager">
+      <% if (query.page > 1) { %><a class="btn" href="<%= qs({ page: query.page - 1 }) %>#browse">← Prev</a><% } %>
+      <span class="muted small">Page <%= query.page %> of <%= pages %></span>
+      <% if (query.page < pages) { %><a class="btn" href="<%= qs({ page: query.page + 1 }) %>#browse">Next →</a><% } %>
+    </nav>
+  <% } %>
+</section>
+<% } %>
+<%- include('../partials/foot') %>

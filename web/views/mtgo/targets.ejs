@@ -1,0 +1,99 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO</p>
+    <h1>Price targets</h1>
+    <p class="muted small lede">Set a buy target (price falls to or below) or a sell target (price rises to or above). You get a Telegram message the day a target is reached.</p>
+  </div>
+  <div class="stat-inline">
+    <span class="pill pill-hit"><%= hit.length %> hit</span>
+    <span class="pill pill-near"><%= near.length %> close</span>
+    <span class="pill"><%= far.length %> waiting</span>
+  </div>
+</div>
+
+<%- include('../partials/flash') %>
+
+<form method="post" action="/mtgo/targets" class="card add-form">
+  <h3>New target</h3>
+  <div class="add-grid cols-target">
+    <%- include('../partials/cardpicker', { pickerId: 'target-card', label: 'Card' }) %>
+    <div>
+      <label for="direction">When price is</label>
+      <select id="direction" name="direction">
+        <option value="below">≤ at or below (buy)</option>
+        <option value="above">≥ at or above (sell)</option>
+      </select>
+    </div>
+    <div>
+      <label for="target">Target</label>
+      <div class="input-suffix"><input id="target" name="target" type="text" inputmode="decimal" required placeholder="0.00"><span>tix</span></div>
+    </div>
+    <div>
+      <label for="nearPct">"Close" within</label>
+      <div class="input-suffix"><input id="nearPct" name="nearPct" type="text" inputmode="decimal" placeholder="10"><span>%</span></div>
+    </div>
+    <div>
+      <label for="tnote">Note</label>
+      <input id="tnote" name="note" type="text" maxlength="200">
+    </div>
+    <div class="add-submit"><button class="btn primary" type="submit">Add</button></div>
+  </div>
+</form>
+
+<% const groups = [
+     ['hit', 'Target reached', hit, 'These are at or past your target right now.'],
+     ['near', 'Getting close', near, 'Within each target\'s "close" range.'],
+     ['far', 'Waiting', far, ''],
+   ]; %>
+<% for (const [key, heading, rows, hint] of groups) { if (!rows.length && key !== 'far') continue; %>
+<section class="card target-group target-<%= key %>">
+  <h3><%= heading %> <span class="muted small">(<%= rows.length %>)</span></h3>
+  <% if (hint) { %><p class="muted small"><%= hint %></p><% } %>
+  <% if (!rows.length) { %>
+    <p class="muted small">No targets yet.</p>
+  <% } else { %>
+  <div class="table-scroll">
+  <table class="table fixed">
+    <colgroup><col class="c-card"><col class="c-goal"><col class="c-num"><col class="c-num"><col class="c-dist"><col class="c-spark"><col><col class="c-act"></colgroup>
+    <thead><tr><th>Card</th><th>Goal</th><th class="num">Target</th><th class="num">Now</th><th>Distance</th><th>30 days</th><th>Note</th><th></th></tr></thead>
+    <tbody>
+    <% for (const r of rows) {
+         const d = r.distancePct;
+         // progress toward the target: 100% = reached, 0% = 50%+ away
+         const progress = d == null ? 0 : Math.max(0, Math.min(100, 100 - d * 2)); %>
+      <tr>
+        <td><%= r.name %><% if (r.foil) { %> <span class="foil">✦</span><% } %> <span class="setcode"><%= r.set %></span><% if (r.owned) { %> <span class="tag">own <%= r.owned %></span><% } %></td>
+        <td><span class="goal goal-<%= r.direction %>"><%= r.direction === 'below' ? 'Buy ≤' : 'Sell ≥' %></span></td>
+        <td class="num"><%= fmt.tix(r.target) %></td>
+        <td class="num strong"><%= fmt.tix(r.price) %></td>
+        <td class="distance">
+          <svg class="progress" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect class="track" width="100" height="6" rx="3"/><rect class="fill" width="<%= progress.toFixed(1) %>" height="6" rx="3"/></svg>
+          <span class="small <%= key === 'hit' ? 'up' : 'muted' %>">
+            <% if (d == null) { %>no price yet<% } else if (key === 'hit') { %>reached<% if (r.hitAt) { %> <%= fmt.ago(r.hitAt) %><% } %><% } else { %><%= d.toFixed(1) %>% away<% } %>
+          </span>
+        </td>
+        <td><%- include('../partials/spark', { points: r.history }) %></td>
+        <td class="small">
+          <%= r.note %>
+          <button type="button" class="link small" data-toggle="edit-<%= r._id %>">edit</button>
+          <form id="edit-<%= r._id %>" method="post" action="/mtgo/targets/<%= r._id %>" class="inline-edit hidden">
+            <input name="target" type="text" inputmode="decimal" value="<%= r.target %>" class="tiny" aria-label="Target price">
+            <input name="nearPct" type="text" inputmode="decimal" value="<%= r.nearPct %>" class="tiny" aria-label="Close within percent">
+            <input name="note" type="text" value="<%= r.note %>" maxlength="200" placeholder="note" aria-label="Note">
+            <button class="btn small-btn" type="submit">Save</button>
+          </form>
+        </td>
+        <td class="actions">
+          <form method="post" action="/mtgo/targets/<%= r._id %>/delete"><button class="link small danger" type="submit">remove</button></form>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</section>
+<% } %>
+<script src="/static/cardpicker.js" defer></script>
+<%- include('../partials/foot') %>

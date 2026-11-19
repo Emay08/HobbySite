@@ -1,0 +1,54 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO</p>
+    <h1>Update collection</h1>
+  </div>
+</div>
+
+<div class="layout-2">
+  <section>
+    <label id="dropzone" class="dropzone" for="file">
+      <input id="file" type="file" accept=".csv,text/csv" hidden>
+      <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0l-4 4m4-4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <strong>Drop your MTGO CSV export here</strong>
+      <span class="muted small">or click to choose a file · replaces the stored collection</span>
+    </label>
+
+    <div id="status" class="card hidden" aria-live="polite"></div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h3>How to export</h3>
+      <ol class="small steps">
+        <li>In the MTGO client, open <strong>Collection</strong>.</li>
+        <li>Select the binder that holds everything (usually <em>Full Trade List</em> or your main collection view), then select all cards.</li>
+        <li>Right-click → <strong>Export</strong> and choose <strong>CSV</strong>.</li>
+        <li>Drop the saved file on the left.</li>
+      </ol>
+      <p class="small muted">Expected columns: Card Name, Quantity, ID #, Rarity, Set, Collector #, Premium.</p>
+    </div>
+
+    <div class="card">
+      <h3>Recent uploads</h3>
+      <% if (uploads.length === 0) { %>
+        <p class="small muted">None yet.</p>
+      <% } else { %>
+        <table class="table compact">
+          <tbody>
+          <% for (const u of uploads) { %>
+            <tr>
+              <td class="small"><%= fmt.dateTime(u.uploadedAt) %></td>
+              <td class="num small"><%= fmt.int(u.totalCards) %> cards</td>
+              <td class="num small muted">+<%= u.added %> / −<%= u.removed %></td>
+            </tr>
+          <% } %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </aside>
+</div>
+<script src="/static/upload.js" defer></script>
+<%- include('../partials/foot') %>

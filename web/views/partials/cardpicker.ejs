@@ -1,0 +1,19 @@
+<%#
+  Card search input. Locals:
+    fieldName   name of the hidden input that receives the MTGO ID (default "mtgoId")
+    pickerId    unique id
+    label       label text
+    ownedOnly   only search cards in your collection
+    printingsOf pickerId of another picker: once that one has a card, list all printings of the same name
+%>
+<div class="picker" id="<%= pickerId %>" data-picker
+     <% if (typeof ownedOnly !== 'undefined' && ownedOnly) { %>data-owned-only="1"<% } %>
+     <% if (typeof printingsOf !== 'undefined' && printingsOf) { %>data-printings-of="<%= printingsOf %>"<% } %>>
+  <label for="<%= pickerId %>-q"><%= label %></label>
+  <input id="<%= pickerId %>-q" type="search" class="picker-input" autocomplete="off" spellcheck="false"
+         placeholder="<%= typeof placeholder !== 'undefined' ? placeholder : 'Search card name…' %>"
+         role="combobox" aria-expanded="false" aria-controls="<%= pickerId %>-list">
+  <input type="hidden" name="<%= typeof fieldName !== 'undefined' ? fieldName : 'mtgoId' %>" class="picker-value">
+  <ul class="picker-results hidden" id="<%= pickerId %>-list" role="listbox"></ul>
+  <div class="picker-chosen hidden"></div>
+</div>

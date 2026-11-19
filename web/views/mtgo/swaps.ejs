@@ -1,0 +1,91 @@
+<%- include('../partials/head') %>
+<% const ready = rows.filter((r) => r.good).length; %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO</p>
+    <h1>Version swaps</h1>
+    <p class="muted small lede">Printings you'd rather own. When the version you want becomes cheaper than the one you have, you get a Telegram message. Set a minimum saving to ignore tiny differences.</p>
+  </div>
+  <div class="stat-inline"><span class="pill <%= ready ? 'pill-hit' : '' %>"><%= ready %> ready to swap</span></div>
+</div>
+
+<%- include('../partials/flash') %>
+
+<form method="post" action="/mtgo/swaps" class="card add-form">
+  <h3>New swap</h3>
+  <div class="add-grid cols-swap">
+    <%- include('../partials/cardpicker', { pickerId: 'swap-owned', fieldName: 'ownedId', label: 'Version I own', ownedOnly: true, placeholder: 'Search your collection…' }) %>
+    <div class="swap-arrow" aria-hidden="true">→</div>
+    <%- include('../partials/cardpicker', { pickerId: 'swap-wanted', fieldName: 'wantedId', label: 'Version I want', printingsOf: 'swap-owned', placeholder: 'Pick the owned card first…' }) %>
+  </div>
+  <div class="add-grid cols-swap-extra">
+    <div>
+      <label for="qty">Copies</label>
+      <input id="qty" name="qty" type="text" inputmode="numeric" placeholder="1">
+    </div>
+    <div>
+      <label for="margin">Only alert if it saves at least</label>
+      <div class="input-suffix"><input id="margin" name="margin" type="text" inputmode="decimal" placeholder="0"><span>tix</span></div>
+    </div>
+    <div>
+      <label for="snote">Note</label>
+      <input id="snote" name="note" type="text" maxlength="200" placeholder="e.g. prefer the old border">
+    </div>
+    <div class="add-submit"><button class="btn primary" type="submit">Add</button></div>
+  </div>
+</form>
+
+<section class="card">
+  <% if (!rows.length) { %>
+    <p class="muted">No swaps yet.</p>
+  <% } else { %>
+  <div class="table-scroll">
+  <table class="table">
+    <thead><tr><th>Card</th><th>I own</th><th></th><th>I want</th><th class="num">Difference</th><th>Status</th><th>Note</th><th></th></tr></thead>
+    <tbody>
+    <% for (const r of rows) { %>
+      <tr class="<%= r.good ? 'row-good' : '' %>">
+        <td class="strong"><%= r.ownedCard.name %><% if (r.qty > 1) { %> <span class="muted small">×<%= r.qty %></span><% } %></td>
+        <td>
+          <span class="setcode"><%= r.ownedCard.set %></span><% if (r.ownedCard.foil) { %> <span class="foil">✦</span><% } %>
+          <span class="num small block"><%= fmt.tix(r.ownedPrice) %></span>
+          <% if (!r.ownedQty) { %><span class="small down block">not in collection</span><% } %>
+        </td>
+        <td class="muted">→</td>
+        <td>
+          <span class="setcode"><%= r.wantedCard.set %></span><% if (r.wantedCard.foil) { %> <span class="foil">✦</span><% } %>
+          <span class="num small block"><%= fmt.tix(r.wantedPrice) %></span>
+        </td>
+        <td class="num">
+          <% if (r.saving == null) { %><span class="muted">—</span>
+          <% } else if (r.saving > 0) { %><span class="up">save <%= fmt.tix(r.saving) %></span><% if (r.qty > 1) { %><span class="small muted block"><%= fmt.tix(r.saving * r.qty) %> total</span><% } %>
+          <% } else { %><span class="down">costs <%= fmt.tix(-r.saving) %> more</span><% } %>
+        </td>
+        <td>
+          <% if (r.good) { %><span class="pill pill-hit">Swap now</span>
+          <% } else if (r.saving != null && r.saving > 0) { %><span class="pill pill-near">below min. <%= fmt.tix(r.margin) %></span>
+          <% } else { %><span class="pill">waiting</span><% } %>
+          <% if (r.margin) { %><span class="small muted block">min. saving <%= fmt.tix(r.margin) %></span><% } %>
+        </td>
+        <td class="small">
+          <%= r.note %>
+          <button type="button" class="link small" data-toggle="edit-<%= r._id %>">edit</button>
+          <form id="edit-<%= r._id %>" method="post" action="/mtgo/swaps/<%= r._id %>" class="inline-edit hidden">
+            <input name="qty" type="text" inputmode="numeric" value="<%= r.qty %>" class="tiny" aria-label="Copies">
+            <input name="margin" type="text" inputmode="decimal" value="<%= r.margin %>" class="tiny" aria-label="Minimum saving">
+            <input name="note" type="text" value="<%= r.note %>" maxlength="200" placeholder="note" aria-label="Note">
+            <button class="btn small-btn" type="submit">Save</button>
+          </form>
+        </td>
+        <td class="actions">
+          <form method="post" action="/mtgo/swaps/<%= r._id %>/delete"><button class="link small danger" type="submit">remove</button></form>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</section>
+<script src="/static/cardpicker.js" defer></script>
+<%- include('../partials/foot') %>

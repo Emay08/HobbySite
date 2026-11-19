@@ -1,0 +1,92 @@
+<%- include('../partials/head') %>
+<% const isShort = list === 'short'; %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO · Watch list</p>
+    <h1><%= cfg.title %></h1>
+    <p class="muted small lede">
+      <% if (isShort) { %>Cards you're tracking for quick moves — day and week changes, with a Telegram digest when a card moves more than its alert % in a day.<% } else { %>Cards you're tracking over months — 30/90-day trends and change since you added them. No phone alerts.<% } %>
+    </p>
+  </div>
+  <a class="link" href="/mtgo/watch/<%= cfg.other %>"><%= isShort ? 'Long-term list →' : 'Short-term list →' %></a>
+</div>
+
+<%- include('../partials/flash') %>
+
+<form method="post" action="/mtgo/watch/<%= list %>" class="card add-form">
+  <h3>Add a card</h3>
+  <div class="add-grid <%= isShort ? 'cols-short' : 'cols-long' %>">
+    <%- include('../partials/cardpicker', { pickerId: 'watch-card', label: 'Card' }) %>
+    <% if (isShort) { %>
+      <div>
+        <label for="alertPct">Alert at daily move ≥</label>
+        <div class="input-suffix"><input id="alertPct" name="alertPct" type="text" inputmode="decimal" placeholder="<%= defaultAlertPct %>"><span>%</span></div>
+      </div>
+    <% } %>
+    <div>
+      <label for="note">Note</label>
+      <input id="note" name="note" type="text" maxlength="200" placeholder="<%= isShort ? 'e.g. spiking after Pro Tour' : 'e.g. wait for rotation' %>">
+    </div>
+    <div class="add-submit"><button class="btn primary" type="submit">Add</button></div>
+  </div>
+</form>
+
+<section class="card">
+  <% if (rows.length === 0) { %>
+    <p class="muted">Nothing on this list yet.</p>
+  <% } else { %>
+  <div class="table-scroll">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Card</th>
+        <th class="num">Price</th>
+        <% if (isShort) { %><th class="num">1 day</th><th class="num">7 days</th><% } else { %><th class="num">30 days</th><th class="num">90 days</th><% } %>
+        <th class="num">Since added</th>
+        <th><%= isShort ? '30 days' : '6 months' %></th>
+        <th><%= isShort ? 'Alert / note' : 'Note' %></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    <% for (const r of rows) {
+         const a = isShort ? fmt.pct(r.d1) : fmt.pct(r.d30);
+         const b = isShort ? fmt.pct(r.d7) : fmt.pct(r.d90);
+         const s = fmt.pct(r.sinceAdded); %>
+      <tr>
+        <td>
+          <%= r.name %><% if (r.foil) { %> <span class="foil" title="Foil">✦</span><% } %>
+          <span class="setcode"><%= r.set %></span>
+          <% if (r.owned) { %><span class="tag">own <%= r.owned %></span><% } %>
+        </td>
+        <td class="num strong"><%= fmt.tix(r.price) %></td>
+        <td class="num <%= a.cls %>"><%= a.text %></td>
+        <td class="num <%= b.cls %>"><%= b.text %></td>
+        <td class="num">
+          <span class="<%= s.cls %>"><%= s.text %></span>
+          <span class="muted small block">from <%= fmt.tix(r.addedPrice) %> · <%= fmt.date(r.addedAt) %></span>
+        </td>
+        <td><%- include('../partials/spark', { points: r.history }) %></td>
+        <td class="small">
+          <% if (isShort) { %><span class="muted">alert ≥ <%= r.alertPct ?? defaultAlertPct %>%</span><% if (r.note) { %><br><% } %><% } %>
+          <%= r.note %>
+          <button type="button" class="link small" data-toggle="edit-<%= r._id %>">edit</button>
+          <form id="edit-<%= r._id %>" method="post" action="/mtgo/watch/item/<%= r._id %>/note" class="inline-edit hidden">
+            <% if (isShort) { %><input name="alertPct" type="text" inputmode="decimal" value="<%= r.alertPct ?? '' %>" placeholder="alert %" class="tiny" aria-label="Alert percent"><% } %>
+            <input name="note" type="text" value="<%= r.note %>" maxlength="200" placeholder="note" aria-label="Note">
+            <button class="btn small-btn" type="submit">Save</button>
+          </form>
+        </td>
+        <td class="actions">
+          <form method="post" action="/mtgo/watch/item/<%= r._id %>/move"><button class="link small" type="submit" title="Move to the <%= cfg.other %>-term list">→ <%= cfg.other %></button></form>
+          <form method="post" action="/mtgo/watch/item/<%= r._id %>/delete"><button class="link small danger" type="submit">remove</button></form>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</section>
+<script src="/static/cardpicker.js" defer></script>
+<%- include('../partials/foot') %>

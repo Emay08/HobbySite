@@ -1,0 +1,24 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+
+    "MONGODB_URI": "mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority",
+    "MONGODB_DB": "mtgo_manager",
+
+    "TELEGRAM_BOT_TOKEN": "123456789:AA...from-BotFather",
+    "TELEGRAM_CHAT_ID": "123456789",
+
+    "MONITOR_SCHEDULE": "0 */30 * * * *",
+    "PRICE_SYNC_SCHEDULE": "0 20 10 * * *",
+
+    "PRICE_ALERTS": "true",
+    "PRICE_ALERT_MIN_PCT": "25",
+    "PRICE_ALERT_MIN_TIX": "2",
+    "WATCH_ALERT_PCT": "15",
+
+    "GOATBOTS_PRICES_URL": "https://www.goatbots.com/download/price-history.zip",
+    "GOATBOTS_CARDS_URL": "https://www.goatbots.com/download/card-definitions.zip"
+  }
+}

@@ -1,0 +1,21 @@
+<%- include('partials/head', { bodyClass: 'login-page' }) %>
+<div class="login-wrap">
+  <form class="login-card" method="post" action="/login" autocomplete="on">
+    <div class="login-mark">
+      <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8.5 5v10L12 22 3.5 17V7z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 7l4.3 2.5v5L12 17l-4.3-2.5v-5z" fill="currentColor"/></svg>
+    </div>
+    <h1>Vault</h1>
+    <p class="muted">Private. Sign in to continue.</p>
+
+    <% if (error) { %><div class="alert" role="alert"><%= error %></div><% } %>
+
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" value="<%= username %>" autocomplete="username" required autofocus>
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+    <button type="submit" class="btn primary block">Sign in</button>
+  </form>
+</div>
+<%- include('partials/foot') %>

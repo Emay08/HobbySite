@@ -1,0 +1,21 @@
+<%- include('partials/head') %>
+<section class="landing">
+  <p class="eyebrow">Welcome back, <%= user.username %></p>
+  <h1>What are we doing today?</h1>
+
+  <div class="tiles">
+    <a class="tile" href="/mtgo">
+      <div class="tile-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="12" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="8" y="5" width="12" height="16" rx="1.5" class="card-front" stroke="currentColor" stroke-width="1.6"/><path d="M14 10l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor"/></svg>
+      </div>
+      <h2>MTGO Collection Manager</h2>
+      <p>Reprint news, Treasure Chest updates, collection value and CSV updates.</p>
+      <span class="tile-go">Open →</span>
+    </a>
+
+    <div class="tile tile-empty" aria-hidden="true">
+      <p>More tools later</p>
+    </div>
+  </div>
+</section>
+<%- include('partials/foot') %>
