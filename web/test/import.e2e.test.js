@@ -190,6 +190,36 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
   assert.equal(await db.collection('trades').countDocuments({ _id: 'sheet|bought|1' }), 0);
   assert.equal((await db.collection('sheet_trades').findOne({ _id: 'sheet|bought|1' })).status, 'skipped');
 
+  // a GoatBots trade file dropped on the collection page is refused; the collection is untouched
+  await db.collection('collection').insertOne({ _id: '70000', mtgoId: '70000', name: 'Mox Opal', qty: 3, set: 'SOM', foil: false });
+  r = await uploadFile('/mtgo/upload', 'gb.csv', [GB_HEADER, gbRow('2025-05-10', 'get', 50000, 'Force of Will', 9.08)].join('\n'), 'text/csv');
+  assert.equal(r.status, 400);
+  assert.match((await r.json()).error, /Trades page/);
+  assert.equal(await db.collection('collection').countDocuments(), 1);
+
+  // "start fresh": no unconfirmed entries against the old (wrong) collection
+  await db.collection('pending_changes').insertOne({ mtgoId: '1234', status: 'open', qty: 1, remaining: 1, direction: 'buy', windowEnd: new Date() });
+  {
+    const body = new FormData();
+    body.append('fresh', '1');
+    body.append('file', new Blob(['Card Name,Quantity,ID #,Rarity,Set,Collector #,Premium\n"Grim Monolith",2,60000,Rare,ULG,1,No\n'], { type: 'text/csv' }), 'c.csv');
+    r = await req('/mtgo/upload', { method: 'POST', body, headers: { accept: 'application/json' } });
+    const j = await r.json();
+    assert.equal(r.status, 200, JSON.stringify(j));
+    assert.equal(j.fresh.pendingDismissed, 1);
+    assert.equal(await db.collection('pending_changes').countDocuments({ status: 'open' }), 0);
+    assert.equal(await db.collection('collection_changes').countDocuments(), 0);
+  }
+
+  // card-name suggestions (pickers): owned-only filter
+  r = await req('/mtgo/api/suggest?q=grim&owned=1');
+  assert.deepEqual((await r.json()).map((x) => x.name), ['Grim Monolith']);
+  r = await req('/mtgo/api/suggest?q=mox&owned=1');
+  assert.deepEqual(await r.json(), []);
+
+  // static links carry a content version so browsers refetch after deploys
+  assert.match(await html('/mtgo/tc'), /\/static\/style\.css\?v=[0-9a-f]{10}/);
+
   // undo
   r = await form('/mtgo/import/undo', { confirm: 'yes' });
   assert.equal(r.status, 303);

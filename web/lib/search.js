@@ -34,6 +34,7 @@ async function build() {
     db.collection('watchlist').find({}, { projection: { name: 1, list: 1 } }).toArray(),
   ]);
   const tiers = new Map();
+  const ownedSet = new Set(owned.map(norm));
   const put = (name, tier) => {
     if (!name) return;
     const k = norm(name);
@@ -43,7 +44,7 @@ async function build() {
   for (const w of watch) put(w.name, w.list === 'short' ? 0 : 1);
   for (const n of owned) put(n, 2);
   for (const n of all) put(n, 3);
-  const entries = [...tiers.entries()].map(([k, v]) => ({ name: v.name, norm: k, words: k.split(/[\s,/-]+/), tier: v.tier }));
+  const entries = [...tiers.entries()].map(([k, v]) => ({ name: v.name, norm: k, words: k.split(/[\s,/-]+/), tier: v.tier, owned: ownedSet.has(k) }));
   entries.sort((a, b) => a.tier - b.tier || a.norm.length - b.norm.length || a.norm.localeCompare(b.norm));
   index = { builtAt: Date.now(), entries };
   dirty = false;
@@ -89,9 +90,9 @@ function rank(entries, q, limit = 10) {
   return hits.slice(0, limit).map(({ e }) => ({ name: e.name, tier: e.tier, label: TIER_LABELS[e.tier] }));
 }
 
-async function suggest(q, limit = 10) {
+async function suggest(q, limit = 10, { ownedOnly = false } = {}) {
   const idx = await getIndex();
-  return rank(idx.entries, q, limit);
+  return rank(ownedOnly ? idx.entries.filter((e) => e.owned) : idx.entries, q, limit);
 }
 
 module.exports = { suggest, rank, invalidate, getIndex, norm };

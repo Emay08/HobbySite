@@ -1,6 +1,14 @@
 require('dotenv').config();
 
 const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+
+function assetVersion(dir) {
+  const h = crypto.createHash('sha1');
+  for (const f of fs.readdirSync(dir).sort()) h.update(f).update(fs.readFileSync(path.join(dir, f)));
+  return h.digest('hex').slice(0, 10);
+}
 const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
@@ -54,6 +62,9 @@ async function main() {
   app.use((req, res, next) => (req.path === '/mtgo/import/confirm' ? next() : smallForms(req, res, next)));
   app.use(express.json({ limit: '20kb' }));
   app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: isProd ? '7d' : 0 }));
+  // Links to /static files carry ?v=<hash of their contents>, so browsers fetch new copies
+  // after each deploy instead of reusing week-old cached ones.
+  app.locals.assetV = assetVersion(path.join(__dirname, 'public'));
 
   app.use(
     session({

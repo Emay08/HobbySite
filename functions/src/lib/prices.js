@@ -1,21 +1,17 @@
 const AdmZip = require('adm-zip');
 const telegram = require('./telegram');
 
-const DEFAULT_URL = 'https://www.goatbots.com/download/price-history.zip';
+const { downloadFirst } = require('./goatbotsDownload');
+
+const DEFAULT_URLS = ['https://www.goatbots.com/download/prices/price-history.zip', 'https://www.goatbots.com/download/price-history.zip'];
 
 /**
  * Downloads GoatBots' daily price file. The zip holds one JSON text file that maps
  * MTGO catalog ID → price in tix, e.g. {"12345": 0.03, "67890": 41.2}.
  * MTGO catalog IDs are the same numbers as the "ID #" column in the MTGO CSV export.
  */
-async function downloadPrices(url = process.env.GOATBOTS_PRICES_URL || DEFAULT_URL) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'personal MTGO collection tracker' },
-    signal: AbortSignal.timeout(120000),
-  });
-  if (!res.ok) throw new Error(`Price download failed: HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  return parsePriceZip(buf);
+async function downloadPrices(urls = [process.env.GOATBOTS_PRICES_URL, ...DEFAULT_URLS]) {
+  return parsePriceZip(await downloadFirst([].concat(urls), 'Price'));
 }
 
 function parsePriceZip(buf) {

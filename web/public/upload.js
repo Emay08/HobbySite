@@ -58,6 +58,10 @@
     show(el('p', {}, el('span', { class: 'spinner' }), ' Uploading ', el('strong', {}, file.name), '…'));
 
     const body = new FormData();
+    // options on the page (e.g. "start fresh") travel with the file
+    document.querySelectorAll('[data-upload-field]').forEach((f) => {
+      if (f.type !== 'checkbox' || f.checked) body.append(f.name, f.value);
+    });
     body.append('file', file);
     try {
       const res = await fetch(zone.dataset.endpoint || '/mtgo/upload', {
@@ -100,6 +104,11 @@
     }
     if (d.diff.sampleRemoved.length) {
       nodes.push(el('p', { class: 'small muted' }, 'Gone: ' + d.diff.sampleRemoved.map((c) => c.name).join(', ')));
+    }
+    if (d.fresh) {
+      nodes.push(
+        el('p', { class: 'small muted' }, `Started fresh: cleared ${fmtInt(d.fresh.changesCleared)} recorded changes and dismissed ${fmtInt(d.fresh.pendingDismissed)} unconfirmed entries.`)
+      );
     }
     if (d.pending && d.pending.created) {
       const left = d.pending.created - d.pending.resolved;

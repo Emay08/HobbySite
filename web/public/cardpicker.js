@@ -30,6 +30,23 @@
     const api = { root, value: null, onChange: [] };
     pickers.set(root.id, api);
 
+    // Two steps: card names (ranked like the nav search: watch lists, owned, then all of
+    // MTGO), then the versions of the chosen name.
+    let mode = 'names';
+    let names = [];
+    let pickedName = null;
+
+    async function loadNames(q) {
+      const id = ++reqId;
+      const qs = new URLSearchParams({ q, limit: '12' });
+      if (ownedOnly) qs.set('owned', '1');
+      const res = await fetch('/mtgo/api/suggest?' + qs, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
+      if (id !== reqId) return;
+      names = res.ok ? await res.json() : [];
+      mode = 'names';
+      render();
+    }
+
     async function load(params) {
       const id = ++reqId;
       const qs = new URLSearchParams(params);
@@ -37,12 +54,47 @@
       const res = await fetch('/mtgo/api/cards?' + qs, { headers: { Accept: 'application/json' }, credentials: 'same-origin' });
       if (id !== reqId) return; // a newer search has started
       results = res.ok ? await res.json() : [];
+      mode = 'versions';
+      if (pickedName && results.length === 1) return choose(results[0]);
       render();
+    }
+
+    function pickName(n) {
+      pickedName = n;
+      input.value = n;
+      load({ name: n });
     }
 
     function render() {
       list.replaceChildren();
       active = -1;
+      if (mode === 'names') {
+        if (!names.length) list.append(el('li', 'picker-empty', input.value.trim().length < 2 ? 'Type at least 2 letters' : 'No matches'));
+        names.forEach((n, i) => {
+          const li = el('li', 'picker-option picker-name', el('span', 'po-name', n.name), n.label ? el('span', 'tier tier-' + n.label, n.label === 'owned' ? 'owned' : n.label + '-term') : '');
+          li.setAttribute('role', 'option');
+          li.dataset.index = i;
+          li.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            pickName(n.name);
+          });
+          li.addEventListener('mouseenter', () => setActive(i));
+          list.append(li);
+        });
+        if (names.length) setActive(0);
+        list.classList.remove('hidden');
+        input.setAttribute('aria-expanded', 'true');
+        return;
+      }
+      if (pickedName) {
+        const backLi = el('li', 'picker-back small muted', `← ${results.length} version${results.length === 1 ? '' : 's'} of ${pickedName} — pick one`);
+        backLi.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          pickedName = null;
+          loadNames(input.value.trim());
+        });
+        list.append(backLi);
+      }
       if (!results.length) {
         list.append(el('li', 'picker-empty', input.value.trim().length < 2 && !api.printingsName ? 'Type at least 2 letters' : 'No matches'));
       }
@@ -61,10 +113,18 @@
           choose(c);
         });
         li.dataset.index = i;
+        li.addEventListener('mouseenter', () => setActive(i));
         list.append(li);
       });
+      if (results.length) setActive(0);
       list.classList.remove('hidden');
       input.setAttribute('aria-expanded', 'true');
+    }
+
+    function setActive(i) {
+      const opts = list.querySelectorAll('.picker-option');
+      active = i;
+      opts.forEach((o, j) => o.classList.toggle('active', j === i));
     }
 
     function close() {
@@ -90,6 +150,7 @@
 
     function clear() {
       api.value = null;
+      pickedName = null;
       hidden.value = '';
       chosen.classList.add('hidden');
       input.classList.remove('hidden');
@@ -105,13 +166,14 @@
         results = [];
         return render();
       }
-      load({ q });
-    }, 180);
+      pickedName = null;
+      loadNames(q);
+    }, 120);
 
     input.addEventListener('input', search);
     input.addEventListener('focus', () => {
       if (api.printingsName && !input.value.trim()) load({ name: api.printingsName });
-      else if (results.length) render();
+      else if (names.length || results.length) render();
     });
     input.addEventListener('blur', () => setTimeout(close, 120));
     input.addEventListener('keydown', (e) => {
@@ -119,12 +181,14 @@
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         if (!opts.length) return;
-        active = (active + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length;
-        opts.forEach((o, i) => o.classList.toggle('active', i === active));
+        setActive((active + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length);
         opts[active].scrollIntoView({ block: 'nearest' });
       } else if (e.key === 'Enter') {
         e.preventDefault(); // never submit the form from the search box
-        if (active >= 0 && results[active]) choose(results[active]);
+        if (mode === 'names') {
+          const n = names[active >= 0 ? active : 0];
+          if (n) pickName(n.name);
+        } else if (active >= 0 && results[active]) choose(results[active]);
         else if (results.length === 1) choose(results[0]);
       } else if (e.key === 'Escape') {
         close();

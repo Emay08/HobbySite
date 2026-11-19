@@ -69,6 +69,8 @@ There is no sign-up page and no users table: the one allowed username and its bc
 ### Updating your collection
 MTGO client → **Collection** → select all cards in your full collection → right-click → **Export** → **CSV**. Drag the file onto **MTGO → Update**. Each upload replaces the stored collection and shows what was added/removed. Headers are matched loosely, so exports from other tools that have *name* + *quantity* columns also work (cards without an MTGO ID won't get prices, though).
 
+Only drop the MTGO export here: a GoatBots trade history is refused (it would otherwise be read as a collection of the cards in your trades). If the stored collection is ever wrong, tick **Start fresh** before uploading: the upload becomes the new starting point, recorded collection changes are cleared and open unconfirmed buys/sells are dismissed, instead of thousands of bogus changes being measured against the wrong collection.
+
 MTGO's own CSV export isn't quite valid CSV: after a card name with an accented letter (Márton Stromgald, Nazgûl…) it drops the line break, and quotes inside names aren't escaped (`"Henzie "Toolbox" Torre"`). The upload reads MTGO exports record by record to cope with both, and counts sideboarded copies too.
 
 ### Card search
@@ -100,7 +102,7 @@ Every recorded update (`/mtgo/tc`): added / removed / changed counts, cards and 
 For the later price analysis, the daily job also stores `price_daily`: one compact document per day with the GoatBots price of every printing of every card that has been in the chest, plus everything you own (a few thousand IDs, under 100 KB a day). GoatBots only publishes today's prices, so this history starts when this is deployed.
 
 ### Watch lists, price targets and version swaps
-Each has its own page in the MTGO menu. Cards are picked with a search box that covers every printing on MTGO (from GoatBots' card list, refreshed daily). Until the first daily job has run, the search only finds cards in your own collection.
+Each has its own page in the MTGO menu. Cards are picked in two steps: type a name (suggestions ranked like the nav search — watch lists, then your collection, then every card on MTGO), then pick the version. Every version comes from GoatBots' card definitions — the cards actually in circulation on MTGO — refreshed daily. Until the first daily job has run, only cards in your own collection are found.
 
 | Page | What it shows |
 |------|---------------|
@@ -170,6 +172,17 @@ Reads https://www.magicspoiler.com hourly between 8 am and 8 pm Pacific.
 ### If a watcher breaks
 
 Both watchers record errors on the website (Highlights → Monitors, in red). If the Treasure Chest page can't be read for 30 minutes during an update window (6 hours otherwise), or MagicSpoiler for 6 hours, you get one Telegram warning a day. MagicSpoiler sits behind Cloudflare; if it starts blocking Azure, the warning will say so.
+
+### Running the price sync now
+
+The daily job runs at 10:20 UTC. To run it immediately (e.g. after a deploy), trigger it through the Function App's admin endpoint:
+
+```powershell
+$key = az functionapp keys list -g hobbysite-rg -n hobbysite-func-6xrma0 --query masterKey -o tsv
+Invoke-RestMethod -Method Post -Uri "https://hobbysite-func-6xrma0.azurewebsites.net/admin/functions/priceSync" -Headers @{ "x-functions-key" = $key } -ContentType "application/json" -Body '{}'
+```
+
+It answers straight away (202) and runs in the background for a minute or two; the Collection page then shows "Prices updated …".
 
 ### Checking by hand
 
@@ -266,7 +279,7 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 | `NOTIFY_PRICE_TARGETS`, `NOTIFY_SWAPS`, `NOTIFY_SHORT_WATCH`, `NOTIFY_COLLECTION_MOVERS` | set to `true` to also get Telegram messages for these (all off by default) |
 | `PRICE_ALERT_MIN_PCT` / `PRICE_ALERT_MIN_TIX` | thresholds for the collection-movers message, if turned on (default 25 % and 2 tix) |
 | `WATCH_ALERT_PCT` | default daily-move alert for the short-term watch list (default 15) |
-| `GOATBOTS_PRICES_URL` / `GOATBOTS_CARDS_URL` | override if GoatBots moves the files |
+| `GOATBOTS_PRICES_URL` / `GOATBOTS_CARDS_URL` | override if GoatBots moves the files (defaults: `https://www.goatbots.com/download/prices/price-history.zip` and `…/prices/card-definitions.zip`, with the older `/download/…` paths as fallback) |
 
 ## Tests
 

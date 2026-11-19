@@ -32,6 +32,11 @@
         e.preventDefault();
         location.href = cardUrl(it.name);
       });
+      // the mouse and the arrow keys move the same highlight
+      li.addEventListener('mouseenter', () => {
+        active = i;
+        list.querySelectorAll('.nav-suggest-item').forEach((o, j) => o.classList.toggle('active', j === i));
+      });
       list.append(li);
     });
     list.hidden = !items.length;

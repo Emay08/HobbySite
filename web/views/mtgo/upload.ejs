@@ -14,6 +14,10 @@
       <strong>Drop your MTGO CSV export here</strong>
       <span class="muted small">or click to choose a file · replaces the stored collection</span>
     </label>
+    <label class="check small">
+      <input type="checkbox" name="fresh" value="1" data-upload-field>
+      <span><strong>Start fresh</strong> — the stored collection is wrong, so don't compare against it: clears recorded collection changes and dismisses all unconfirmed buys/sells. This upload becomes the new starting point.</span>
+    </label>
 
     <div id="status" class="card hidden" aria-live="polite"></div>
   </section>
@@ -56,5 +60,5 @@
     </div>
   </aside>
 </div>
-<script src="/static/upload.js" defer></script>
+<script src="/static/upload.js?v=<%= assetV %>" defer></script>
 <%- include('../partials/foot') %>

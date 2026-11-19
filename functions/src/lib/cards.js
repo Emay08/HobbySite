@@ -1,19 +1,16 @@
 const AdmZip = require('adm-zip');
 
-const DEFAULT_URL = 'https://www.goatbots.com/download/card-definitions.zip';
+const { downloadFirst } = require('./goatbotsDownload');
+
+const DEFAULT_URLS = ['https://www.goatbots.com/download/prices/card-definitions.zip', 'https://www.goatbots.com/download/card-definitions.zip'];
 
 /**
  * GoatBots' card definitions: MTGO catalog ID → { name, cardset, rarity, foil }.
  * Stored in the `cards` collection so the website can search every printing on
  * MTGO (not just the ones you own) when adding watch-list items, targets and swaps.
  */
-async function downloadCardDefinitions(url = process.env.GOATBOTS_CARDS_URL || DEFAULT_URL) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'personal MTGO collection tracker' },
-    signal: AbortSignal.timeout(120000),
-  });
-  if (!res.ok) throw new Error(`Card definitions download failed: HTTP ${res.status}`);
-  return parseCardZip(Buffer.from(await res.arrayBuffer()));
+async function downloadCardDefinitions(urls = [process.env.GOATBOTS_CARDS_URL, ...DEFAULT_URLS]) {
+  return parseCardZip(await downloadFirst([].concat(urls), 'Card definitions'));
 }
 
 function parseCardZip(buf) {

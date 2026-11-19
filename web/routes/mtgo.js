@@ -104,7 +104,7 @@ router.post('/upload', (req, res, next) => {
     try {
       const { cards, warnings, rowCount } = parseCollectionCsv(req.file.buffer);
       if (cards.length === 0) return res.status(400).json({ error: 'No cards found in that file.' });
-      const diff = await col.replaceCollection(cards, { filename: req.file.originalname });
+      const diff = await col.replaceCollection(cards, { filename: req.file.originalname, fresh: req.body && req.body.fresh === '1' });
       search.invalidate();
       const summary = await col.getSummary();
       res.json({
@@ -123,6 +123,7 @@ router.post('/upload', (req, res, next) => {
           sampleRemoved: diff.removed.slice(0, 10),
         },
         pending: diff.pending,
+        fresh: diff.fresh || null,
       });
     } catch (e) {
       if (e.expose) return res.status(e.status || 400).json({ error: e.message });

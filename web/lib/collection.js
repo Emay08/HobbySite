@@ -183,7 +183,15 @@ async function replaceCollection(cards, meta) {
   // buys/sells. Skipped for the very first upload (everything would show as "added").
   let pending = null;
   const lastUpload = await db.collection('uploads').find().sort({ uploadedAt: -1 }).limit(1).next();
-  if (previous.length) {
+  if (meta.fresh) {
+    // "Start fresh": the stored collection was wrong, so changes measured against it are
+    // meaningless. Clear them; this upload becomes the new starting point.
+    const [cc, pc] = await Promise.all([
+      db.collection('collection_changes').deleteMany({}),
+      db.collection('pending_changes').updateMany({ status: 'open' }, { $set: { status: 'dismissed', reason: 'fresh start', resolvedAt: now } }),
+    ]);
+    diff.fresh = { changesCleared: cc.deletedCount, pendingDismissed: pc.modifiedCount };
+  } else if (previous.length) {
     const changes = [];
     const rec = (c, from, to) =>
       changes.push({ at: now, mtgoId: c.mtgoId || null, name: c.name, nameLower: c.name.toLowerCase(), set: c.set || '', foil: !!c.foil, from, to, change: to - from });
@@ -209,6 +217,7 @@ async function replaceCollection(cards, meta) {
     added: diff.added.length,
     removed: diff.removed.length,
     changed: diff.changed.length,
+    fresh: !!meta.fresh,
   });
 
   await recordTodayValue();

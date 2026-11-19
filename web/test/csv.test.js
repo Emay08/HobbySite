@@ -56,3 +56,8 @@ test('reads MTGO exports with missing line breaks and unescaped quotes', () => {
 test('gives a readable error for broken non-MTGO CSVs', () => {
   assert.throws(() => parseCollectionCsv('name,count\n"a"b,1\n'), (e) => e.expose === true && /Couldn't read the CSV/.test(e.message));
 });
+
+test('a GoatBots trade history is refused as a collection', () => {
+  const gb = 'timestamp,time_cet,bot,get_value,give_value,credits_before,credits_after,method,itemID,name,cardset,rarity,foil,quantity,price\n1787843359,"2026-08-27 17:09:19",GoatBots1,41.5,42,0.38,0.88,get,90543,"Force of Will",EMA,Mythic,0,5,41.5\n';
+  assert.throws(() => parseCollectionCsv(Buffer.from(gb)), /GoatBots trade history.*Trades page/);
+});

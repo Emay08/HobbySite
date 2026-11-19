@@ -4,10 +4,13 @@
   <div class="card-head-main">
     <p class="eyebrow">MTGO · Card</p>
     <h1><%= name %></h1>
-    <div class="stats mini">
-      <div class="stat"><span class="stat-label">You own</span><span class="stat-value"><%= fmt.int(ownedQty) %></span></div>
+    <div class="stats mini card-stats">
+      <div class="stat"><span class="stat-label">You own</span><span class="stat-value"><%= fmt.int(ownedQty) %></span><% if (ownedWithoutId.length) { %><span class="stat-sub muted small"><%= ownedWithoutId.reduce((n, o) => n + o.qty, 0) %> without an MTGO ID</span><% } %></div>
       <div class="stat"><span class="stat-label">Your value</span><span class="stat-value"><%= fmt.tix(ownedValue) %></span></div>
-      <div class="stat"><span class="stat-label">Versions on MTGO</span><span class="stat-value"><%= versions.length %></span></div>
+      <div class="stat"><span class="stat-label">Cheapest version</span><span class="stat-value"><%= cheapest ? fmt.tix(cheapest.price) : '—' %></span><% if (cheapest) { %><span class="stat-sub muted small"><%= cheapest.set %><%= cheapest.foil ? ' foil' : '' %> · GoatBots</span><% } %></div>
+      <div class="stat"><span class="stat-label">Versions on MTGO</span><span class="stat-value"><%= versions.length %></span><span class="stat-sub muted small"><%= versions.filter((v) => v.foil).length %> foil</span></div>
+      <div class="stat"><span class="stat-label">Treasure Chest</span><span class="stat-value"><%= chest.current.length ? 'In now' : chest.periods.length ? 'Was in' : '—' %></span><% if (chest.periods.length) { %><span class="stat-sub small"><a href="#chest"><%= chest.periods.length %> period<%= chest.periods.length === 1 ? '' : 's' %></a></span><% } %></div>
+      <div class="stat"><span class="stat-label">Your trades</span><span class="stat-value"><%= trades.length %></span><span class="stat-sub small"><a href="#trades">history</a></span></div>
     </div>
     <p><a class="btn" href="#add-trade">+ Add transaction</a></p>
     <p class="small vendor-links">
@@ -24,29 +27,6 @@
 
 <%- include('../partials/flash') %>
 
-<% if (owned.length || ownedWithoutId.length) { %>
-<section class="card">
-  <h3>Your versions</h3>
-  <table class="table compact">
-    <thead><tr><th>Version</th><th class="num">Qty</th><th class="num">GoatBots</th><th class="num">Value</th><th class="num">Cardhoarder buys at</th><th class="num">Dojo buys at</th></tr></thead>
-    <tbody>
-    <% for (const v of owned) { %>
-      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>">
-        <td><span class="setcode"><%= v.set %></span><% if (v.foil) { %> <span class="foil">✦ foil</span><% } %> <span class="muted small"><%= v.rarity %></span></td>
-        <td class="num strong"><%= v.qty %></td>
-        <td class="num"><%= fmt.tix(v.price) %></td>
-        <td class="num"><%= fmt.tix((v.price || 0) * v.qty) %></td>
-        <td class="num live" data-vendor="cardhoarder" data-field="buy">…</td>
-        <td class="num live" data-vendor="dojo" data-field="buy">…</td>
-      </tr>
-    <% } %>
-    <% for (const o of ownedWithoutId) { %>
-      <tr><td><span class="setcode"><%= o.set || '?' %></span> <span class="muted small">no MTGO ID in your export</span></td><td class="num strong"><%= o.qty %></td><td class="num">—</td><td class="num">—</td><td></td><td></td></tr>
-    <% } %>
-    </tbody>
-  </table>
-</section>
-<% } %>
 
 <section class="card">
   <div class="section-head">
@@ -98,11 +78,6 @@
     <% } %>
     </tbody>
   </table>
-  </div>
-  <div id="unmatched" class="hidden">
-    <h4 class="small">Dojo listings not matched to a version above</h4>
-    <p class="small muted">Dojo names variants in the product name; when a set has several variants they can't be matched to MTGO IDs reliably.</p>
-    <table class="table compact"><thead><tr><th>Dojo product</th><th>Set</th><th class="num">Sell</th><th class="num">Buy</th><th class="num">Stock</th></tr></thead><tbody></tbody></table>
   </div>
 </section>
 
@@ -224,5 +199,5 @@
   <% } %>
 </section>
 <p class="small muted attribution">Card image from <a href="https://scryfall.com/" target="_blank" rel="noopener">Scryfall</a>.</p>
-<script src="/static/card.js" defer></script>
+<script src="/static/card.js?v=<%= assetV %>" defer></script>
 <%- include('../partials/foot') %>

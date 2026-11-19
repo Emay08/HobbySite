@@ -91,6 +91,7 @@ router.get('/card/:name', async (req, res, next) => {
       ownedWithoutId,
       ownedQty: owned.reduce((n, v) => n + v.qty, 0) + ownedWithoutId.reduce((n, o) => n + o.qty, 0),
       ownedValue: owned.reduce((n, v) => n + v.qty * (v.price || 0), 0),
+      cheapest: versions.filter((v) => v.price != null && v.price > 0).sort((a, b) => a.price - b.price)[0] || null,
       trades,
       changes,
       pending,
@@ -115,7 +116,7 @@ router.get('/card/:name', async (req, res, next) => {
 router.get('/api/suggest', async (req, res, next) => {
   try {
     res.set('Cache-Control', 'private, max-age=30');
-    res.json(await search.suggest(text(req.query.q, 80)));
+    res.json(await search.suggest(text(req.query.q, 80), Number(req.query.limit) === 12 ? 12 : 10, { ownedOnly: req.query.owned === '1' }));
   } catch (err) {
     next(err);
   }

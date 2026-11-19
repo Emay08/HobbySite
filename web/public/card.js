@@ -88,8 +88,8 @@
     // Dojo rows we couldn't place
     if (dj.ok) {
       const left = dj.rows.filter((r) => !usedDojo.has(r));
-      if (left.length) {
-        const box = document.getElementById('unmatched');
+      const box = document.getElementById('unmatched'); // not shown: only GoatBots' versions count
+      if (left.length && box) {
         const tbody = box.querySelector('tbody');
         for (const r of left) {
           const tr = el('tr');

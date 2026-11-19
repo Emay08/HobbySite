@@ -99,6 +99,12 @@ function isMtgoExport(text) {
 function parseCollectionCsv(buffer) {
   const text = (Buffer.isBuffer(buffer) ? buffer.toString('utf8') : String(buffer)).replace(/^\uFEFF/, '');
   let records;
+  // A GoatBots trade history has name + quantity columns too; read as a collection it
+  // would replace your collection with the cards in your trades.
+  const header = text.slice(0, 400).split(/\r?\n/)[0].toLowerCase();
+  if (/\btimestamp\b/.test(header) && /\bmethod\b/.test(header) && /\bbot\b/.test(header)) {
+    throw new CsvError('This is a GoatBots trade history, not a collection export — upload it on the Trades page. Your collection was not changed.');
+  }
   if (isMtgoExport(text)) {
     records = parseMtgoExport(text);
   } else {
