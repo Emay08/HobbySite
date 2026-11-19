@@ -1,0 +1,69 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO · Highlights</p>
+    <h1>Treasure Chest history</h1>
+    <p class="muted small lede">Every recorded Treasure Chest update. Changelists come from your spreadsheet (Jan 2024 – Nov 2026) and, from now on, the watcher. Each update's full contents are rebuilt backwards from the newest snapshot of the page, so cards that didn't change still count.</p>
+  </div>
+  <% if (updates.length) { %>
+  <div class="stat-inline"><span class="pill"><%= updates.length %> updates</span><span class="pill"><%= fmt.date(updates[updates.length - 1].date) %> – <%= fmt.date(updates[0].date) %></span></div>
+  <% } %>
+</div>
+<% if (flash) { %><%- include('../partials/flash', { flash }) %><% } %>
+
+<% if (!updates.length) { %>
+  <div class="card empty-card">
+    <p><strong>No updates recorded yet.</strong></p>
+    <p class="muted">Import your spreadsheet on the <a href="/mtgo/import">spreadsheet import</a> page. New updates are added automatically by the Treasure Chest watcher.</p>
+  </div>
+<% } else { %>
+<div class="layout-2">
+  <section>
+    <div class="card table-scroll">
+      <table class="table">
+        <thead><tr><th>Update</th><th class="num">Added</th><th class="num">Removed</th><th class="num">Changed</th><th class="num">Cards in chest</th><th class="num">Total slots</th><th></th></tr></thead>
+        <tbody>
+        <% for (const u of updates) { %>
+          <tr>
+            <td><a href="/mtgo/tc/<%= u.date %>"><strong><%= fmt.date(u.date) %></strong></a></td>
+            <td class="num up">+<%= u.added %></td>
+            <td class="num down">−<%= u.removed %></td>
+            <td class="num"><%= u.changed || '' %></td>
+            <td class="num"><%= u.contentsCount ? fmt.int(u.contentsCount) : '—' %></td>
+            <td class="num"><%= u.contentsCount ? fmt.int(u.totalSlots) : '—' %></td>
+            <td class="small">
+              <% if (u.source === 'watcher') { %><span class="tag" title="Recorded by the Treasure Chest watcher">watcher</span><% } %>
+              <% if (u.issuesCount) { %><span class="tag" title="Changelist rows that disagree with the rebuilt contents"><%= u.issuesCount %> mismatches</span><% } %>
+              <% if (u.excludedCount) { %><span class="tag" title="Rows that repeat the previous tab were left out"><%= u.excludedCount %> copied rows left out</span><% } %>
+            </td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <aside>
+    <div class="card">
+      <h3>Full contents</h3>
+      <% if (meta) { %>
+        <p class="small">Rebuilt <%= fmt.dateTime(meta.at) %> from the page snapshot of <strong><%= fmt.date(meta.snapshotDate) %></strong>, back to <%= fmt.date(updates[updates.length - 1].date) %>.</p>
+        <p class="small muted"><%= meta.issues %> changelist rows disagree with the rebuilt contents — usually typos or rows the page itself got wrong. They're listed on each update's page.</p>
+      <% } else if (!snapshots) { %>
+        <p class="small muted">Waiting for the Treasure Chest watcher's first snapshot of the page. Contents are rebuilt automatically once it exists.</p>
+      <% } else { %>
+        <p class="small muted">Not rebuilt yet.</p>
+      <% } %>
+      <form method="post" action="/mtgo/tc/rebuild"><button class="btn small-btn" type="submit">Rebuild now</button></form>
+    </div>
+    <div class="card">
+      <h3>Notes</h3>
+      <ul class="small muted steps">
+        <li>Tabs before June 2024 had no Treatment column, so versions in those updates are known by set only.</li>
+        <li>The June 4 2024 tab repeated most of May 13's rows; those copies are left out.</li>
+        <li>Card pages show when each version was in the chest.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+<% } %>
+<%- include('../partials/foot') %>

@@ -49,8 +49,9 @@
   });
 
   async function send(file) {
-    if (!/\.csv$/i.test(file.name)) {
-      show(el('p', { class: 'error' }, 'That is not a .csv file.'));
+    const ext = zone.dataset.ext || 'csv';
+    if (!new RegExp(`\\.${ext}$`, 'i').test(file.name)) {
+      show(el('p', { class: 'error' }, `That is not a .${ext} file.`));
       return;
     }
     zone.classList.add('busy');
@@ -67,6 +68,7 @@
       });
       const data = await res.json().catch(() => ({ error: `Server returned ${res.status}` }));
       if (!res.ok) throw new Error(data.error || 'Upload failed');
+      if (data.redirect) return window.location.assign(data.redirect);
       if (zone.dataset.kind === 'trades') renderTrades(file.name, data);
       else renderResult(file.name, data);
     } catch (err) {

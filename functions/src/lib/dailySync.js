@@ -1,12 +1,14 @@
 const prices = require('./prices');
 const cards = require('./cards');
 const alerts = require('./alerts');
+const chestPrices = require('./chestPrices');
 
 /**
  * The whole daily job, shared by the Azure timer and the local script:
  *   1. card definitions (names/sets for every MTGO ID — powers the card search)
  *   2. prices
- *   3. price history for tracked cards
+ *   3. price history for tracked cards, and a daily price snapshot of every Treasure
+ *      Chest card and everything you own (for later analysis)
  *   4. collection value snapshot
  *   5. price targets / version swaps: update hit & ready flags for the website
  *      (Telegram for these is off unless enabled with NOTIFY_* settings)
@@ -23,6 +25,11 @@ async function runDailySync(db, { log = console.log, sendAlerts = true } = {}) {
   const { prices: map, file } = await prices.downloadPrices();
   log(`Stored ${await prices.storePrices(db, map)} prices from ${file}`);
   log(`Recorded history for ${await alerts.recordTrackedHistory(db, map)} tracked cards`);
+  try {
+    log(`Recorded daily prices for ${await chestPrices.recordChestPrices(db, map)} Treasure Chest / owned cards`);
+  } catch (err) {
+    log(`Daily chest prices skipped: ${err.message}`);
+  }
 
   const yesterday = await db.collection('value_history').find().sort({ date: -1 }).limit(1).next();
   const today = await prices.recordCollectionValue(db);

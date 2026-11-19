@@ -72,7 +72,10 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     const res = await fetch(BASE + p, { redirect: 'manual', ...opts, headers: { cookie, ...(opts.headers || {}) } });
     const sc = res.headers.get('set-cookie');
     if (sc) cookie = sc.split(';')[0];
-    return res;
+    // Read the whole response before going on: express-session sends the headers before
+    // the session is saved, so starting the next request on headers alone can overtake it.
+    const body = await res.arrayBuffer();
+    return new Response(body, { status: res.status, headers: res.headers });
   };
   const form = (p, data) =>
     req(p, { method: 'POST', body: new URLSearchParams(data), headers: { 'content-type': 'application/x-www-form-urlencoded' } });

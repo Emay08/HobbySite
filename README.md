@@ -37,6 +37,10 @@ mtgo-manager/
 | `trade_imports` | web                  | Log of trade history uploads |
 | `pending_changes` | web                | Unconfirmed buys/sells found by comparing collection uploads |
 | `collection_changes` | web             | Per-card quantity changes recorded by each CSV upload |
+| `tc_history`    | both                 | One doc per Treasure Chest update (`_id` = date): `changes` (the CHANGELIST), `contents` (full chest after the update), `issues` |
+| `price_daily`   | functions/priceSync  | One doc per day: `prices` = { MTGO ID: tix } for every printing of every chest card + everything you own |
+| `sheet_trades`  | web                  | Entries from the spreadsheet import (as typed, resolved card name, duplicate/date-range info) |
+| `import_staging`| web                  | A spreadsheet import waiting for review |
 | `sessions`      | web                  | Login sessions |
 
 Prices come from GoatBots' public daily price file, keyed by MTGO catalog ID — the same number as the `ID #` column in the MTGO CSV export — so cards match exactly, including foils and different printings.
@@ -82,6 +86,18 @@ Event Tickets are left out. Card pages also have an **Add transaction** button f
 
 ### Trade history (GoatBots)
 On GoatBots, download your trade history CSV (your last 1,000 trades) and drop it on **MTGO → Trades**. Upload every download you have, in any order: each trade is identified by its timestamp + bot, and each item by get/give + MTGO ID, so trades already stored are skipped and only new ones are added. The Trades page lists every trade (what you got, what you gave, values, credit change) with a card-name filter; each card's trades also appear in the trade history on its card page, tagged *GoatBots import*, next to anything you log by hand.
+
+### Spreadsheet import (one-time) — **Update → Spreadsheet import**
+Your Google Sheet (Treasure Chest tabs + `buysell`) was converted to `vault-import.json` with `tools/sheet-to-json.py` (`python3 tools/sheet-to-json.py MTGO_treasure_chest_updates.xlsx vault-import.json`; needs `openpyxl`). Drop that file on the import page, check the flagged entries, and import. **Undo** removes everything it added.
+
+- **Treasure Chest tabs** are CHANGELISTs (only cards that changed). They're stored in `tc_history`, and each update's **full contents** are rebuilt backwards from the watcher's newest page snapshot (before an update = after it, with each changed card set back to slots − change). Rows that disagree with the rebuild are listed as mismatches on each update's page. The tab named "Jan 16 2025" is treated as **Jan 16 2026**; the **June 4 2024** tab repeated 283 of May 13's rows, so those are left out (a checkbox keeps them). Tabs before June 2024 have no Treatment, so those versions are known by set only.
+- **buysell** (rebought / recently bought / sold, oldest first, no dates): names are matched to MTGO cards (shorthand, typos, "(f)" = foil, "x4" = quantity, other notes kept). An entry is a **GoatBots duplicate** when the same card, direction and price (to the cent) appear in your GoatBots trades *in the same order as the sheet* — the longest such chain per column is used, so one stray match can't throw off the rest. Duplicates aren't added. Everything else becomes a trade with no date and the **range between its nearest matched neighbours** (shown on card pages, tagged *Spreadsheet*). Uploading another GoatBots history re-runs the matching, so older histories remove more duplicates and narrow the ranges.
+- Entries without a card name wait on the import page to be named or skipped; *remove* on a card page skips one for good.
+
+### Treasure Chest history — **Highlights → Treasure Chest → Update history**
+Every recorded update (`/mtgo/tc`): added / removed / changed counts, cards and total slots in the chest, and a page per update with the changes, the full contents and which of them you own. Card pages have a **Treasure Chest** section: when each version was in the chest (added, removed, how many updates, max slots) and every changelist row that mentions it. The watcher writes each new update to the same place, contents and all.
+
+For the later price analysis, the daily job also stores `price_daily`: one compact document per day with the GoatBots price of every printing of every card that has been in the chest, plus everything you own (a few thousand IDs, under 100 KB a day). GoatBots only publishes today's prices, so this history starts when this is deployed.
 
 ### Watch lists, price targets and version swaps
 Each has its own page in the MTGO menu. Cards are picked with a search box that covers every printing on MTGO (from GoatBots' card list, refreshed daily). Until the first daily job has run, the search only finds cards in your own collection.
@@ -139,6 +155,7 @@ Reads https://www.mtgo.com/news/mtgo-treasure-chest-info.
   - CHANGELIST wrong → the message lists the differences.
   - CHANGELIST fixed later → it's checked again against the page as it was before the update began.
 - **Message:** sent on every change: counts of added / removed / changed cards, new or removed slot tables, the next update date, the CHANGELIST check, and **the added cards that are in your collection or on a watch list** (matched by name, any version) with your versions' current prices. Those cards are also added to the short-term watch list.
+- **History:** each update is also written to `tc_history` (date from the page's "Last Updated"), with the full contents and the changes — see *Treasure Chest history* above.
 - The first check only records the page; nothing is sent.
 
 ### Reprints — `functions/src/lib/spoilers.js`
@@ -262,7 +279,7 @@ With a MongoDB to test against (a local one, or a throwaway Atlas database), the
 
 ```bash
 export TEST_MONGODB_URI="mongodb://127.0.0.1:27017/?directConnection=true"
-cd web && npm test          # + login, upload, card search, watch lists, targets, swaps, card pages through the real server
+cd web && npm test          # + login, upload, card search, watch lists, targets, swaps, card pages, spreadsheet import through the real server
 cd functions && npm test    # + daily job, Treasure Chest scenarios (stale / wrong / late CHANGELIST), reprint watcher
 ```
 

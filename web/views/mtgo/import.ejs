@@ -1,0 +1,158 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO · Update</p>
+    <h1>Spreadsheet import</h1>
+    <p class="muted small lede">One-time import of your Google Sheet: every Treasure Chest update tab, and the buy/sell tab. Upload <code>vault-import.json</code>, check the entries flagged below, then import. It can be undone.</p>
+  </div>
+</div>
+<%- include('../partials/flash') %>
+
+<% if (staged) {
+     const t = preview.totals;
+     const tcRows = staged.tc.reduce((n, u) => n + u.rows.length, 0);
+     const excluded = staged.tc.filter((u) => u.excludedRows.length);
+     const attention = preview.rows.filter((r) => r.match !== 'ok');
+     const rows = showAll ? preview.rows : attention; %>
+<form method="post" action="/mtgo/import/confirm">
+  <div class="stats">
+    <div class="stat stat-hero"><span class="stat-label">Treasure Chest updates</span><span class="stat-value"><%= staged.tc.length %></span><span class="stat-sub muted"><%= fmt.date(staged.tc[0].date) %> – <%= fmt.date(staged.tc[staged.tc.length - 1].date) %> · <%= fmt.int(tcRows) %> changelist rows</span></div>
+    <div class="stat"><span class="stat-label">Spreadsheet trades</span><span class="stat-value"><%= fmt.int(t.entries) %></span><span class="stat-sub muted"><%= t.noPrice %> without a price</span></div>
+    <div class="stat"><span class="stat-label">Already in GoatBots</span><span class="stat-value"><%= fmt.int(t.duplicates) %></span><span class="stat-sub muted">skipped as duplicates</span></div>
+    <div class="stat"><span class="stat-label">To add</span><span class="stat-value"><%= fmt.int(t.toImport) %></span><span class="stat-sub muted"><%= t.check %> to check · <%= t.none %> not found</span></div>
+  </div>
+
+  <div class="layout-2">
+    <section>
+      <div class="card table-scroll">
+        <div class="section-head">
+          <h3><%= showAll ? 'All entries' : 'Entries to check' %> <span class="muted small">(<%= rows.length %>)</span></h3>
+          <a class="small" href="/mtgo/import<%= showAll ? '' : '?all=1' %>"><%= showAll ? 'Only show entries to check' : `Show all ${preview.rows.length} entries` %></a>
+        </div>
+        <p class="small muted">
+          Amber: a best guess, other cards match as well. Red: no card found — type the name (suggestions appear as you type), or tick <em>skip</em>.
+          Anything left without a name is kept aside; you can fix it after importing.
+        </p>
+        <table class="table compact review-table">
+          <thead><tr><th>Sheet</th><th>Written as</th><th>Card</th><th class="num">Qty</th><th class="num">Each</th><th>GoatBots</th><th>Skip</th></tr></thead>
+          <tbody>
+          <% for (const r of rows) { const id = r._id; %>
+            <tr class="<%= r.match === 'check' ? 'match-check' : r.match === 'none' ? 'match-none' : '' %> <%= r.duplicate ? 'dup' : '' %>">
+              <td class="small muted"><%= columns[r.column] %> #<%= r.seq + 1 %></td>
+              <td class="raw"><%= r.raw %></td>
+              <td>
+                <input type="text" name="fix:<%= id %>" value="<%= r.name || '' %>" list="dl-<%= r.column %>-<%= r.seq %>" placeholder="card name" autocomplete="off" aria-label="Card for <%= r.raw %>">
+                <% if (r.candidates.length > 1) { %><datalist id="dl-<%= r.column %>-<%= r.seq %>"><% for (const c of r.candidates) { %><option value="<%= c %>"><% } %></datalist><% } %>
+                <% if (r.foil || r.hints) { %><span class="small muted"><%= r.foil ? 'foil ' : '' %><%= r.hints %></span><% } %>
+              </td>
+              <td class="num"><%= r.qty %></td>
+              <td class="num"><%= r.price == null ? '—' : fmt.tix(r.price) %></td>
+              <td class="small"><% if (r.duplicate) { %>duplicate · <%= fmt.date(r.matchedAt) %><% } else if (r.name) { %><span class="muted"><%= r.from ? fmt.date(r.from) : 'before' %> – <%= fmt.date(r.to) %></span><% } %></td>
+              <td><input type="checkbox" name="skip:<%= id %>" value="1" aria-label="Skip <%= r.raw %>"></td>
+            </tr>
+          <% } %>
+          <% if (!rows.length) { %><tr><td colspan="7" class="muted small">Every entry matched a card. <a href="/mtgo/import?all=1">Show all</a> to review them anyway.</td></tr><% } %>
+          </tbody>
+        </table>
+        <div class="sticky-actions">
+          <button class="btn primary" type="submit">Import</button>
+          <button class="btn" type="submit" formaction="/mtgo/import/cancel">Cancel</button>
+          <span class="small muted">Treasure Chest updates and <%= fmt.int(t.toImport) %> trades will be added.</span>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h3>Duplicates</h3>
+        <p class="small">Checked against <strong><%= fmt.int(preview.gb.items) %></strong> GoatBots trade lines<% if (preview.gb.first) { %> from <%= fmt.date(preview.gb.first) %> to <%= fmt.date(preview.gb.last) %><% } %>.</p>
+        <p class="small muted">An entry is a duplicate when GoatBots has the same card, direction and price to the cent, in the same order as your sheet. Spreadsheet trades are re-checked every time you upload a GoatBots history, so uploading older histories later still removes their duplicates.</p>
+        <p class="small muted">Undated entries get the date range between their nearest matched neighbours in the same column.</p>
+      </div>
+      <div class="card">
+        <h3>Treasure Chest</h3>
+        <% if (excluded.length) { %>
+          <% for (const u of excluded) { %>
+            <p class="small"><strong><%= u.tab %></strong>: <%= u.excludedRows.length %> of <%= u.excludedRows.length + u.rows.length %> rows are identical to the previous tab and will be left out.</p>
+          <% } %>
+          <label class="small check"><input type="checkbox" name="includeCopied" value="1"> Keep them anyway</label>
+        <% } %>
+        <p class="small muted">Full contents of each update are rebuilt from the watcher's latest page snapshot<%= snapshots ? '' : ' (none stored yet — rebuilt automatically later)' %>.</p>
+      </div>
+    </aside>
+  </div>
+</form>
+
+<% } else { %>
+
+<div class="layout-2">
+  <section>
+    <% if (done) { %>
+      <div class="stats">
+        <div class="stat stat-hero"><span class="stat-label">Treasure Chest updates</span><span class="stat-value"><%= tcCount %></span><span class="stat-sub"><a href="/mtgo/tc">View history →</a></span></div>
+        <div class="stat"><span class="stat-label">Trades added</span><span class="stat-value"><%= fmt.int(done.imported) %></span><span class="stat-sub muted">of <%= fmt.int(done.total) %> entries</span></div>
+        <div class="stat"><span class="stat-label">GoatBots duplicates</span><span class="stat-value"><%= fmt.int(done.duplicates) %></span><span class="stat-sub muted">not added</span></div>
+        <div class="stat"><span class="stat-label">Need a name</span><span class="stat-value"><%= fmt.int(done.unresolved) %></span><span class="stat-sub muted"><%= done.skipped %> skipped</span></div>
+      </div>
+
+      <% if (done.open.length) { %>
+      <div class="card table-scroll" id="unresolved">
+        <h3>Entries without a card <span class="muted small">(<%= done.open.length %>)</span></h3>
+        <table class="table compact review-table">
+          <thead><tr><th>Sheet</th><th>Written as</th><th>Card</th><th></th></tr></thead>
+          <tbody>
+          <% for (const e of done.open) { %>
+            <tr>
+              <td class="small muted"><%= columns[e.column] %> #<%= e.seq + 1 %></td>
+              <td class="raw"><%= e.raw %><% if (e.price != null) { %> <span class="muted">· <%= fmt.tix(e.price) %></span><% } %></td>
+              <td>
+                <form method="post" action="/mtgo/import/fix" class="inline-form">
+                  <input type="hidden" name="id" value="<%= e._id %>">
+                  <input type="text" name="name" list="dl-<%= e.column %>-<%= e.seq %>" placeholder="card name" autocomplete="off" required aria-label="Card for <%= e.raw %>">
+                  <% if ((e.candidates || []).length) { %><datalist id="dl-<%= e.column %>-<%= e.seq %>"><% for (const c of e.candidates) { %><option value="<%= c %>"><% } %></datalist><% } %>
+                  <button class="btn small-btn" type="submit">Save</button>
+                </form>
+              </td>
+              <td>
+                <form method="post" action="/mtgo/import/fix"><input type="hidden" name="id" value="<%= e._id %>"><input type="hidden" name="skip" value="1"><button class="link small" type="submit">skip</button></form>
+              </td>
+            </tr>
+          <% } %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    <% } %>
+
+    <label id="dropzone" class="dropzone <%= done ? 'dropzone-short' : '' %>" for="file" data-endpoint="/mtgo/import/upload" data-kind="sheet" data-ext="json">
+      <input id="file" type="file" accept=".json,application/json" hidden>
+      <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0l-4 4m4-4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <strong>Drop vault-import.json here</strong>
+      <span class="muted small">or click to choose it · you'll review everything before it's saved<%= done ? ' · importing again replaces the earlier import' : '' %></span>
+    </label>
+    <div id="status" class="card hidden" aria-live="polite"></div>
+  </section>
+
+  <aside>
+    <% if (done) { %>
+    <div class="card">
+      <h3>Undo</h3>
+      <p class="small muted">Removes the spreadsheet's Treasure Chest updates (ones the watcher recorded stay) and every spreadsheet trade.</p>
+      <form method="post" action="/mtgo/import/undo">
+        <label class="small check"><input type="checkbox" name="confirm" value="yes"> Yes, remove the import</label>
+        <button class="btn small-btn danger" type="submit">Undo import</button>
+      </form>
+    </div>
+    <% } %>
+    <div class="card">
+      <h3>What's in the file</h3>
+      <ul class="small muted steps">
+        <li>Each dated tab: that update's changelist (card, set, treatment, slots, change).</li>
+        <li>The buysell tab: rebought, recently bought and sold, oldest first, with “(f)” for foil and “x4” for quantity.</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+<% } %>
+<script src="/static/upload.js" defer></script>
+<%- include('../partials/foot') %>

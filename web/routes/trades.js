@@ -3,6 +3,7 @@ const multer = require('multer');
 const { getDb } = require('../lib/db');
 const { parseGoatbotsHistory, importGoatbotsHistory } = require('../lib/goatbotsTrades');
 const { reconcile, resolveManually, dismiss, localDate } = require('../lib/reconcile');
+const sheet = require('../lib/sheetTrades');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024, files: 1 } });
@@ -17,7 +18,7 @@ router.get('/trades', async (req, res, next) => {
     const filter = q ? { 'items.name': { $regex: escapeRegex(q), $options: 'i' } } : {};
     const coll = db.collection('gb_trades');
     const pendingFilter = { status: 'open', ...(q ? { nameLower: { $regex: escapeRegex(q.toLowerCase()) } } : {}) };
-    const [trades, total, totals, imports, manual, pending, pendingCount] = await Promise.all([
+    const [trades, total, totals, imports, manual, sheetCount, pending, pendingCount] = await Promise.all([
       coll.find(filter).sort({ at: -1 }).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).toArray(),
       coll.countDocuments(filter),
       coll
@@ -26,7 +27,8 @@ router.get('/trades', async (req, res, next) => {
         ])
         .toArray(),
       db.collection('trade_imports').find().sort({ importedAt: -1 }).limit(8).toArray(),
-      db.collection('trades').countDocuments({ source: { $ne: 'goatbots' } }),
+      db.collection('trades').countDocuments({ source: { $nin: ['goatbots', 'sheet'] } }),
+      db.collection('trades').countDocuments({ source: 'sheet' }),
       db.collection('pending_changes').find(pendingFilter).sort({ windowEnd: -1, name: 1 }).limit(300).toArray(),
       db.collection('pending_changes').countDocuments(pendingFilter),
     ]);
@@ -47,6 +49,7 @@ router.get('/trades', async (req, res, next) => {
       totals: totals[0] || null,
       imports,
       manual,
+      sheetCount,
       pending,
       pendingCount,
       flash,
@@ -67,7 +70,11 @@ router.post('/trades/upload', (req, res, next) => {
       const summary = await importGoatbotsHistory(getDb(), parsed, { filename: req.file.originalname });
       const rec = await reconcile(getDb());
       const stillOpen = await getDb().collection('pending_changes').countDocuments({ status: 'open' });
-      res.json({ ok: true, ...summary, pendingResolved: rec.resolved, pendingOpen: stillOpen });
+      // older GoatBots histories can reveal more spreadsheet duplicates and narrow their dates
+      const before = await getDb().collection('trades').countDocuments({ source: 'sheet' });
+      const sheetStats = await sheet.syncSheetTrades(getDb());
+      const sheetRemoved = sheetStats ? Math.max(0, before - sheetStats.imported) : 0;
+      res.json({ ok: true, ...summary, pendingResolved: rec.resolved, pendingOpen: stillOpen, sheetRemoved });
     } catch (e) {
       if (e.expose) return res.status(e.status || 400).json({ error: e.message });
       console.error('Trade import failed:', e);
@@ -109,6 +116,23 @@ router.post('/trades/pending/dismiss', async (req, res, next) => {
     const n = await dismiss(getDb(), ids, String(req.body.reason || '').slice(0, 80));
     req.session.flash = { type: 'ok', message: `Dismissed ${n} unconfirmed ${n === 1 ? 'change' : 'changes'}.` };
     res.redirect(303, back(req));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Dismisses every open entry (optionally only those from one collection upload). */
+router.post('/trades/pending/dismiss-all', async (req, res, next) => {
+  try {
+    if (req.body.confirm !== 'yes') {
+      req.session.flash = { type: 'error', message: 'Tick the box to confirm dismissing everything.' };
+      return res.redirect(303, '/mtgo/trades#unconfirmed');
+    }
+    const r = await getDb()
+      .collection('pending_changes')
+      .updateMany({ status: 'open' }, { $set: { status: 'dismissed', reason: 'dismissed all', resolvedAt: new Date() } });
+    req.session.flash = { type: 'ok', message: `Dismissed all ${r.modifiedCount} unconfirmed changes.` };
+    res.redirect(303, '/mtgo/trades#unconfirmed');
   } catch (err) {
     next(err);
   }

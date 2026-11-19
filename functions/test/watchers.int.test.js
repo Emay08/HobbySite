@@ -141,6 +141,22 @@ test('Treasure Chest watcher end to end', { skip: !URI && 'TEST_MONGODB_URI not 
 
     const highlights = await db.collection('highlights').find({ category: 'treasure-chest' }).toArray();
     assert.strictEqual(highlights.length, 6);
+
+    // every update is recorded in tc_history (same documents the website's history pages use)
+    const hist = await db.collection('tc_history').find().sort({ date: 1 }).toArray();
+    assert.deepStrictEqual(hist.map((h) => h.date), ['2026-12-08', '2027-01-12', '2027-02-09']);
+    assert.ok(hist[0].contents.some((c) => c.name === 'Võx, Child of the Collective' && c.slots === 1));
+    assert.ok(hist[1].changes.some((c) => c.name === 'Ancestral Recall' && c.change === 1));
+    assert.ok(hist[2].changes.some((c) => c.name === 'Mox Diamond' && c.slots === 0));
+    assert.ok(hist.every((h) => h.source === 'watcher'));
+
+    // daily prices for every printing of every chest card
+    const { recordChestPrices, chestCardIds } = require('../src/lib/chestPrices');
+    const ids = await chestCardIds(db);
+    assert.ok(ids.has('1001')); // Force of Will (owned / chest)
+    const n = await recordChestPrices(db, new Map([['1001', 18.4], ['999999', 1]]), { date: '2027-02-10' });
+    assert.strictEqual(n, 1);
+    assert.deepStrictEqual((await db.collection('price_daily').findOne({ _id: '2027-02-10' })).prices, { 1001: 18.4 });
   } finally {
     tg.restore();
     await db.dropDatabase();

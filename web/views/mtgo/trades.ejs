@@ -33,6 +33,7 @@
         <tr><td>Value received</td><td class="num"><%= fmt.tix(totals.got) %></td></tr>
         <tr><td>Value given</td><td class="num"><%= fmt.tix(totals.gave) %></td></tr>
         <tr><td>Manual entries</td><td class="num"><%= fmt.int(manual) %></td></tr>
+        <% if (sheetCount) { %><tr><td><a href="/mtgo/import">Spreadsheet entries</a></td><td class="num"><%= fmt.int(sheetCount) %></td></tr><% } %>
       </tbody></table>
       <p class="small muted">Values are GoatBots' prices at the time of each trade, tickets included.</p>
     </div>
@@ -75,6 +76,12 @@
   </table>
   </div>
   <% if (pendingCount > pending.length) { %><p class="small muted">Showing the newest <%= pending.length %>; filter by card name to find others.</p><% } %>
+  <% if (pendingCount > 20 && !query.q) { %>
+    <form method="post" action="/mtgo/trades/pending/dismiss-all" class="inline-form small">
+      <label class="check"><input type="checkbox" name="confirm" value="yes"> Dismiss all <%= fmt.int(pendingCount) %> unconfirmed changes</label>
+      <button class="btn small-btn" type="submit">Dismiss all</button>
+    </form>
+  <% } %>
   <% } %>
 </section>
 

@@ -67,30 +67,62 @@ function tradesInWindowFilter(p) {
   };
 }
 
+/** Whether a trade falls inside a pending change's window (same rules as tradesInWindowFilter). */
+function inWindow(t, p) {
+  if (t.fromPending && String(t.fromPending) === String(p._id)) return true;
+  if (t.at) {
+    const at = new Date(t.at);
+    return at <= p.windowEnd && (!p.windowStart || at > p.windowStart);
+  }
+  if (!t.date) return false;
+  return t.date <= localDate(p.windowEnd) && (!p.windowStart || t.date >= localDate(p.windowStart));
+}
+
 /**
  * Re-checks open pending changes (optionally filtered) against the trade log.
  * Returns how many were fully resolved.
+ *
+ * Three database round trips however many entries there are: the open entries, every
+ * trade for their MTGO IDs, and one bulk write. (One query per entry took minutes from
+ * Azure once there were thousands of entries, and the request timed out.)
  */
 async function reconcile(db, filter = {}) {
   const coll = db.collection('pending_changes');
   const trades = db.collection('trades');
   await trades.createIndex({ mtgoId: 1, at: 1 });
   const open = await coll.find({ status: 'open', ...filter }).toArray();
+  if (!open.length) return { checked: 0, resolved: 0 };
+
+  const ids = [...new Set(open.map((p) => p.mtgoId))];
+  const byId = new Map();
+  for (let i = 0; i < ids.length; i += 5000) {
+    const rows = await trades
+      .find({ mtgoId: { $in: ids.slice(i, i + 5000) } }, { projection: { mtgoId: 1, direction: 1, qty: 1, at: 1, date: 1, fromPending: 1 } })
+      .toArray();
+    for (const t of rows) {
+      if (!byId.has(t.mtgoId)) byId.set(t.mtgoId, []);
+      byId.get(t.mtgoId).push(t);
+    }
+  }
+
   let resolved = 0;
+  const now = new Date();
+  const ops = [];
   for (const p of open) {
-    const matches = await trades.find(tradesInWindowFilter(p), { projection: { direction: 1, qty: 1 } }).toArray();
+    const matches = (byId.get(p.mtgoId) || []).filter((t) => inWindow(t, p));
     const net = matches.reduce((n, t) => n + (t.direction === 'buy' ? t.qty : -t.qty), 0);
     const wanted = p.direction === 'buy' ? p.qty : -p.qty;
     // Trades explain the change if they point the same way; whatever they don't cover remains
     const explained = Math.sign(net) === Math.sign(wanted) ? Math.min(Math.abs(net), Math.abs(wanted)) : 0;
     const remaining = p.qty - explained;
-    const set = { remaining, matchedTrades: matches.map((m) => m._id), checkedAt: new Date() };
+    const set = { remaining, matchedTrades: matches.map((m) => m._id), checkedAt: now };
     if (remaining === 0) {
-      Object.assign(set, { status: 'resolved', resolvedBy: 'trades', resolvedAt: new Date() });
+      Object.assign(set, { status: 'resolved', resolvedBy: 'trades', resolvedAt: now });
       resolved++;
     }
-    await coll.updateOne({ _id: p._id }, { $set: set });
+    ops.push({ updateOne: { filter: { _id: p._id }, update: { $set: set } } });
   }
+  for (let i = 0; i < ops.length; i += 1000) await coll.bulkWrite(ops.slice(i, i + 1000), { ordered: false });
   return { checked: open.length, resolved };
 }
 

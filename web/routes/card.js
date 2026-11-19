@@ -5,6 +5,8 @@ const cards = require('../lib/cards');
 const vendors = require('../lib/vendors');
 const { reconcile, localDate } = require('../lib/reconcile');
 const search = require('../lib/search');
+const tcHistory = require('../lib/tcHistory');
+const sheet = require('../lib/sheetTrades');
 
 const router = express.Router();
 
@@ -65,11 +67,15 @@ router.get('/card/:name', async (req, res, next) => {
     }
     const db = getDb();
     const lower = displayName.toLowerCase();
-    const [trades, changes, pending] = await Promise.all([
+    const [trades, changes, pending, chest] = await Promise.all([
       db.collection('trades').find({ nameLower: lower }).sort({ date: -1, at: -1, createdAt: -1 }).toArray(),
       db.collection('collection_changes').find({ nameLower: lower }).sort({ at: -1 }).limit(100).toArray(),
       db.collection('pending_changes').find({ nameLower: lower, status: 'open' }).sort({ windowEnd: -1 }).toArray(),
+      tcHistory.cardPresence(db, displayName),
     ]);
+    // spreadsheet entries have no date: order them by the end of their date range
+    const when = (t) => t.date || t.dateTo || '';
+    trades.sort((a, b) => when(b).localeCompare(when(a)));
     for (const p of pending) {
       p.minDate = p.windowStart ? localDate(p.windowStart) : '';
       p.maxDate = localDate(p.windowEnd);
@@ -88,6 +94,7 @@ router.get('/card/:name', async (req, res, next) => {
       trades,
       changes,
       pending,
+      chest,
       flash,
       links: {
         goatbots: vendors.goatbotsUrl(displayName),
@@ -218,7 +225,9 @@ router.post('/card/:name/trades', async (req, res, next) => {
 
 router.post('/card/:name/trades/:id/delete', async (req, res, next) => {
   try {
-    if (ObjectId.isValid(req.params.id)) await getDb().collection('trades').deleteOne({ _id: new ObjectId(req.params.id), source: { $ne: 'goatbots' } });
+    const id = String(req.params.id);
+    if (id.startsWith('sheet|')) await sheet.fixEntry(getDb(), id, null, { skip: true }); // stays skipped on re-sync
+    else if (ObjectId.isValid(id)) await getDb().collection('trades').deleteOne({ _id: new ObjectId(id), source: { $ne: 'goatbots' } });
     res.redirect(303, `${cardPath(req.params.name)}#trades`);
   } catch (err) {
     next(err);

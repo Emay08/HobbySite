@@ -169,6 +169,14 @@ async function runTreasureChest(db, { now = new Date(), force = false, html = nu
     }
   }
 
+  if (result.cycle.length) {
+    try {
+      await recordHistory(db, parsed, result.cycle, { now, snapshotId: insertedId });
+    } catch (err) {
+      log(`History not recorded: ${err.message}`);
+    }
+  }
+
   await addHighlight(db, now, {
     title: `Treasure Chest page updated${result.sectionDate ? ` — ${result.sectionDate}` : ''}`,
     summary: summaryLine(result, matches),
@@ -199,6 +207,41 @@ async function runTreasureChest(db, { now = new Date(), force = false, html = nu
 }
 
 /** "November 10" from the "CURATED CARD LISTS - November 10" heading. */
+const keyPart = (s) =>
+  String(s == null ? '' : s).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[‘’`´]/g, "'").replace(/[“”]/g, '"').toLowerCase();
+
+/** "Last Updated: 11/9/2026 1 p.m. PT" → '2026-11-09' (Pacific date of `now` as a fallback). */
+function updateDate(parsed, now) {
+  const m = String(parsed.lastUpdatedText || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(now);
+}
+
+/**
+ * Writes the update to `tc_history` (the same documents the website's history pages and
+ * the spreadsheet import use): full contents after the update, and the changes since the
+ * previous consistent state. Repeated ticks during one update overwrite the same date.
+ */
+async function recordHistory(db, parsed, cycle, { now = new Date(), snapshotId = null } = {}) {
+  const date = updateDate(parsed, now);
+  const row = (c, slots) => ({ name: c.name, nameKey: keyPart(c.name), set: String(c.set || '').toUpperCase(), treatment: c.treatment || '', slots });
+  const contents = [...slotTotals(parsed).values()]
+    .filter((c) => c.total > 0)
+    .map((c) => row(c, c.total))
+    .sort((a, b) => a.nameKey.localeCompare(b.nameKey) || a.set.localeCompare(b.set));
+  const changes = cycle.map((d) => ({ ...row(d, d.to), change: d.change }));
+  await db.collection('tc_history').updateOne(
+    { _id: date },
+    {
+      $set: { date, contents, changes, issues: [], source: 'watcher', watcherAt: now, contentsSource: { snapshotId, snapshotDate: date, rebuiltAt: now } },
+      $unset: { excludedRows: '' },
+    },
+    { upsert: true }
+  );
+  return date;
+}
+
 function sectionDate(parsed) {
   const curated = (parsed.sectionTitles || []).find((t) => /curated card lists/i.test(t)) || '';
   return (curated.match(/-\s*(.+)$/) || [])[1] || null;
@@ -340,4 +383,4 @@ async function addHighlight(db, now, { title, summary, notified = false }) {
   });
 }
 
-module.exports = { runTreasureChest, schedule, analyse, sectionDate, buildMessage, parseHtml, TC_URL, STATE_ID };
+module.exports = { runTreasureChest, schedule, analyse, sectionDate, recordHistory, updateDate, buildMessage, parseHtml, TC_URL, STATE_ID };

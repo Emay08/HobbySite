@@ -89,6 +89,11 @@
       <% } %>
     </div>
     <div class="card">
+      <h3>Treasure Chest</h3>
+      <p class="small"><a href="/mtgo/tc">Update history →</a></p>
+      <p class="small muted">Every recorded update since Jan 2024, with full chest contents and when each card was in it.</p>
+    </div>
+    <div class="card">
       <h3>Prices</h3>
       <p class="small muted">Last price sync: <%= summary.pricesUpdatedAt ? fmt.dateTime(summary.pricesUpdatedAt) : 'never' %></p>
       <p class="small muted">Last collection upload: <%= summary.lastUpload ? fmt.dateTime(summary.lastUpload.uploadedAt) : 'never' %></p>

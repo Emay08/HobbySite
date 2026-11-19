@@ -106,6 +106,45 @@
   </div>
 </section>
 
+<% if (chest.periods.length || chest.events.length) { %>
+<section class="card" id="chest">
+  <div class="section-head">
+    <h3>Treasure Chest</h3>
+    <a class="small" href="/mtgo/tc">All updates →</a>
+  </div>
+  <% if (chest.current.length) { %><p class="small"><span class="pill pill-near">In the chest now</span> <%= chest.current.map((p) => p.set + (p.treatment ? ' ' + p.treatment : '')).join(' · ') %></p><% } %>
+  <% if (chest.periods.length) { %>
+    <table class="table compact">
+      <thead><tr><th>Version</th><th>Added</th><th>Removed</th><th class="num">Updates</th><th class="num">Max slots</th></tr></thead>
+      <tbody>
+      <% for (const p of chest.periods) { %>
+        <tr>
+          <td><span class="setcode"><%= p.set %></span> <span class="small muted"><%= p.treatment || (p.from < '2024-06-04' ? 'version not recorded' : '') %></span></td>
+          <td class="small"><a href="/mtgo/tc/<%= p.from %>"><%= fmt.date(p.from) %></a><% if (p.from === chest.firstRecorded) { %> <span class="muted" title="Your records start here; it may have been in the chest earlier">or earlier</span><% } %></td>
+          <td class="small"><% if (p.to) { %><a href="/mtgo/tc/<%= p.to %>"><%= fmt.date(p.to) %></a><% } else { %><span class="muted">still in</span><% } %></td>
+          <td class="num"><%= p.updates %></td>
+          <td class="num"><%= p.maxSlots %></td>
+        </tr>
+      <% } %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p class="small muted">Mentioned in <%= chest.events.length %> changelist<%= chest.events.length === 1 ? '' : 's' %>; full chest contents haven't been rebuilt yet (see <a href="/mtgo/tc">Treasure Chest history</a>).</p>
+  <% } %>
+  <details class="small">
+    <summary><%= chest.events.length %> changelist entr<%= chest.events.length === 1 ? 'y' : 'ies' %></summary>
+    <table class="table compact">
+      <thead><tr><th>Update</th><th>Version</th><th class="num">Slots</th></tr></thead>
+      <tbody>
+      <% for (const e of chest.events) { %>
+        <tr><td><a href="/mtgo/tc/<%= e.date %>"><%= fmt.date(e.date) %></a></td><td><span class="setcode"><%= e.set %></span> <span class="muted"><%= e.treatment %></span></td><td class="num"><%= e.from %> → <%= e.to %></td></tr>
+      <% } %>
+      </tbody>
+    </table>
+  </details>
+</section>
+<% } %>
+
 <section class="card" id="trades">
   <h3>Trade history</h3>
   <% if (pending.length) { %>
@@ -143,7 +182,7 @@
       <tbody>
       <% for (const t of trades) { %>
         <tr>
-          <td class="small"><%= t.date %></td>
+          <td class="small"><% if (t.date) { %><%= t.date %><% } else { %><span title="No date in the spreadsheet; the range comes from neighbouring entries that match GoatBots trades"><%= t.dateFrom ? fmt.date(t.dateFrom) : 'before' %> – <%= t.dateTo ? fmt.date(t.dateTo) : '?' %></span><% } %></td>
           <td><span class="goal <%= t.direction === 'buy' ? 'goal-below' : 'goal-above' %>"><%= t.direction === 'buy' ? 'Bought' : 'Sold' %></span></td>
           <td><% if (t.set) { %><span class="setcode"><%= t.set %></span><%= t.foil ? ' ✦' : '' %><% } else { %><span class="muted small">—</span><% } %></td>
           <td class="num"><%= t.qty %></td>
@@ -153,6 +192,7 @@
           <td class="small"><%= t.note %></td>
           <td class="actions">
             <% if (t.source === 'goatbots') { %><a class="tag" href="/mtgo/trades?q=<%= encodeURIComponent(name) %>" title="Imported from your GoatBots trade history">GoatBots import</a>
+            <% } else if (t.source === 'sheet') { %><a class="tag" href="/mtgo/import" title="From your spreadsheet import">Spreadsheet</a><form method="post" action="/mtgo/card/<%= encodeURIComponent(name) %>/trades/<%= encodeURIComponent(t._id) %>/delete"><button class="link small danger" type="submit" title="Leave this spreadsheet entry out">remove</button></form>
             <% } else { %><form method="post" action="/mtgo/card/<%= encodeURIComponent(name) %>/trades/<%= t._id %>/delete"><button class="link small danger" type="submit">delete</button></form><% } %>
           </td>
         </tr>

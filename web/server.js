@@ -13,6 +13,8 @@ const mtgoRoutes = require('./routes/mtgo');
 const { router: listRoutes } = require('./routes/lists');
 const { router: cardRoutes } = require('./routes/card');
 const { router: tradeRoutes } = require('./routes/trades');
+const { router: historyRoutes } = require('./routes/history');
+const { router: importRoutes } = require('./routes/import');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -46,7 +48,10 @@ async function main() {
       },
     })
   );
-  app.use(express.urlencoded({ extended: false, limit: '20kb' }));
+  // Small form bodies everywhere; the spreadsheet import's review form parses its own
+  // (larger) body after the login check.
+  const smallForms = express.urlencoded({ extended: false, limit: '20kb' });
+  app.use((req, res, next) => (req.path === '/mtgo/import/confirm' ? next() : smallForms(req, res, next)));
   app.use(express.json({ limit: '20kb' }));
   app.use('/static', express.static(path.join(__dirname, 'public'), { maxAge: isProd ? '7d' : 0 }));
 
@@ -71,6 +76,15 @@ async function main() {
     })
   );
 
+  // Save the session before redirecting. express-session otherwise sends the redirect's
+  // headers first and saves afterwards, so the browser's next request can arrive before
+  // the save and miss a flash message.
+  app.use((req, res, next) => {
+    const redirect = res.redirect.bind(res);
+    res.redirect = (...args) => (req.session ? req.session.save(() => redirect(...args)) : redirect(...args));
+    next();
+  });
+
   // Make the logged-in user and current path available to every view
   app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
@@ -85,6 +99,8 @@ async function main() {
   app.use('/mtgo', requireLogin, listRoutes);
   app.use('/mtgo', requireLogin, cardRoutes);
   app.use('/mtgo', requireLogin, tradeRoutes);
+  app.use('/mtgo', requireLogin, historyRoutes);
+  app.use('/mtgo', requireLogin, importRoutes);
 
   app.use((req, res) => res.status(404).render('error', { title: 'Not found', message: 'Page not found.' }));
   app.use((err, req, res, _next) => {

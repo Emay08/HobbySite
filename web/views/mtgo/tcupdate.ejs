@@ -1,0 +1,87 @@
+<%- include('../partials/head') %>
+<%
+  const have = (r) => owned.get(r.name.toLowerCase()) || 0;
+%>
+<div class="page-head">
+  <div>
+    <p class="eyebrow"><a href="/mtgo/tc">Treasure Chest history</a></p>
+    <h1><%= fmt.date(u.date) %></h1>
+    <p class="small muted">
+      <% if (u.prevDate) { %><a href="/mtgo/tc/<%= u.prevDate %>">← <%= fmt.date(u.prevDate) %></a><% } %>
+      <% if (u.prevDate && u.nextDate) { %> · <% } %>
+      <% if (u.nextDate) { %><a href="/mtgo/tc/<%= u.nextDate %>"><%= fmt.date(u.nextDate) %> →</a><% } %>
+      <% if (u.tab) { %> · spreadsheet tab “<%= u.tab %>”<% } %><% if (u.source === 'watcher') { %> · recorded by the watcher<% } %>
+    </p>
+  </div>
+  <div class="stat-inline">
+    <span class="pill pill-hit">+<%= u.added.length %> added</span>
+    <span class="pill">−<%= u.removed.length %> removed</span>
+    <% if (u.changed.length) { %><span class="pill"><%= u.changed.length %> changed</span><% } %>
+  </div>
+</div>
+
+<div class="layout-2">
+  <section>
+    <% for (const [title, rows] of [['Added', u.added], ['Slot count changed', u.changed], ['Removed', u.removed]]) { if (!rows.length) continue; %>
+    <div class="card table-scroll">
+      <h3><%= title %> <span class="muted small">(<%= rows.length %>)</span></h3>
+      <table class="table compact">
+        <thead><tr><th>Card</th><th>Set</th><th>Treatment</th><th class="num">Slots</th><th class="num">You own</th></tr></thead>
+        <tbody>
+        <% for (const r of rows) { %>
+          <tr>
+            <td><% if (isProduct(r.name)) { %><%= r.name %><% } else { %><a href="<%= fmt.cardUrl(r.name) %>"><%= r.name %></a><% } %></td>
+            <td><span class="setcode"><%= r.set %></span></td>
+            <td class="small muted"><%= r.treatment %></td>
+            <td class="num"><%= r.from %> → <%= r.to %></td>
+            <td class="num"><%= have(r) || '' %></td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+
+    <div class="card table-scroll">
+      <h3>Full contents after this update <span class="muted small">(<%= (u.contents || []).length %> versions, <%= (u.contents || []).reduce((n, r) => n + r.slots, 0) %> slots)</span></h3>
+      <% if (!(u.contents || []).length) { %>
+        <p class="small muted">Not rebuilt yet — see <a href="/mtgo/tc">Treasure Chest history</a>.</p>
+      <% } else { %>
+      <table class="table compact">
+        <thead><tr><th>Card</th><th>Set</th><th>Treatment</th><th class="num">Slots</th><th class="num">You own</th></tr></thead>
+        <tbody>
+        <% for (const r of u.contents) { %>
+          <tr>
+            <td><% if (isProduct(r.name)) { %><%= r.name %><% } else { %><a href="<%= fmt.cardUrl(r.name) %>"><%= r.name %></a><% } %></td>
+            <td><span class="setcode"><%= r.set %></span></td>
+            <td class="small muted"><%= r.treatment %></td>
+            <td class="num"><%= r.slots %></td>
+            <td class="num"><%= have(r) || '' %></td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </section>
+  <aside>
+    <% if ((u.issues || []).length) { %>
+    <div class="card">
+      <h3>Mismatches <span class="muted small">(<%= u.issues.length %>)</span></h3>
+      <p class="small muted">Changelist rows whose slot count doesn't match the contents rebuilt from later updates.</p>
+      <table class="table compact"><thead><tr><th>Card</th><th class="num">Says</th><th class="num">Rebuilt</th></tr></thead><tbody>
+        <% for (const i of u.issues.slice(0, 60)) { %>
+          <tr><td class="small"><%= i.name %> <span class="setcode"><%= i.set %></span></td><td class="num"><%= i.expected %></td><td class="num"><%= i.found %></td></tr>
+        <% } %>
+      </tbody></table>
+    </div>
+    <% } %>
+    <% if ((u.excludedRows || []).length) { %>
+    <div class="card">
+      <h3>Left out <span class="muted small">(<%= u.excludedRows.length %>)</span></h3>
+      <p class="small muted">These rows are identical to the previous tab's, so they were treated as copied, not as changes in this update.</p>
+    </div>
+    <% } %>
+  </aside>
+</div>
+<%- include('../partials/foot') %>
