@@ -48,6 +48,7 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
       ADMIN_PASSWORD_HASH: bcrypt.hashSync('correct horse', 4),
       SESSION_SECRET: 'test-secret',
       NODE_ENV: 'test',
+      VENDOR_LIVE_DISABLED: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -153,6 +154,132 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     await form(`/mtgo/swaps/${id}`, { margin: '50', qty: '2', note: '' });
     page = await html('/mtgo/swaps');
     assert.match(page, /below min\. 50\.00 tix/);
+  });
+
+  await t.test('card page: versions, owned, watch toggles, trade log, upload changes', async () => {
+    let page = await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer'));
+    assert.match(page, /<h1>Ragavan, Nimble Pilferer<\/h1>/);
+    assert.match(page, /Versions on MTGO<\/span><span class="stat-value">3</);
+    assert.match(page, /You own<\/span><span class="stat-value">2</);
+    assert.match(page, /goatbots\.com\/card\/ragavan-nimble-pilferer/);
+    // Lists link to the card page
+    assert.match(await html('/mtgo/collection'), /href="\/mtgo\/card\/Ragavan%2C%20Nimble%20Pilferer"/);
+    // Toggle short-term watch on the MH2R version, then off again
+    await form('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer') + '/watch', { mtgoId: '99001', list: 'short' });
+    page = await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer'));
+    assert.match(page, /Added Ragavan, Nimble Pilferer \(MH2R\) to the short-term watch list/);
+    assert.match(page, /class="pill-btn on"[^>]*>✓ Short/);
+    assert.match(await html('/mtgo/watch/short'), /MH2R/);
+    await form('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer') + '/watch', { mtgoId: '99001', list: 'short' });
+    assert.match(await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer')), /Removed Ragavan/);
+    // Trade log
+    await form('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer') + '/trades', { date: '2026-11-01', direction: 'buy', mtgoId: '90543', qty: '2', price: '55', counterparty: 'GoatBots', note: 'xmas' });
+    await form('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer') + '/trades', { date: '2026-11-10', direction: 'sell', qty: '1', price: '62.5', counterparty: 'Cardhoarder' });
+    page = await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer'));
+    assert.match(page, /Bought 2 for 110\.00 tix · sold 1 for 62\.50 tix · net -47\.50 tix/);
+    const tradeId = page.match(/\/trades\/([a-f0-9]{24})\/delete/)[1];
+    await form('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer') + `/trades/${tradeId}/delete`, {});
+    assert.match(await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer')), /Bought 2 for 110\.00 tix · sold 0/);
+    // A second CSV upload records per-card changes
+    const csv = 'Card Name,Quantity,ID #,Rarity,Set,Collector #,Premium\n"Ragavan, Nimble Pilferer",3,90543,Mythic,MH2,138,Yes\nEvent Tickets,10,1,,,,No\n';
+    const fd = new FormData();
+    fd.append('file', new Blob([csv], { type: 'text/csv' }), 'export2.csv');
+    assert.strictEqual((await req('/mtgo/upload', { method: 'POST', body: fd, headers: { accept: 'application/json' } })).status, 200);
+    page = await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer'));
+    assert.match(page, /<td class="num">2<\/td>\s*<td class="num">3<\/td>\s*<td class="num up">\+1<\/td>/);
+    assert.match(await html('/mtgo/card/' + encodeURIComponent('Force of Will')), /<td class="num down">-1<\/td>/);
+    // Unknown card
+    assert.strictEqual((await req('/mtgo/card/Not%20A%20Card')).status, 404);
+    // Live prices endpoint (vendors disabled in tests)
+    const live = await (await req('/mtgo/api/live?name=Force%20of%20Will')).json();
+    assert.strictEqual(live.disabled, true);
+  });
+
+  await t.test('GoatBots trade history import skips duplicates', async () => {
+    const hdr = 'timestamp,time_cet,bot,get_value,give_value,credits_before,credits_after,method,itemID,name,cardset,rarity,foil,quantity,price\n';
+    const t1 = '1787843359,"2026-08-27 17:09:19",GoatBots1,41.5,42,0.38,0.88,get,90543,"Ragavan, Nimble Pilferer",MH2,Mythic,1,1,41.5\n' +
+               '1787843359,"2026-08-27 17:09:19",GoatBots1,41.5,42,0.38,0.88,give,1,"Event Ticket",EVT,Common,0,42,1\n';
+    const t2 = '1787801349,"2026-08-27 05:29:09",GoatBots2,0,12.1,0.30,0.38,give,50000,"Force of Will",EMA,Mythic,0,1,12.1\n';
+    const send = async (body) => {
+      const fd = new FormData();
+      fd.append('file', new Blob(['\uFEFF' + body], { type: 'text/csv' }), 'goatbots-trade-history.csv');
+      const r = await req('/mtgo/trades/upload', { method: 'POST', body: fd, headers: { accept: 'application/json' } });
+      return [r.status, await r.json()];
+    };
+    let [status, j] = await send(hdr + t1);
+    assert.strictEqual(status, 200, JSON.stringify(j));
+    assert.deepStrictEqual([j.tradesInFile, j.newTrades, j.newItems], [1, 1, 1]); // Event Tickets aren't a card entry
+    [, j] = await send(hdr + t1 + t2); // overlapping download
+    assert.deepStrictEqual([j.tradesInFile, j.newTrades, j.duplicateTrades, j.newItems], [2, 1, 1, 1]);
+    [status, j] = await send('Card Name,Quantity,ID #,Rarity,Set,Collector #,Premium\n"X",1,2,C,S,1,No\n');
+    assert.strictEqual(status, 400);
+    assert.match(j.error, /collection export, not a trade history/);
+    const page = await html('/mtgo/trades');
+    assert.match(page, /2 trades<\/p>/);
+    assert.match(page, /42 Event Tickets/);
+    const card = await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer'));
+    assert.match(card, /GoatBots import/);
+    assert.match(card, /GoatBots1/);
+  });
+
+  await t.test('nav search: suggestions ranked by watch list / collection / all', async () => {
+    let r = await (await req('/mtgo/api/suggest?q=rag')).json();
+    assert.deepStrictEqual(r[0], { name: 'Ragavan, Nimble Pilferer', tier: 2, label: 'owned' });
+    // Put Force of Will on the long-term list → it becomes tier 1
+    await form('/mtgo/card/' + encodeURIComponent('Force of Will') + '/watch', { mtgoId: '50000', list: 'long' });
+    r = await (await req('/mtgo/api/suggest?q=force')).json();
+    assert.deepStrictEqual(r[0], { name: 'Force of Will', tier: 1, label: 'long' });
+    const go = await req('/mtgo/go?q=forc');
+    assert.strictEqual(go.status, 303);
+    assert.strictEqual(go.headers.get('location'), '/mtgo/card/Force%20of%20Will');
+    assert.match(await html('/mtgo'), /id="nav-search"/);
+  });
+
+  await t.test('collection changes become unconfirmed trades; GoatBots import and manual entry resolve them', async () => {
+    // State now: Ragavan foil 90543 ×3, Event Tickets. Upload: Ragavan ×5 (+2), Force of Will EMA ×1 (+1)
+    const upload = async (rows, name) => {
+      const fd = new FormData();
+      fd.append('file', new Blob(['Card Name,Quantity,ID #,Rarity,Set,Collector #,Premium\n' + rows], { type: 'text/csv' }), name);
+      const r = await req('/mtgo/upload', { method: 'POST', body: fd, headers: { accept: 'application/json' } });
+      return r.json();
+    };
+    const openCount = async () => Number((await html('/mtgo/trades')).match(/Unconfirmed <span class="muted small">\((\d+)\)/)[1]);
+    const start = await openCount(); // earlier tests already left some
+    await new Promise((r) => setTimeout(r, 1100)); // so a trade "just now" is after the previous upload
+    const before = Math.floor(Date.now() / 1000);
+    let u = await upload('"Ragavan, Nimble Pilferer",5,90543,Mythic,MH2,138,Yes\n"Force of Will",1,50000,Mythic,EMA,49,No\nEvent Tickets,3,1,,,,No\n', 'c3.csv');
+    assert.deepStrictEqual(u.pending, { created: 2, checked: 2, resolved: 0 });
+    assert.strictEqual(await openCount(), start + 2);
+    let page;
+
+    // A GoatBots download that includes buying 2 Ragavans inside the window resolves that one
+    const hdr = 'timestamp,time_cet,bot,get_value,give_value,credits_before,credits_after,method,itemID,name,cardset,rarity,foil,quantity,price\n';
+    const fd = new FormData();
+    fd.append('file', new Blob([hdr + `${before},"x",GoatBots3,90,90,0,0,get,90543,"Ragavan, Nimble Pilferer",MH2,Mythic,1,2,45\n`], { type: 'text/csv' }), 'h.csv');
+    const j = await (await req('/mtgo/trades/upload', { method: 'POST', body: fd, headers: { accept: 'application/json' } })).json();
+    assert.deepStrictEqual([j.newTrades, j.pendingResolved, j.pendingOpen], [1, 1, start + 1]);
+
+    // Fill in the Force of Will purchase by hand (bought from Dojo)
+    page = await html('/mtgo/card/' + encodeURIComponent('Force of Will'));
+    const ids = [...page.matchAll(/\/mtgo\/trades\/pending\/([a-f0-9]{24})\/resolve/g)].map((m) => m[1]);
+    const id = ids[0]; // newest first: this upload's +1
+    await form(`/mtgo/trades/pending/${id}/resolve`, { qty: '1', price: '12.5', date: new Date().toISOString().slice(0, 10), counterparty: 'Dojo', back: '/mtgo/trades#unconfirmed' });
+    page = await html('/mtgo/trades');
+    assert.match(page, /Saved to your trade history/);
+    assert.strictEqual(await openCount(), start);
+    const fow = await html('/mtgo/card/' + encodeURIComponent('Force of Will'));
+    assert.match(fow, /Dojo/);
+    assert.match(fow, /12\.50 tix/);
+
+    // Sell 4 Ragavans that no trade explains → shows on the card page; bulk dismiss clears it
+    u = await upload('"Ragavan, Nimble Pilferer",1,90543,Mythic,MH2,138,Yes\n"Force of Will",1,50000,Mythic,EMA,49,No\n', 'c4.csv');
+    assert.strictEqual(u.pending.created, 1);
+    const rag = await html('/mtgo/card/' + encodeURIComponent('Ragavan, Nimble Pilferer'));
+    assert.match(rag, /Unconfirmed changes from collection uploads/);
+    assert.match(rag, /−4/);
+    const pid = rag.match(/\/mtgo\/trades\/pending\/([a-f0-9]{24})\/resolve/)[1];
+    await form('/mtgo/trades/pending/dismiss', { ids: pid, back: '/mtgo/trades#unconfirmed' });
+    assert.match(await html('/mtgo/trades'), /Dismissed 1 unconfirmed change\./);
   });
 
   await t.test('other pages still render', async () => {

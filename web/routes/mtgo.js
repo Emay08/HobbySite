@@ -3,6 +3,7 @@ const multer = require('multer');
 const { getDb } = require('../lib/db');
 const { parseCollectionCsv } = require('../lib/csv');
 const col = require('../lib/collection');
+const search = require('../lib/search');
 
 const router = express.Router();
 
@@ -104,6 +105,7 @@ router.post('/upload', (req, res, next) => {
       const { cards, warnings, rowCount } = parseCollectionCsv(req.file.buffer);
       if (cards.length === 0) return res.status(400).json({ error: 'No cards found in that file.' });
       const diff = await col.replaceCollection(cards, { filename: req.file.originalname });
+      search.invalidate();
       const summary = await col.getSummary();
       res.json({
         ok: true,
@@ -120,10 +122,12 @@ router.post('/upload', (req, res, next) => {
           sampleAdded: diff.added.slice(0, 10),
           sampleRemoved: diff.removed.slice(0, 10),
         },
+        pending: diff.pending,
       });
     } catch (e) {
-      if (/CSV|column|rows/i.test(e.message)) return res.status(400).json({ error: e.message });
-      next(e);
+      if (e.expose) return res.status(e.status || 400).json({ error: e.message });
+      console.error('Upload failed:', e);
+      res.status(500).json({ error: `Upload failed: ${e.message}` });
     }
   });
 });

@@ -1,0 +1,26 @@
+<%# One unconfirmed buy/sell. Locals: p (pending change), back (return URL), showName, bulk (adds a checkbox for bulk dismiss) %>
+<tr class="pending-row">
+  <% if (typeof bulk !== 'undefined' && bulk) { %><td><input type="checkbox" name="ids" value="<%= p._id %>" form="bulk-dismiss" aria-label="Select <%= p.name %>"></td><% } %>
+  <% if (showName) { %><td><a class="cardlink" href="<%= fmt.cardUrl(p.name) %>"><%= p.name %></a></td><% } %>
+  <td><span class="setcode"><%= p.set || '?' %></span><%= p.foil ? ' ✦' : '' %></td>
+  <td class="num"><span class="<%= p.direction === 'buy' ? 'up' : 'down' %>"><%= p.direction === 'buy' ? '+' : '−' %><%= p.remaining %></span><% if (p.remaining !== p.qty) { %><span class="muted small block">of <%= p.qty %></span><% } %></td>
+  <td class="small nowrap"><%= p.minDate ? fmt.date(p.minDate) : 'before' %> – <%= fmt.date(p.maxDate) %></td>
+  <td class="pending-form-cell">
+    <form method="post" action="/mtgo/trades/pending/<%= p._id %>/resolve" class="pending-form">
+      <input type="hidden" name="back" value="<%= back %>">
+      <span class="muted small"><%= p.direction === 'buy' ? 'Bought' : 'Sold' %></span>
+      <input name="qty" type="text" inputmode="numeric" value="<%= p.remaining %>" class="tiny" aria-label="Quantity">
+      <span class="muted small">at</span>
+      <input name="price" type="text" inputmode="decimal" class="tiny" placeholder="<%= typeof p.price === 'number' ? p.price.toFixed(2) : 'tix' %>" aria-label="Tix each">
+      <input name="date" type="date" value="<%= p.maxDate %>" <% if (p.minDate) { %>min="<%= p.minDate %>"<% } %> max="<%= p.maxDate %>" aria-label="Date">
+      <input name="counterparty" type="text" maxlength="80" placeholder="with…" class="short" aria-label="Traded with">
+      <button class="btn small-btn" type="submit">Save</button>
+    </form>
+  </td>
+  <td class="actions">
+    <form method="post" action="/mtgo/trades/pending/dismiss">
+      <input type="hidden" name="id" value="<%= p._id %>"><input type="hidden" name="back" value="<%= back %>">
+      <button class="link small" type="submit" title="Not a purchase or sale (prize, redemption, gift…) — remove from this list">dismiss</button>
+    </form>
+  </td>
+</tr>

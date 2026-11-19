@@ -1,0 +1,127 @@
+<%- include('../partials/head') %>
+<%
+  const qs = (o) => { const p = new URLSearchParams({ q: query.q, page: query.page, ...o }); for (const [k, v] of [...p]) if (!v || (k === 'page' && v === '1')) p.delete(k); const s = p.toString(); return '/mtgo/trades' + (s ? '?' + s : ''); };
+  const itemList = (items) => items.filter((i) => i.mtgoId !== '1');
+  const tickets = (items) => items.filter((i) => i.mtgoId === '1').reduce((n, i) => n + i.qty, 0);
+%>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO</p>
+    <h1>Trades</h1>
+    <p class="muted small lede">Your GoatBots trade history. Upload each download as often as you like — trades already stored are skipped. Collection changes that no trade explains wait under <em>Unconfirmed</em> until a later import matches them, or you fill them in.</p>
+  </div>
+  <% if (totals) { %>
+  <div class="stat-inline"><span class="pill"><%= fmt.int(totals.n) %> trades</span><span class="pill"><%= fmt.date(totals.first) %> – <%= fmt.date(totals.last) %></span></div>
+  <% } %>
+</div>
+
+<div class="layout-2">
+  <section>
+    <label id="dropzone" class="dropzone dropzone-short" for="file" data-endpoint="/mtgo/trades/upload" data-kind="trades">
+      <input id="file" type="file" accept=".csv,text/csv" hidden>
+      <svg width="36" height="36" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0l-4 4m4-4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <strong>Drop a GoatBots trade history CSV here</strong>
+      <span class="muted small">or click to choose a file · new trades are added, duplicates ignored</span>
+    </label>
+    <div id="status" class="card hidden" aria-live="polite"></div>
+  </section>
+  <aside>
+    <% if (totals) { %>
+    <div class="card">
+      <h3>Totals</h3>
+      <table class="table compact"><tbody>
+        <tr><td>Value received</td><td class="num"><%= fmt.tix(totals.got) %></td></tr>
+        <tr><td>Value given</td><td class="num"><%= fmt.tix(totals.gave) %></td></tr>
+        <tr><td>Manual entries</td><td class="num"><%= fmt.int(manual) %></td></tr>
+      </tbody></table>
+      <p class="small muted">Values are GoatBots' prices at the time of each trade, tickets included.</p>
+    </div>
+    <% } %>
+    <div class="card">
+      <h3>Recent imports</h3>
+      <% if (!imports.length) { %><p class="small muted">None yet.</p><% } else { %>
+      <table class="table compact"><tbody>
+        <% for (const i of imports) { %>
+          <tr><td class="small"><%= fmt.dateTime(i.importedAt) %></td><td class="num small">+<%= fmt.int(i.newTrades) %></td><td class="num small muted"><%= fmt.int(i.duplicateTrades) %> dup.</td></tr>
+        <% } %>
+      </tbody></table>
+      <% } %>
+    </div>
+  </aside>
+</div>
+
+<%- include('../partials/flash') %>
+
+<section class="card" id="unconfirmed">
+  <div class="browse-head">
+    <h3>Unconfirmed <span class="muted small">(<%= fmt.int(pendingCount) %>)</span></h3>
+    <% if (pending.length) { %>
+    <form id="bulk-dismiss" method="post" action="/mtgo/trades/pending/dismiss" class="filters">
+      <input type="hidden" name="back" value="/mtgo/trades<%= query.q ? '?q=' + encodeURIComponent(query.q) : '' %>#unconfirmed">
+      <button class="btn small-btn" type="submit">Dismiss selected</button>
+    </form>
+    <% } %>
+  </div>
+  <p class="small muted">Cards that appeared in or disappeared from your collection between two uploads, with no trade to explain them. Each must have happened between the two upload dates shown. Fill in the price and date (Save), wait for a GoatBots history upload to match them automatically, or dismiss ones that weren't purchases or sales (prizes, redemptions, gifts).</p>
+  <% if (!pending.length) { %>
+    <p class="small muted"><%= query.q ? 'None for that card.' : 'Nothing to confirm.' %></p>
+  <% } else { %>
+  <div class="table-scroll">
+  <table class="table compact pending-table">
+    <thead><tr><th><input type="checkbox" id="select-all-pending" aria-label="Select all"></th><th>Card</th><th>Version</th><th class="num">Change</th><th>Between</th><th>Fill in</th><th></th></tr></thead>
+    <tbody>
+      <% for (const p of pending) { %><%- include('../partials/pendingrow', { p, back: '/mtgo/trades' + (query.q ? '?q=' + encodeURIComponent(query.q) : '') + '#unconfirmed', showName: true, bulk: true }) %><% } %>
+    </tbody>
+  </table>
+  </div>
+  <% if (pendingCount > pending.length) { %><p class="small muted">Showing the newest <%= pending.length %>; filter by card name to find others.</p><% } %>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="browse-head">
+    <h3>History</h3>
+    <form method="get" action="/mtgo/trades" class="filters">
+      <input type="search" name="q" value="<%= query.q %>" placeholder="Card name…" aria-label="Filter by card name">
+      <button class="btn" type="submit">Filter</button>
+      <% if (query.q) { %><a class="link small" href="/mtgo/trades">Clear</a><% } %>
+    </form>
+  </div>
+  <% if (!trades.length) { %>
+    <p class="muted small"><%= query.q ? 'No trades with that card.' : 'No trades imported yet.' %></p>
+  <% } else { %>
+  <p class="small muted"><%= fmt.int(total) %> trades</p>
+  <div class="table-scroll">
+  <table class="table trades-table">
+    <thead><tr><th>When</th><th>Bot</th><th>You got</th><th>You gave</th><th class="num">Value got / gave</th><th class="num">Credit</th></tr></thead>
+    <tbody>
+    <% for (const t of trades) { const got = t.items.filter((i) => i.method === 'get'), gave = t.items.filter((i) => i.method === 'give'); %>
+      <tr>
+        <td class="small nowrap"><%= fmt.dateTime(t.at) %></td>
+        <td class="small"><%= t.bot %></td>
+        <% for (const side of [got, gave]) { %>
+          <td class="small">
+            <% for (const i of itemList(side)) { %>
+              <div><%= i.qty %>× <a class="cardlink" href="<%= fmt.cardUrl(i.name) %>"><%= i.name %></a> <span class="setcode"><%= i.set %></span><%= i.foil ? ' ✦' : '' %> <span class="muted">@ <%= i.price %></span></div>
+            <% } %>
+            <% if (tickets(side)) { %><div class="muted"><%= tickets(side) %> Event Ticket<%= tickets(side) === 1 ? '' : 's' %></div><% } %>
+          </td>
+        <% } %>
+        <td class="num small"><%= fmt.tix(t.getValue) %><span class="block muted"><%= fmt.tix(t.giveValue) %></span></td>
+        <td class="num small muted"><%= t.creditsAfter != null && t.creditsBefore != null ? ((t.creditsAfter - t.creditsBefore) >= 0 ? '+' : '') + (t.creditsAfter - t.creditsBefore).toFixed(2) : '' %></td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  </div>
+  <% if (pages > 1) { %>
+    <nav class="pager">
+      <% if (query.page > 1) { %><a class="btn" href="<%= qs({ page: query.page - 1 }) %>">← Newer</a><% } %>
+      <span class="muted small">Page <%= query.page %> of <%= pages %></span>
+      <% if (query.page < pages) { %><a class="btn" href="<%= qs({ page: query.page + 1 }) %>">Older →</a><% } %>
+    </nav>
+  <% } %>
+  <% } %>
+</section>
+<script src="/static/upload.js" defer></script>
+<%- include('../partials/foot') %>

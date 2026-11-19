@@ -7,9 +7,11 @@ mtgo-manager/
 ├── web/         Express website (Azure App Service)
 │                login → landing page → MTGO manager (highlights, collection browser, CSV upload)
 └── functions/   Azure Functions app (timer triggers)
-                 siteMonitor  – every 30 min: watch sites, save highlights, Telegram alerts
-                 priceSync    – daily: GoatBots cards + prices → value history, tracked-card history,
-                                alerts for price targets, version swaps, short-term watch list, collection movers
+                 treasureChest – Treasure Chest page: every 30 s near an update, daily otherwise  → Telegram
+                 spoilerWatch  – MagicSpoiler, hourly 8 am–8 pm PT: reprints of your cards       → Telegram
+                 siteMonitor   – every 30 min: MTGO news + r/mtgo headlines for the website
+                 priceSync     – daily: GoatBots cards + prices → value history, tracked-card history,
+                                 target / swap status for the website
 ```
 
 ## What's in MongoDB
@@ -25,9 +27,16 @@ mtgo-manager/
 | `targets`       | web + priceSync      | Price targets; the daily job sets `hit` / `hitAt` |
 | `swaps`         | web + priceSync      | Version swaps; the daily job sets `good` when the wanted printing is cheaper |
 | `value_history` | both                 | One doc per day: total collection value |
-| `highlights`    | functions/siteMonitor| News items shown on the MTGO front page |
-| `monitor_state` | functions/siteMonitor| What each monitor has already seen, last run, last error |
+| `highlights`    | functions            | Items shown on the MTGO front page (news, Treasure Chest updates, reprints) |
+| `monitor_state` | functions            | Each watcher's state: last run, last error, schedule |
+| `tc_snapshots`  | functions/treasureChest | Parsed copies of the Treasure Chest page (last 30 changes) |
+| `spoiler_pages` | functions/spoilerWatch  | Card names already seen on each MagicSpoiler page |
 | `meta`          | functions/priceSync  | Last price sync time |
+| `trades`        | web                  | Per-card trade entries: logged by hand on card pages, or imported from GoatBots |
+| `gb_trades`     | web                  | Imported GoatBots trades (one doc per trade, with all items) |
+| `trade_imports` | web                  | Log of trade history uploads |
+| `pending_changes` | web                | Unconfirmed buys/sells found by comparing collection uploads |
+| `collection_changes` | web             | Per-card quantity changes recorded by each CSV upload |
 | `sessions`      | web                  | Login sessions |
 
 Prices come from GoatBots' public daily price file, keyed by MTGO catalog ID — the same number as the `ID #` column in the MTGO CSV export — so cards match exactly, including foils and different printings.
@@ -56,17 +65,52 @@ There is no sign-up page and no users table: the one allowed username and its bc
 ### Updating your collection
 MTGO client → **Collection** → select all cards in your full collection → right-click → **Export** → **CSV**. Drag the file onto **MTGO → Update**. Each upload replaces the stored collection and shows what was added/removed. Headers are matched loosely, so exports from other tools that have *name* + *quantity* columns also work (cards without an MTGO ID won't get prices, though).
 
+MTGO's own CSV export isn't quite valid CSV: after a card name with an accented letter (Márton Stromgald, Nazgûl…) it drops the line break, and quotes inside names aren't escaped (`"Henzie "Toolbox" Torre"`). The upload reads MTGO exports record by record to cope with both, and counts sideboarded copies too.
+
+### Card search
+The search box in the top bar (press `/` to jump to it) suggests card names as you type, in this order: your short-term watch list, long-term watch list, your collection, then every card on MTGO; within each group exact matches come first, then names starting with what you typed, then names containing it. Enter (or clicking a suggestion) opens that card's page. The names are kept in memory on the web server, so each lookup takes a few milliseconds; the list refreshes every 10 minutes and immediately after you change a watch list or upload your collection.
+
+### Unconfirmed buys and sells
+Every collection upload is compared with the previous one. Each version whose quantity changed becomes an *unconfirmed* buy (+n) or sell (−n) with an unknown price, dated "between the previous upload and this one". Trades you already have in that window for the same MTGO ID (GoatBots imports, or entries you added) are subtracted automatically; if they account for the whole change it's resolved straight away.
+
+What's left is listed on the **Trades** page (and on each card's page), where you can:
+- **Save** it with a price, a date inside the window and who you traded with — it becomes a normal trade-history entry;
+- **leave it** — the next GoatBots history upload that covers those dates resolves it automatically;
+- **dismiss** it (one by one, or tick several and *Dismiss selected*) if it wasn't a purchase or sale, e.g. a prize or redemption.
+
+Event Tickets are left out. Card pages also have an **Add transaction** button for trades with other vendors or players.
+
+### Trade history (GoatBots)
+On GoatBots, download your trade history CSV (your last 1,000 trades) and drop it on **MTGO → Trades**. Upload every download you have, in any order: each trade is identified by its timestamp + bot, and each item by get/give + MTGO ID, so trades already stored are skipped and only new ones are added. The Trades page lists every trade (what you got, what you gave, values, credit change) with a card-name filter; each card's trades also appear in the trade history on its card page, tagged *GoatBots import*, next to anything you log by hand.
+
 ### Watch lists, price targets and version swaps
 Each has its own page in the MTGO menu. Cards are picked with a search box that covers every printing on MTGO (from GoatBots' card list, refreshed daily). Until the first daily job has run, the search only finds cards in your own collection.
 
-| Page | What it shows | Telegram |
-|------|---------------|----------|
-| **Short watch** | price, 1-day and 7-day change, change since added, 30-day chart | daily digest of cards that moved more than their alert % (default 15 %, per card) |
-| **Long watch** | price, 30- and 90-day change, change since added, 6-month chart, notes | none |
-| **Targets** | three groups: *reached*, *getting close* (within the card's "close" %, default 10 %), *waiting*. Buy targets (≤) or sell targets (≥) | once when a target is reached. It re-arms if the price moves back, or if you edit the target |
-| **Swaps** | the version you own next to the one you want, the price gap, total saving across your copies | once when the wanted version becomes cheaper by at least your minimum saving. It re-arms when the gap closes |
+| Page | What it shows |
+|------|---------------|
+| **Short watch** | price, 1-day and 7-day change, change since added, 30-day chart. Rows are highlighted when a card moved more than its alert % today (default 15 %). Cards found by the Treasure Chest and reprint watchers are added here automatically (tagged *auto*). |
+| **Long watch** | price, 30- and 90-day change, change since added, 6-month chart, notes |
+| **Targets** | three groups: *reached*, *getting close* (within the card's "close" %, default 10 %), *waiting*. Buy targets (≤) or sell targets (≥) |
+| **Swaps** | the version you own next to the one you want, the price gap, total saving across your copies; *Swap now* when the wanted version is cheaper by at least your minimum saving |
 
-Items move between the short- and long-term lists with one click. Charts start from the day a card is added (price history is only kept for tracked cards so the database stays small) and fill in as the daily job runs. All alerts are checked once a day, after the price update.
+Items move between the short- and long-term lists with one click. Charts start from the day a card is added (price history is only kept for tracked cards so the database stays small) and fill in as the daily job runs. Target and swap status is updated once a day, after the price update. None of these send Telegram messages unless you turn that on (see `NOTIFY_*` settings).
+
+### Card pages
+Click any card name (collection, watch lists, targets, swaps) to open its page:
+
+- **Your versions**: quantity, value, and what Cardhoarder and Dojo would pay you right now.
+- **All versions** on MTGO with: GoatBots' daily price (last night's average sell price, with 1-day change and a 90-day chart for tracked versions); **live** Cardhoarder and Dojo sell / buy prices and stock; the best offer in each row highlighted; *Short* / *Long* buttons to add or remove that version from either watch list.
+- **Trade history**: a log you fill in (bought / sold, version, quantity, tix each, with whom) with totals, plus the quantity changes recorded by each collection upload.
+
+Where the prices come from:
+
+| Vendor | Freshness | How |
+|--------|-----------|-----|
+| GoatBots | daily (published ~5:30 AM CET) | their public download, as before. Their live prices are deliberately drawn as obfuscated images to stop automated reading, so the page links to GoatBots' own card page for those. |
+| Cardhoarder | live | one request per card page view (their search, exact name). Their card ids are MTGO catalog ids, so prices match your versions exactly. |
+| Dojo | live | one request per card page view (their price table search). Matched to versions by set + foil; variants Dojo names in brackets ("Retro Frame") that can't be placed are listed separately. |
+
+Live results are cached for 2 minutes. If a vendor blocks or times out, its columns show "!" with the reason and the rest of the page still works. Set `VENDOR_LIVE_DISABLED=1` on the web app to turn live lookups off.
 
 ## 3. Telegram bot (≈2 minutes)
 
@@ -80,34 +124,49 @@ Items move between the short- and long-term lists with one click. Charts start f
    npm run telegram:test                                 # you should get a message
    ```
 
-## 4. Monitors
+## 4. Watchers and Telegram
 
-Monitors are defined in **`functions/src/lib/monitors.config.js`**. Out of the box:
+Telegram is used for exactly two things:
 
-| id | Watches | Saved as highlight | Telegram |
-|----|---------|--------------------|----------|
-| `mtgo-news` | mtgo.com/news — new articles. Weekly announcement posts are opened and their body is scanned, since Treasure Chest changes are usually buried there. | all new articles | Treasure Chest + reprint matches |
-| `reddit-mtgo` | r/mtgo RSS | only posts matching Treasure Chest / reprint keywords | no |
-| `example-page-watch` | template: alert when any single page's text changes | — | disabled |
+### Treasure Chest page — `functions/src/lib/treasureChest.js`
 
-**Before deploying, check that the selectors still match the live sites:**
+Reads https://www.mtgo.com/news/mtgo-treasure-chest-info.
+
+- **When:** the timer ticks every 30 seconds, but the page is only fetched every tick from **7 days before** the page's "Next Update" date until the page changes (or 7 days after the date, if the update is late). Otherwise it's fetched **once a day**. If the date can't be read, hourly.
+- **What's stored:** every version of the page that differs from the last is parsed and saved (`tc_snapshots`): the header dates, each slot table (whatever slot tables exist that month), and the CHANGELIST.
+- **CHANGELIST check:** the CHANGELIST only lists changes, so it's compared with the *difference* between the slot tables before and after the update — each card version (name + set + treatment) whose total drop weight changed must be listed with the right Change and Slots values. Cards that didn't change aren't expected in it. Also checked: each table's "Total RDR in this list" equals the sum of its rows.
+  - CHANGELIST not updated → the message says so, and the changes are worked out from the slot tables.
+  - CHANGELIST wrong → the message lists the differences.
+  - CHANGELIST fixed later → it's checked again against the page as it was before the update began.
+- **Message:** sent on every change: counts of added / removed / changed cards, new or removed slot tables, the next update date, the CHANGELIST check, and **the added cards that are in your collection or on a watch list** (matched by name, any version) with your versions' current prices. Those cards are also added to the short-term watch list.
+- The first check only records the page; nothing is sent.
+
+### Reprints — `functions/src/lib/spoilers.js`
+
+Reads https://www.magicspoiler.com hourly between 8 am and 8 pm Pacific.
+
+- The pages to check are taken from the site's navigation bar on every run, including sub-menus (e.g. *Star Trek › Star Trek Commander*), so new sets are picked up automatically.
+- Set pages: every card, following page 2, 3, …. News posts (e.g. Secret Lair drops): "1x Card Name" lines, plus names of your cards mentioned in the text (some posts only show cards as images; those can't be read).
+- Every card not seen before on that page is matched against your collection and watch lists by name. Matches are sent in one Telegram message with prices, saved as highlights, and added to the short-term watch list.
+- The very first run treats everything already on the site as new, so expect one larger message listing current reprints of cards you own.
+
+### If a watcher breaks
+
+Both watchers record errors on the website (Highlights → Monitors, in red). If the Treasure Chest page can't be read for 30 minutes during an update window (6 hours otherwise), or MagicSpoiler for 6 hours, you get one Telegram warning a day. MagicSpoiler sits behind Cloudflare; if it starts blocking Azure, the warning will say so.
+
+### Checking by hand
 
 ```bash
-npm run monitors:dry-run              # no DB writes, no Telegram — just prints what it would find
-npm run monitors:dry-run mtgo-news    # one monitor
+cd functions
+npm run tc:dry-run         # parse the live Treasure Chest page and print what was found
+npm run tc:run             # one real check now (ignores the schedule)
+npm run spoilers:dry-run   # list pages + cards you own that are on them; saves nothing
+npm run spoilers:run       # one real check now
 ```
 
-If a monitor extracts nothing, the site's HTML changed (or it now needs JavaScript): adjust `itemSelector` / `hrefPattern`. The website also flags a monitor in red when its last run extracted nothing or failed.
+### News feed (website only)
 
-Adding a site is a few lines — e.g. watch a set's release page and buzz your phone when it changes:
-
-```js
-{ id: 'mh4-release', label: 'MH4 release page', enabled: true, type: 'page',
-  url: 'https://example.com/some-page', contentSelector: 'main',
-  rules: [], default: { category: 'reprint', notify: true, keep: true } },
-```
-
-The first successful run of any monitor saves what it finds but sends nothing, so you don't get 30 messages for old articles.
+`functions/src/lib/monitors.config.js` also fetches mtgo.com/news and r/mtgo headlines every 30 minutes for the Highlights page. These never send Telegram messages. Check them with `npm run monitors:dry-run`.
 
 ## 5. Deploy to Azure
 
@@ -174,6 +233,7 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 | `NODE_ENV` | prod | `production` turns on secure cookies |
 | `DISPLAY_TIMEZONE` | no | default `America/Vancouver` |
 | `WATCH_ALERT_PCT` | no | default alert % shown on the short-term list; keep in step with the functions setting |
+| `VENDOR_LIVE_DISABLED` | no | `1` turns off live Cardhoarder / Dojo lookups on card pages |
 
 **functions** (`local.settings.json` / Function App settings)
 
@@ -183,8 +243,11 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | leave empty to disable Telegram |
 | `MONITOR_SCHEDULE` | NCRONTAB (6 fields, UTC). Default every 30 min |
 | `PRICE_SYNC_SCHEDULE` | NCRONTAB, UTC. Default 10:20 UTC daily |
-| `PRICE_ALERTS` | `true` → daily Telegram digest of big movers among cards you own |
-| `PRICE_ALERT_MIN_PCT` / `PRICE_ALERT_MIN_TIX` | thresholds for the digest (default 25 % and 2 tix) |
+| `TC_WINDOW_DAYS_BEFORE` / `TC_WINDOW_DAYS_AFTER` | Treasure Chest fast-check window around "Next Update" (default 7 / 7) |
+| `TC_IDLE_HOURS` | Treasure Chest check interval outside the window (default 24) |
+| `SPOILER_HOURS` | MagicSpoiler active hours, Pacific (default `8-20`) |
+| `NOTIFY_PRICE_TARGETS`, `NOTIFY_SWAPS`, `NOTIFY_SHORT_WATCH`, `NOTIFY_COLLECTION_MOVERS` | set to `true` to also get Telegram messages for these (all off by default) |
+| `PRICE_ALERT_MIN_PCT` / `PRICE_ALERT_MIN_TIX` | thresholds for the collection-movers message, if turned on (default 25 % and 2 tix) |
 | `WATCH_ALERT_PCT` | default daily-move alert for the short-term watch list (default 15) |
 | `GOATBOTS_PRICES_URL` / `GOATBOTS_CARDS_URL` | override if GoatBots moves the files |
 
@@ -199,8 +262,8 @@ With a MongoDB to test against (a local one, or a throwaway Atlas database), the
 
 ```bash
 export TEST_MONGODB_URI="mongodb://127.0.0.1:27017/?directConnection=true"
-cd web && npm test          # + login, upload, card search, watch lists, targets, swaps through the real server
-cd functions && npm test    # + daily job: prices, history, target/swap/watch alerts (GoatBots + Telegram faked)
+cd web && npm test          # + login, upload, card search, watch lists, targets, swaps, card pages through the real server
+cd functions && npm test    # + daily job, Treasure Chest scenarios (stale / wrong / late CHANGELIST), reprint watcher
 ```
 
 ## Adding more tools later

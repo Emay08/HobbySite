@@ -2,6 +2,7 @@ const express = require('express');
 const { ObjectId } = require('mongodb');
 const { getDb } = require('../lib/db');
 const cards = require('../lib/cards');
+const search = require('../lib/search');
 
 const router = express.Router();
 
@@ -107,6 +108,7 @@ router.post('/watch/:list(short|long)', async (req, res, next) => {
       addedAt: new Date(),
     });
     await cards.seedHistory(card.mtgoId, card.price);
+    search.invalidate();
     flash(req, 'ok', `Added ${card.name} (${card.set}).`);
     back(res, `/mtgo/watch/${list}`);
   } catch (err) {
@@ -121,6 +123,7 @@ router.post('/watch/item/:id/move', async (req, res, next) => {
     if (!item) return back(res, '/mtgo/watch/short');
     const to = WATCH[item.list].other;
     await coll.updateOne({ _id: item._id }, { $set: { list: to } });
+    search.invalidate();
     flash(req, 'ok', `Moved ${item.name} to the ${to}-term list.`);
     back(res, `/mtgo/watch/${item.list}`);
   } catch (err) {
@@ -146,6 +149,7 @@ router.post('/watch/item/:id/delete', async (req, res, next) => {
   try {
     const coll = getDb().collection('watchlist');
     const item = await coll.findOneAndDelete({ _id: oid(req.params.id) });
+    search.invalidate();
     if (item) flash(req, 'ok', `Removed ${item.name}.`);
     back(res, `/mtgo/watch/${item ? item.list : 'short'}`);
   } catch (err) {

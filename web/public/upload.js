@@ -1,4 +1,7 @@
 (function () {
+  const all = document.getElementById('select-all-pending');
+  if (all) all.addEventListener('change', () => document.querySelectorAll('input[name="ids"][form="bulk-dismiss"]').forEach((c) => (c.checked = all.checked)));
+
   const zone = document.getElementById('dropzone');
   const input = document.getElementById('file');
   const status = document.getElementById('status');
@@ -56,7 +59,7 @@
     const body = new FormData();
     body.append('file', file);
     try {
-      const res = await fetch('/mtgo/upload', {
+      const res = await fetch(zone.dataset.endpoint || '/mtgo/upload', {
         method: 'POST',
         body,
         headers: { Accept: 'application/json' },
@@ -64,7 +67,8 @@
       });
       const data = await res.json().catch(() => ({ error: `Server returned ${res.status}` }));
       if (!res.ok) throw new Error(data.error || 'Upload failed');
-      renderResult(file.name, data);
+      if (zone.dataset.kind === 'trades') renderTrades(file.name, data);
+      else renderResult(file.name, data);
     } catch (err) {
       show(el('p', { class: 'error' }, err.message));
     } finally {
@@ -95,6 +99,19 @@
     if (d.diff.sampleRemoved.length) {
       nodes.push(el('p', { class: 'small muted' }, 'Gone: ' + d.diff.sampleRemoved.map((c) => c.name).join(', ')));
     }
+    if (d.pending && d.pending.created) {
+      const left = d.pending.created - d.pending.resolved;
+      nodes.push(
+        el(
+          'p',
+          { class: 'small' },
+          `${fmtInt(d.pending.created)} versions changed since your last upload` +
+            (d.pending.resolved ? ` — ${fmtInt(d.pending.resolved)} matched to trades you'd already imported` : '') +
+            (left ? `. ${fmtInt(left)} unconfirmed: ` : '.'),
+          left ? el('a', { href: '/mtgo/trades#unconfirmed' }, 'review on the Trades page') : ''
+        )
+      );
+    }
     if (d.unpriced) {
       nodes.push(el('p', { class: 'small muted' }, `${fmtInt(d.unpriced)} entries have no price yet.`));
     }
@@ -105,6 +122,25 @@
     }
     nodes.push(el('p', {}, el('a', { href: '/mtgo/collection', class: 'btn primary' }, 'View collection →')));
     show(...nodes);
+  }
+
+  function renderTrades(name, d) {
+    const day = (s) => (s ? new Date(s).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '?');
+    show(
+      el('h3', {}, d.newTrades ? `✓ ${fmtInt(d.newTrades)} new trades added` : '✓ Nothing new — every trade was already stored'),
+      el('p', { class: 'small muted' }, `${name} · ${day(d.from)} – ${day(d.to)}`),
+      el(
+        'div',
+        { class: 'stats mini' },
+        stat('Trades in file', fmtInt(d.tradesInFile)),
+        stat('New', fmtInt(d.newTrades)),
+        stat('Already stored', fmtInt(d.duplicateTrades))
+      ),
+      el('p', { class: 'small muted' }, `${fmtInt(d.newItems)} new card entries added to card pages.` +
+        (d.pendingResolved ? ` ${fmtInt(d.pendingResolved)} unconfirmed collection changes matched.` : '') +
+        (d.pendingOpen ? ` ${fmtInt(d.pendingOpen)} still unconfirmed.` : '')),
+      el('p', {}, el('a', { href: '/mtgo/trades', class: 'btn primary' }, 'Refresh page →'))
+    );
   }
 
   function stat(label, value) {

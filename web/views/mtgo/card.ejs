@@ -1,0 +1,188 @@
+<%- include('../partials/head') %>
+<div class="card-head">
+  <img class="card-art" src="<%= links.scryfallImage %>" alt="<%= name %>" loading="lazy" referrerpolicy="no-referrer">
+  <div class="card-head-main">
+    <p class="eyebrow">MTGO · Card</p>
+    <h1><%= name %></h1>
+    <div class="stats mini">
+      <div class="stat"><span class="stat-label">You own</span><span class="stat-value"><%= fmt.int(ownedQty) %></span></div>
+      <div class="stat"><span class="stat-label">Your value</span><span class="stat-value"><%= fmt.tix(ownedValue) %></span></div>
+      <div class="stat"><span class="stat-label">Versions on MTGO</span><span class="stat-value"><%= versions.length %></span></div>
+    </div>
+    <p><a class="btn" href="#add-trade">+ Add transaction</a></p>
+    <p class="small vendor-links">
+      Live elsewhere:
+      <a href="<%= links.goatbots %>" target="_blank" rel="noopener noreferrer">GoatBots ↗</a> ·
+      <a href="<%= links.cardhoarder %>" target="_blank" rel="noopener noreferrer">Cardhoarder ↗</a> ·
+      <a href="<%= links.dojo %>" target="_blank" rel="noopener noreferrer">Dojo ↗</a>
+    </p>
+    <p class="small muted" id="live-status" data-name="<%= name %>" data-enabled="<%= livePricesEnabled ? '1' : '0' %>">
+      <%= livePricesEnabled ? 'Loading live prices…' : 'Live prices are turned off.' %>
+    </p>
+  </div>
+</div>
+
+<%- include('../partials/flash') %>
+
+<% if (owned.length || ownedWithoutId.length) { %>
+<section class="card">
+  <h3>Your versions</h3>
+  <table class="table compact">
+    <thead><tr><th>Version</th><th class="num">Qty</th><th class="num">GoatBots</th><th class="num">Value</th><th class="num">Cardhoarder buys at</th><th class="num">Dojo buys at</th></tr></thead>
+    <tbody>
+    <% for (const v of owned) { %>
+      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>">
+        <td><span class="setcode"><%= v.set %></span><% if (v.foil) { %> <span class="foil">✦ foil</span><% } %> <span class="muted small"><%= v.rarity %></span></td>
+        <td class="num strong"><%= v.qty %></td>
+        <td class="num"><%= fmt.tix(v.price) %></td>
+        <td class="num"><%= fmt.tix((v.price || 0) * v.qty) %></td>
+        <td class="num live" data-vendor="cardhoarder" data-field="buy">…</td>
+        <td class="num live" data-vendor="dojo" data-field="buy">…</td>
+      </tr>
+    <% } %>
+    <% for (const o of ownedWithoutId) { %>
+      <tr><td><span class="setcode"><%= o.set || '?' %></span> <span class="muted small">no MTGO ID in your export</span></td><td class="num strong"><%= o.qty %></td><td class="num">—</td><td class="num">—</td><td></td><td></td></tr>
+    <% } %>
+    </tbody>
+  </table>
+</section>
+<% } %>
+
+<section class="card">
+  <div class="section-head">
+    <h3>All versions</h3>
+    <span class="small muted">GoatBots = last night's average sell price · Cardhoarder &amp; Dojo = live · <em>sell</em> is what you'd pay, <em>buy</em> is what they'd pay you</span>
+  </div>
+  <div class="table-scroll">
+  <table class="table compact versions">
+    <thead>
+      <tr>
+        <th rowspan="2">Version</th><th rowspan="2" class="num">Own</th>
+        <th class="num" rowspan="2">GoatBots<br><span class="muted small">daily</span></th>
+        <th rowspan="2">90 days</th>
+        <th colspan="3" class="vendor-col">Cardhoarder</th>
+        <th colspan="3" class="vendor-col">Dojo</th>
+        <th rowspan="2">Watch</th>
+      </tr>
+      <tr>
+        <th class="num">Sell</th><th class="num">Buy</th><th class="num">Stock</th>
+        <th class="num">Sell</th><th class="num">Buy</th><th class="num">Stock</th>
+      </tr>
+    </thead>
+    <tbody>
+    <% for (const v of versions) { const d = fmt.pct(v.d1); %>
+      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>" class="<%= v.qty ? 'row-owned' : '' %>">
+        <td>
+          <span class="setcode"><%= v.set %></span><% if (v.foil) { %> <span class="foil">✦</span><% } %>
+          <span class="muted small"><%= v.rarity %> · #<%= v.mtgoId %></span>
+          <% for (const t of v.targets) { %><a class="tag" href="/mtgo/targets" title="Price target">🎯 <%= t.direction === 'below' ? '≤' : '≥' %> <%= t.target %></a><% } %>
+        </td>
+        <td class="num strong"><%= v.qty || '' %></td>
+        <td class="num"><%= fmt.tix(v.price) %><% if (v.d1 != null) { %><span class="small block <%= d.cls %>"><%= d.text %></span><% } %></td>
+        <td><% if (v.history.length > 1) { %><%- include('../partials/spark', { points: v.history }) %><% } %></td>
+        <td class="num live" data-vendor="cardhoarder" data-field="sell">…</td>
+        <td class="num live" data-vendor="cardhoarder" data-field="buy">…</td>
+        <td class="num live small" data-vendor="cardhoarder" data-field="stock">…</td>
+        <td class="num live" data-vendor="dojo" data-field="sell">…</td>
+        <td class="num live" data-vendor="dojo" data-field="buy">…</td>
+        <td class="num live small" data-vendor="dojo" data-field="stock">…</td>
+        <td class="watch-buttons">
+          <% for (const list of ['short', 'long']) { const on = v.lists.includes(list); %>
+            <form method="post" action="/mtgo/card/<%= encodeURIComponent(name) %>/watch">
+              <input type="hidden" name="mtgoId" value="<%= v.mtgoId %>"><input type="hidden" name="list" value="<%= list %>">
+              <button class="pill-btn <%= on ? 'on' : '' %>" type="submit" title="<%= on ? 'Remove from' : 'Add to' %> the <%= list %>-term watch list"><%= on ? '✓ ' : '+ ' %><%= list === 'short' ? 'Short' : 'Long' %></button>
+            </form>
+          <% } %>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  </div>
+  <div id="unmatched" class="hidden">
+    <h4 class="small">Dojo listings not matched to a version above</h4>
+    <p class="small muted">Dojo names variants in the product name; when a set has several variants they can't be matched to MTGO IDs reliably.</p>
+    <table class="table compact"><thead><tr><th>Dojo product</th><th>Set</th><th class="num">Sell</th><th class="num">Buy</th><th class="num">Stock</th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<section class="card" id="trades">
+  <h3>Trade history</h3>
+  <% if (pending.length) { %>
+    <h4 class="small">Unconfirmed changes from collection uploads</h4>
+    <table class="table compact pending-table">
+      <thead><tr><th>Version</th><th class="num">Change</th><th>Between</th><th>Fill in</th><th></th></tr></thead>
+      <tbody>
+        <% for (const p of pending) { %><%- include('../partials/pendingrow', { p, back: '/mtgo/card/' + encodeURIComponent(name) + '#trades', showName: false, bulk: false }) %><% } %>
+      </tbody>
+    </table>
+  <% } %>
+  <h4 class="small" id="add-trade">Add a transaction</h4>
+  <form method="post" action="/mtgo/card/<%= encodeURIComponent(name) %>/trades" class="trade-form">
+    <div><label for="t-date">Date</label><input id="t-date" type="date" name="date" value="<%= today %>"></div>
+    <div><label for="t-dir">Type</label>
+      <select id="t-dir" name="direction"><option value="buy">Bought</option><option value="sell">Sold</option></select></div>
+    <div><label for="t-ver">Version</label>
+      <select id="t-ver" name="mtgoId"><option value="">Any / unknown</option>
+        <% for (const v of versions) { %><option value="<%= v.mtgoId %>"><%= v.set %><%= v.foil ? ' foil' : '' %> (#<%= v.mtgoId %>)</option><% } %>
+      </select></div>
+    <div><label for="t-qty">Qty</label><input id="t-qty" name="qty" type="text" inputmode="numeric" value="1"></div>
+    <div><label for="t-price">Tix each</label><input id="t-price" name="price" type="text" inputmode="decimal" placeholder="0.00"></div>
+    <div><label for="t-cp">With</label><input id="t-cp" name="counterparty" type="text" maxlength="80" placeholder="e.g. Cardhoarder, a player"></div>
+    <div class="grow"><label for="t-note">Note</label><input id="t-note" name="note" type="text" maxlength="200"></div>
+    <div class="add-submit"><button class="btn primary" type="submit">Log</button></div>
+  </form>
+
+  <% if (trades.length) {
+       const bought = trades.filter((t) => t.direction === 'buy'), sold = trades.filter((t) => t.direction === 'sell');
+       const sum = (arr, f) => arr.reduce((n, t) => n + f(t), 0);
+       const spent = sum(bought, (t) => (t.price || 0) * t.qty), got = sum(sold, (t) => (t.price || 0) * t.qty); %>
+    <p class="small muted">Bought <%= sum(bought, (t) => t.qty) %> for <%= fmt.tix(spent) %> · sold <%= sum(sold, (t) => t.qty) %> for <%= fmt.tix(got) %> · net <%= fmt.tix(got - spent) %></p>
+    <table class="table compact">
+      <thead><tr><th>Date</th><th>Type</th><th>Version</th><th class="num">Qty</th><th class="num">Each</th><th class="num">Total</th><th>With</th><th>Note</th><th></th></tr></thead>
+      <tbody>
+      <% for (const t of trades) { %>
+        <tr>
+          <td class="small"><%= t.date %></td>
+          <td><span class="goal <%= t.direction === 'buy' ? 'goal-below' : 'goal-above' %>"><%= t.direction === 'buy' ? 'Bought' : 'Sold' %></span></td>
+          <td><% if (t.set) { %><span class="setcode"><%= t.set %></span><%= t.foil ? ' ✦' : '' %><% } else { %><span class="muted small">—</span><% } %></td>
+          <td class="num"><%= t.qty %></td>
+          <td class="num"><%= fmt.tix(t.price) %></td>
+          <td class="num"><%= t.price == null ? '—' : fmt.tix(t.price * t.qty) %></td>
+          <td class="small"><%= t.counterparty %></td>
+          <td class="small"><%= t.note %></td>
+          <td class="actions">
+            <% if (t.source === 'goatbots') { %><a class="tag" href="/mtgo/trades?q=<%= encodeURIComponent(name) %>" title="Imported from your GoatBots trade history">GoatBots import</a>
+            <% } else { %><form method="post" action="/mtgo/card/<%= encodeURIComponent(name) %>/trades/<%= t._id %>/delete"><button class="link small danger" type="submit">delete</button></form><% } %>
+          </td>
+        </tr>
+      <% } %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p class="small muted">No trades for this card yet. Log one above, or <a href="/mtgo/trades">import your GoatBots trade history</a>.</p>
+  <% } %>
+
+  <h4 class="small changes-head">Changes from your collection uploads</h4>
+  <% if (changes.length) { %>
+    <table class="table compact">
+      <thead><tr><th>Upload</th><th>Version</th><th class="num">Before</th><th class="num">After</th><th class="num">Change</th></tr></thead>
+      <tbody>
+      <% for (const c of changes) { %>
+        <tr>
+          <td class="small"><%= fmt.dateTime(c.at) %></td>
+          <td><span class="setcode"><%= c.set || '?' %></span><%= c.foil ? ' ✦' : '' %></td>
+          <td class="num"><%= c.from %></td>
+          <td class="num"><%= c.to %></td>
+          <td class="num <%= c.change > 0 ? 'up' : 'down' %>"><%= c.change > 0 ? '+' : '' %><%= c.change %></td>
+        </tr>
+      <% } %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p class="small muted">None yet. From now on, each CSV upload records how many copies of each version came and went.</p>
+  <% } %>
+</section>
+<p class="small muted attribution">Card image from <a href="https://scryfall.com/" target="_blank" rel="noopener">Scryfall</a>.</p>
+<script src="/static/card.js" defer></script>
+<%- include('../partials/foot') %>

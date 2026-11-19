@@ -1,4 +1,5 @@
 const { getDb, getClient } = require('./db');
+const { recordPendingChanges } = require('./reconcile');
 
 /**
  * Event Tickets (MTGO ID 1) are worth exactly 1 tix each; they are kept out of
@@ -143,7 +144,7 @@ async function replaceCollection(cards, meta) {
   const db = getDb();
   const coll = db.collection('collection');
 
-  const previous = await coll.find({}, { projection: { qty: 1, name: 1 } }).toArray();
+  const previous = await coll.find({}, { projection: { qty: 1, name: 1, mtgoId: 1, set: 1, foil: 1 } }).toArray();
   const prevMap = new Map(previous.map((c) => [c._id, c]));
   const nextMap = new Map(cards.map((c) => [c._id, c]));
 
@@ -177,6 +178,28 @@ async function replaceCollection(cards, meta) {
   } finally {
     await session.endSession();
   }
+
+  // Per-card quantity changes, shown on each card's page and turned into unconfirmed
+  // buys/sells. Skipped for the very first upload (everything would show as "added").
+  let pending = null;
+  const lastUpload = await db.collection('uploads').find().sort({ uploadedAt: -1 }).limit(1).next();
+  if (previous.length) {
+    const changes = [];
+    const rec = (c, from, to) =>
+      changes.push({ at: now, mtgoId: c.mtgoId || null, name: c.name, nameLower: c.name.toLowerCase(), set: c.set || '', foil: !!c.foil, from, to, change: to - from });
+    for (const c of cards) {
+      const p = prevMap.get(c._id);
+      if (!p) rec(c, 0, c.qty);
+      else if (p.qty !== c.qty) rec(c, p.qty, c.qty);
+    }
+    for (const p of previous) if (!nextMap.has(p._id)) rec(p, p.qty, 0);
+    if (changes.length) {
+      await db.collection('collection_changes').createIndex({ nameLower: 1, at: -1 });
+      await db.collection('collection_changes').insertMany(changes);
+      pending = await recordPendingChanges(db, changes, { windowStart: lastUpload ? lastUpload.uploadedAt : null, windowEnd: now });
+    }
+  }
+  diff.pending = pending;
 
   await db.collection('uploads').insertOne({
     uploadedAt: now,
