@@ -43,6 +43,21 @@ function Invoke-Az {
   if ($out) { return ($out | Out-String).Trim() }
 }
 
+function Invoke-AzRetry {
+  # Like Invoke-Az, but retries for up to ~2 minutes. Azure sometimes reports a resource it
+  # created seconds ago as "not found" until the change has spread through its systems.
+  $ErrorActionPreference = 'Continue'
+  for ($attempt = 1; $attempt -le 8; $attempt++) {
+    $out = & az @args
+    if ($LASTEXITCODE -eq 0) { if ($out) { return ($out | Out-String).Trim() } else { return } }
+    if ($attempt -lt 8) {
+      Write-Host "  Azure isn't ready yet; retrying in 15 seconds ($attempt/7)..." -ForegroundColor DarkYellow
+      Start-Sleep -Seconds 15
+    }
+  }
+  throw "az $($args -join ' ') failed after several retries (see the error above)."
+}
+
 function Test-Az {
   # Runs az quietly and returns $true if it succeeded (used for "does this exist?" checks).
   $ErrorActionPreference = 'Continue'
@@ -137,9 +152,9 @@ if (-not (Test-Az appservice plan show -g $ResourceGroup -n $names.Plan)) {
 if (-not (Test-Az webapp show -g $ResourceGroup -n $names.WebApp)) {
   Invoke-Az webapp create -g $ResourceGroup -p $names.Plan -n $names.WebApp --runtime 'NODE:22-lts' -o none
 }
-Invoke-Az webapp update -g $ResourceGroup -n $names.WebApp --https-only true -o none
+Invoke-AzRetry webapp update -g $ResourceGroup -n $names.WebApp --https-only true -o none
 $alwaysOn = if ($AppSku -in @('F1', 'FREE', 'D1', 'SHARED')) { 'false' } else { 'true' }   # free tiers don't support Always On
-Invoke-Az webapp config set -g $ResourceGroup -n $names.WebApp --startup-file 'npm start' --always-on $alwaysOn --min-tls-version 1.2 --ftps-state Disabled -o none
+Invoke-AzRetry webapp config set -g $ResourceGroup -n $names.WebApp --startup-file 'npm start' --always-on $alwaysOn --min-tls-version 1.2 --ftps-state Disabled -o none
 
 $webSettings = @(
   @{ name = 'NODE_ENV';                       value = 'production';   slotSetting = $false },
@@ -153,7 +168,7 @@ $webSettings = @(
   @{ name = 'SCM_DO_BUILD_DURING_DEPLOYMENT'; value = 'false';        slotSetting = $false }
 )
 $tmp = Write-JsonFile $webSettings
-try { Invoke-Az webapp config appsettings set -g $ResourceGroup -n $names.WebApp --settings "@$tmp" -o none }
+try { Invoke-AzRetry webapp config appsettings set -g $ResourceGroup -n $names.WebApp --settings "@$tmp" -o none }
 finally { Remove-Item $tmp -Force }
 
 # ---------------------------------------------------------------- functions
@@ -172,15 +187,12 @@ $fnSettings = @(
   @{ name = 'MONGODB_DB';           value = $mongoDb;             slotSetting = $false },
   @{ name = 'MONITOR_SCHEDULE';     value = '0 */30 * * * *';     slotSetting = $false },
   @{ name = 'PRICE_SYNC_SCHEDULE';  value = '0 20 10 * * *';      slotSetting = $false },
-  @{ name = 'PRICE_ALERTS';         value = 'true';               slotSetting = $false },
-  @{ name = 'PRICE_ALERT_MIN_PCT';  value = '25';                 slotSetting = $false },
-  @{ name = 'PRICE_ALERT_MIN_TIX';  value = '2';                  slotSetting = $false },
   @{ name = 'WATCH_ALERT_PCT';      value = '15';                 slotSetting = $false }
 )
 if ($tgToken) { $fnSettings += @{ name = 'TELEGRAM_BOT_TOKEN'; value = $tgToken; slotSetting = $false } }
 if ($tgChat)  { $fnSettings += @{ name = 'TELEGRAM_CHAT_ID';   value = $tgChat;  slotSetting = $false } }
 $tmp = Write-JsonFile $fnSettings
-try { Invoke-Az functionapp config appsettings set -g $ResourceGroup -n $names.FunctionApp --settings "@$tmp" -o none }
+try { Invoke-AzRetry functionapp config appsettings set -g $ResourceGroup -n $names.FunctionApp --settings "@$tmp" -o none }
 finally { Remove-Item $tmp -Force }
 
 # ---------------------------------------------------------------- GitHub -> Azure sign-in (OIDC)
@@ -255,8 +267,8 @@ $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------- summary
 
-$webHost = Invoke-Az webapp show -g $ResourceGroup -n $names.WebApp --query defaultHostName -o tsv
-$webIps  = Invoke-Az webapp show -g $ResourceGroup -n $names.WebApp --query possibleOutboundIpAddresses -o tsv
+$webHost = Invoke-AzRetry webapp show -g $ResourceGroup -n $names.WebApp --query defaultHostName -o tsv
+$webIps  = Invoke-AzRetry webapp show -g $ResourceGroup -n $names.WebApp --query possibleOutboundIpAddresses -o tsv
 
 Step 'Done'
 Write-Host "Website (after the first deploy):  https://$webHost"

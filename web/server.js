@@ -11,6 +11,8 @@ const { requireLogin } = require('./lib/auth');
 const authRoutes = require('./routes/auth');
 const mtgoRoutes = require('./routes/mtgo');
 const { router: listRoutes } = require('./routes/lists');
+const { router: cardRoutes } = require('./routes/card');
+const { router: tradeRoutes } = require('./routes/trades');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -37,7 +39,7 @@ async function main() {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
           styleSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:'],
+          imgSrc: ["'self'", 'data:', 'https://api.scryfall.com', 'https://cards.scryfall.io'], // card art
           formAction: ["'self'"],
           upgradeInsecureRequests: isProd ? [] : null,
         },
@@ -81,6 +83,8 @@ async function main() {
   app.get('/home', requireLogin, (req, res) => res.render('home', { title: 'Home' }));
   app.use('/mtgo', requireLogin, mtgoRoutes);
   app.use('/mtgo', requireLogin, listRoutes);
+  app.use('/mtgo', requireLogin, cardRoutes);
+  app.use('/mtgo', requireLogin, tradeRoutes);
 
   app.use((req, res) => res.status(404).render('error', { title: 'Not found', message: 'Page not found.' }));
   app.use((err, req, res, _next) => {

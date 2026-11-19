@@ -60,7 +60,7 @@
       <tbody>
       <% topByPrice.forEach((c, i) => { %>
         <tr>
-          <td><span class="rank"><%= i + 1 %></span><%= c.name %><% if (c.foil) { %> <span class="foil" title="Foil">✦</span><% } %></td>
+          <td><span class="rank"><%= i + 1 %></span><a class="cardlink" href="<%= fmt.cardUrl(c.name) %>"><%= c.name %></a><% if (c.foil) { %> <span class="foil" title="Foil">✦</span><% } %></td>
           <td><a href="<%= qs({ set: c.set, page: 1 }) %>" class="setcode"><%= c.set %></a></td>
           <td class="num"><%= fmt.tix(c.price) %></td>
           <td class="num"><%= c.qty %></td>
@@ -120,7 +120,7 @@
     <tbody>
     <% for (const c of list.rows) { %>
       <tr>
-        <td><%= c.name %><% if (c.foil) { %> <span class="foil" title="Foil">✦</span><% } %></td>
+        <td><a class="cardlink" href="<%= fmt.cardUrl(c.name) %>"><%= c.name %></a><% if (c.foil) { %> <span class="foil" title="Foil">✦</span><% } %></td>
         <td><span class="setcode"><%= c.set %></span><% if (c.collectorNumber) { %> <span class="muted small">#<%= c.collectorNumber %></span><% } %></td>
         <td class="small"><%= c.rarity %></td>
         <td class="num"><%= c.qty %></td>

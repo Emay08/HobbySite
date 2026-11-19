@@ -31,3 +31,28 @@ test('merges duplicate rows and handles missing ID column', () => {
 test('rejects files without required columns', () => {
   assert.throws(() => parseCollectionCsv('foo,bar\n1,2\n'), /Card Name/);
 });
+
+test('reads MTGO exports with missing line breaks and unescaped quotes', () => {
+  // Real MTGO export quirks: no line break after a name with an accent, quotes inside names not escaped
+  const csv =
+    'Card Name,Quantity,ID #,Rarity,Set,Collector #,Premium,Sideboarded,Annotation\r\n' +
+    '"Event Ticket",247,1,Common,ETK,,No,No,0\r\n' +
+    '"Márton Stromgald",1,28053,Rare,MED,104/195,No,No,0\r"Mystic Remora",1,28055,Uncommon,MED,42/195,No,No,0\r\n' +
+    '"Henzie "Toolbox" Torre",1,99789,Mythic Rare,PRM,/1158,No,No,0\r\n' +
+    '"Nazgûl",1,111681,Uncommon,LTR,332,Yes,No,0\r"Nazgûl",1,111683,Uncommon,LTR,333,Yes,No,0\r"Delighted Halfling",4,111702,Rare,LTR,402,No,No,0\r\n' +
+    '"Mystic Remora",2,28055,Uncommon,MED,42/195,No,Yes,0\r\n';
+  const { cards, rowCount } = parseCollectionCsv(Buffer.from(csv));
+  assert.strictEqual(rowCount, 8);
+  const by = (id) => cards.find((c) => c.mtgoId === id);
+  assert.strictEqual(by('28053').name, 'Márton Stromgald');
+  assert.strictEqual(by('28055').qty, 3); // main + sideboarded rows merged
+  assert.strictEqual(by('99789').name, 'Henzie "Toolbox" Torre');
+  assert.strictEqual(by('99789').rarity, 'Mythic Rare');
+  assert.strictEqual(by('111683').name, 'Nazgûl');
+  assert.strictEqual(by('111702').qty, 4);
+  assert.strictEqual(by('1').qty, 247);
+});
+
+test('gives a readable error for broken non-MTGO CSVs', () => {
+  assert.throws(() => parseCollectionCsv('name,count\n"a"b,1\n'), (e) => e.expose === true && /Couldn't read the CSV/.test(e.message));
+});

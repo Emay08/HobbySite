@@ -3,7 +3,7 @@
   <div>
     <p class="eyebrow">MTGO</p>
     <h1>Price targets</h1>
-    <p class="muted small lede">Set a buy target (price falls to or below) or a sell target (price rises to or above). You get a Telegram message the day a target is reached.</p>
+    <p class="muted small lede">Set a buy target (price falls to or below) or a sell target (price rises to or above). Checked daily after the price update; this page shows which have been reached and which are getting close.</p>
   </div>
   <div class="stat-inline">
     <span class="pill pill-hit"><%= hit.length %> hit</span>
@@ -63,7 +63,7 @@
          // progress toward the target: 100% = reached, 0% = 50%+ away
          const progress = d == null ? 0 : Math.max(0, Math.min(100, 100 - d * 2)); %>
       <tr>
-        <td><%= r.name %><% if (r.foil) { %> <span class="foil">✦</span><% } %> <span class="setcode"><%= r.set %></span><% if (r.owned) { %> <span class="tag">own <%= r.owned %></span><% } %></td>
+        <td><a class="cardlink" href="<%= fmt.cardUrl(r.name) %>"><%= r.name %></a><% if (r.foil) { %> <span class="foil">✦</span><% } %> <span class="setcode"><%= r.set %></span><% if (r.owned) { %> <span class="tag">own <%= r.owned %></span><% } %></td>
         <td><span class="goal goal-<%= r.direction %>"><%= r.direction === 'below' ? 'Buy ≤' : 'Sell ≥' %></span></td>
         <td class="num"><%= fmt.tix(r.target) %></td>
         <td class="num strong"><%= fmt.tix(r.price) %></td>

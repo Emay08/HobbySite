@@ -20,7 +20,10 @@ test('daily sync: prices, history, alerts', { skip: !URI && 'TEST_MONGODB_URI no
 
   process.env.TELEGRAM_BOT_TOKEN = 'TEST';
   process.env.TELEGRAM_CHAT_ID = '42';
-  process.env.PRICE_ALERTS = 'false';
+  // These alerts are off by default; this test switches them on to check they work.
+  process.env.NOTIFY_PRICE_TARGETS = 'true';
+  process.env.NOTIFY_SWAPS = 'true';
+  process.env.NOTIFY_SHORT_WATCH = 'true';
 
   let priceFile = { 1: 1, 90542: 41.5, 90543: 60, 99001: 30, 50000: 12.1 };
   const cardsFile = {
@@ -92,6 +95,15 @@ test('daily sync: prices, history, alerts', { skip: !URI && 'TEST_MONGODB_URI no
     sent.length = 0;
     await runDailySync(db, { log });
     assert.ok(sent.some((s) => /Price target reached/.test(s)));
+    // With the NOTIFY_* settings off (the default), the same changes send nothing
+    for (const k of ['NOTIFY_PRICE_TARGETS', 'NOTIFY_SWAPS', 'NOTIFY_SHORT_WATCH']) delete process.env[k];
+    priceFile = { ...priceFile, 90542: 45, 50000: 12.1 };
+    await runDailySync(db, { log });
+    priceFile = { ...priceFile, 90542: 30, 50000: 16 };
+    sent.length = 0;
+    await runDailySync(db, { log });
+    assert.deepStrictEqual(sent, []);
+    assert.strictEqual((await db.collection('targets').findOne({ mtgoId: '90542' })).hit, true); // website still updated
   } finally {
     global.fetch = realFetch;
     await db.dropDatabase();

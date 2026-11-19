@@ -5,7 +5,9 @@
   "description": "Personal site: login, landing page and MTGO collection manager",
   "main": "server.js",
   "type": "commonjs",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
@@ -22,6 +24,7 @@
     "express-rate-limit": "^7.4.1",
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
+    "linkedom": "^0.18.15",
     "mongodb": "^6.10.0",
     "multer": "^2.0.2"
   }

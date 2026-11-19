@@ -8,7 +8,8 @@ const alerts = require('./alerts');
  *   2. prices
  *   3. price history for tracked cards
  *   4. collection value snapshot
- *   5. alerts: price targets, version swaps, short-term watch list, collection movers
+ *   5. price targets / version swaps: update hit & ready flags for the website
+ *      (Telegram for these is off unless enabled with NOTIFY_* settings)
  */
 async function runDailySync(db, { log = console.log, sendAlerts = true } = {}) {
   try {
@@ -40,7 +41,8 @@ async function runDailySync(db, { log = console.log, sendAlerts = true } = {}) {
   await run('Price targets', () => alerts.checkTargets(db, map));
   await run('Version swaps', () => alerts.checkSwaps(db, map));
   await run('Short-term watch list', () => alerts.checkShortWatch(db, map));
-  if (String(process.env.PRICE_ALERTS).toLowerCase() === 'true') {
+  // Off unless NOTIFY_COLLECTION_MOVERS=true (PRICE_ALERTS is no longer used).
+  if (String(process.env.NOTIFY_COLLECTION_MOVERS).toLowerCase() === 'true') {
     await run('Collection movers', async () => {
       const movers = await prices.findMovers(db, {
         minPct: Number(process.env.PRICE_ALERT_MIN_PCT || 25),

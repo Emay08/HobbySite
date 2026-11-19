@@ -59,4 +59,9 @@ function pct(n, digits = 0) {
   return { text: s, cls: n > 0.05 ? 'up' : n < -0.05 ? 'down' : 'muted' };
 }
 
-module.exports = { tix, int, date, dateTime, ago, sparkline, pct };
+/** Link to a card's page. */
+function cardUrl(name) {
+  return `/mtgo/card/${encodeURIComponent(name || '')}`;
+}
+
+module.exports = { tix, int, date, dateTime, ago, sparkline, pct, cardUrl };

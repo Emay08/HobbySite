@@ -36,6 +36,31 @@ async function sendMessage(html, { disablePreview = false } = {}) {
   return data.result;
 }
 
+/**
+ * Sends a message that may be longer than Telegram's limit by splitting it on line
+ * breaks into several messages (never inside an HTML tag, since tags stay on one line).
+ */
+async function sendLong(html, opts = {}) {
+  const lines = String(html).split('\n');
+  const chunks = [];
+  let cur = '';
+  for (const line of lines) {
+    const piece = line.length > 3800 ? line.slice(0, 3790) + '…' : line;
+    if (cur && cur.length + piece.length + 1 > 3800) {
+      chunks.push(cur);
+      cur = '';
+    }
+    cur = cur ? `${cur}\n${piece}` : piece;
+  }
+  if (cur) chunks.push(cur);
+  const results = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const suffix = chunks.length > 1 ? `\n<i>(${i + 1}/${chunks.length})</i>` : '';
+    results.push(await sendMessage(chunks[i] + suffix, { disablePreview: true, ...opts }));
+  }
+  return results;
+}
+
 async function getUpdates() {
   const res = await fetch(`${API}/bot${process.env.TELEGRAM_BOT_TOKEN}/getUpdates`);
   const data = await res.json();
@@ -43,4 +68,4 @@ async function getUpdates() {
   return data.result;
 }
 
-module.exports = { sendMessage, getUpdates, escapeHtml, isConfigured };
+module.exports = { sendMessage, sendLong, getUpdates, escapeHtml, isConfigured };

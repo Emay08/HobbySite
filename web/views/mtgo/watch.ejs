@@ -5,7 +5,7 @@
     <p class="eyebrow">MTGO · Watch list</p>
     <h1><%= cfg.title %></h1>
     <p class="muted small lede">
-      <% if (isShort) { %>Cards you're tracking for quick moves — day and week changes, with a Telegram digest when a card moves more than its alert % in a day.<% } else { %>Cards you're tracking over months — 30/90-day trends and change since you added them. No phone alerts.<% } %>
+      <% if (isShort) { %>Cards you're tracking for quick moves — day and week changes. Rows are highlighted when a card moves more than its alert % in a day. Cards in your collection or watch lists that turn up in a Treasure Chest update or a reprint are added here automatically.<% } else { %>Cards you're tracking over months — 30/90-day trends and change since you added them. No phone alerts.<% } %>
     </p>
   </div>
   <a class="link" href="/mtgo/watch/<%= cfg.other %>"><%= isShort ? 'Long-term list →' : 'Short-term list →' %></a>
@@ -19,7 +19,7 @@
     <%- include('../partials/cardpicker', { pickerId: 'watch-card', label: 'Card' }) %>
     <% if (isShort) { %>
       <div>
-        <label for="alertPct">Alert at daily move ≥</label>
+        <label for="alertPct">Highlight daily move ≥</label>
         <div class="input-suffix"><input id="alertPct" name="alertPct" type="text" inputmode="decimal" placeholder="<%= defaultAlertPct %>"><span>%</span></div>
       </div>
     <% } %>
@@ -50,14 +50,17 @@
     </thead>
     <tbody>
     <% for (const r of rows) {
+         const limit = r.alertPct ?? defaultAlertPct;
+         const flagged = isShort && r.d1 != null && limit > 0 && Math.abs(r.d1) >= limit;
          const a = isShort ? fmt.pct(r.d1) : fmt.pct(r.d30);
          const b = isShort ? fmt.pct(r.d7) : fmt.pct(r.d90);
          const s = fmt.pct(r.sinceAdded); %>
-      <tr>
+      <tr class="<%= flagged ? 'row-alert' : '' %>">
         <td>
-          <%= r.name %><% if (r.foil) { %> <span class="foil" title="Foil">✦</span><% } %>
+          <% if (flagged) { %><span title="Moved more than <%= limit %>% today">⚡</span> <% } %><a class="cardlink" href="<%= fmt.cardUrl(r.name) %>"><%= r.name %></a><% if (r.foil) { %> <span class="foil" title="Foil">✦</span><% } %>
           <span class="setcode"><%= r.set %></span>
           <% if (r.owned) { %><span class="tag">own <%= r.owned %></span><% } %>
+          <% if (r.autoAdded) { %><span class="tag" title="Added automatically by the Treasure Chest / reprint watchers">auto</span><% } %>
         </td>
         <td class="num strong"><%= fmt.tix(r.price) %></td>
         <td class="num <%= a.cls %>"><%= a.text %></td>
@@ -68,7 +71,7 @@
         </td>
         <td><%- include('../partials/spark', { points: r.history }) %></td>
         <td class="small">
-          <% if (isShort) { %><span class="muted">alert ≥ <%= r.alertPct ?? defaultAlertPct %>%</span><% if (r.note) { %><br><% } %><% } %>
+          <% if (isShort) { %><span class="muted">highlight ≥ <%= limit %>%</span><% if (r.note) { %><br><% } %><% } %>
           <%= r.note %>
           <button type="button" class="link small" data-toggle="edit-<%= r._id %>">edit</button>
           <form id="edit-<%= r._id %>" method="post" action="/mtgo/watch/item/<%= r._id %>/note" class="inline-edit hidden">

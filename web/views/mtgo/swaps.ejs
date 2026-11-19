@@ -4,7 +4,7 @@
   <div>
     <p class="eyebrow">MTGO</p>
     <h1>Version swaps</h1>
-    <p class="muted small lede">Printings you'd rather own. When the version you want becomes cheaper than the one you have, you get a Telegram message. Set a minimum saving to ignore tiny differences.</p>
+    <p class="muted small lede">Printings you'd rather own. Swaps where the version you want is now cheaper than the one you have are marked <em>Swap now</em>. Set a minimum saving to ignore tiny differences.</p>
   </div>
   <div class="stat-inline"><span class="pill <%= ready ? 'pill-hit' : '' %>"><%= ready %> ready to swap</span></div>
 </div>
@@ -45,7 +45,7 @@
     <tbody>
     <% for (const r of rows) { %>
       <tr class="<%= r.good ? 'row-good' : '' %>">
-        <td class="strong"><%= r.ownedCard.name %><% if (r.qty > 1) { %> <span class="muted small">×<%= r.qty %></span><% } %></td>
+        <td class="strong"><a class="cardlink" href="<%= fmt.cardUrl(r.ownedCard.name) %>"><%= r.ownedCard.name %></a><% if (r.qty > 1) { %> <span class="muted small">×<%= r.qty %></span><% } %></td>
         <td>
           <span class="setcode"><%= r.ownedCard.set %></span><% if (r.ownedCard.foil) { %> <span class="foil">✦</span><% } %>
           <span class="num small block"><%= fmt.tix(r.ownedPrice) %></span>

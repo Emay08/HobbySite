@@ -5,6 +5,13 @@ const t = (n) => (n == null ? '—' : Number(n).toFixed(2));
 const label = (c) => `${e(c.name)}${c.foil ? ' ✦' : ''} (${e(c.set || '?')})`;
 const today = () => new Date().toISOString().slice(0, 10);
 
+/**
+ * Telegram for these alerts is OFF unless turned on with an app setting
+ * (NOTIFY_PRICE_TARGETS / NOTIFY_SWAPS / NOTIFY_SHORT_WATCH = true).
+ * The checks still run every day so the website shows hits, ready swaps, etc.
+ */
+const enabled = (name) => String(process.env[name] || '').toLowerCase() === 'true';
+
 /** Every MTGO ID referenced by a watch list, a price target or a version swap. */
 async function trackedIds(db) {
   const [w, tg, s] = await Promise.all([
@@ -58,7 +65,7 @@ async function checkTargets(db, priceMap) {
     }
     await coll.updateOne({ _id: tg._id }, { $set: set });
   }
-  if (hits.length) {
+  if (hits.length && enabled('NOTIFY_PRICE_TARGETS')) {
     const lines = hits.map(
       (h) => `${h.direction === 'above' ? '📈 Sell' : '🛒 Buy'} ${label(h)} — now <b>${t(h.price)}</b> (target ${h.direction === 'above' ? '≥' : '≤'} ${t(h.target)})`
     );
@@ -91,7 +98,7 @@ async function checkSwaps(db, priceMap) {
     }
     await coll.updateOne({ _id: s._id }, { $set: set });
   }
-  if (opened.length) {
+  if (opened.length && enabled('NOTIFY_SWAPS')) {
     const lines = opened.map(
       (s) =>
         `🔁 ${label(s.ownedCard)} <b>${t(s.owned)}</b>\n   → ${label(s.wantedCard)} <b>${t(s.wanted)}</b>  (save ${t(s.saving)} tix${s.qty > 1 ? ` each, ×${s.qty}` : ''})`
@@ -103,6 +110,7 @@ async function checkSwaps(db, priceMap) {
 
 /** Short-term watch list: daily digest of items that moved more than their alert threshold. */
 async function checkShortWatch(db, priceMap) {
+  if (!enabled('NOTIFY_SHORT_WATCH')) return 0;
   const defaultPct = Number(process.env.WATCH_ALERT_PCT || 15);
   const items = await db.collection('watchlist').find({ list: 'short' }).toArray();
   if (!items.length) return 0;

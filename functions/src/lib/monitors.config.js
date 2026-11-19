@@ -35,9 +35,11 @@
 const REPRINT = /\b(reprint(?:ed|s|ing)?|remaster(?:ed)?|masters|anthology|vintage cube|legacy cube|cube|horizons|flashback draft|special guest|mystery booster|spotlight)\b/i;
 const TREASURE_CHEST = /treasure chest/i;
 
+// Telegram is reserved for the dedicated Treasure Chest and reprint watchers
+// (treasureChest.js, spoilers.js), so these news monitors only feed the website.
 const sharedRules = [
-  { match: TREASURE_CHEST, category: 'treasure-chest', notify: true },
-  { match: REPRINT, category: 'reprint', notify: true },
+  { match: TREASURE_CHEST, category: 'treasure-chest', notify: false },
+  { match: REPRINT, category: 'reprint', notify: false },
 ];
 
 module.exports = [
@@ -76,6 +78,6 @@ module.exports = [
     url: 'https://www.mtgo.com/en/mtgo/ (replace me)',
     contentSelector: 'main',
     rules: sharedRules,
-    default: { category: 'news', notify: true, keep: true },
+    default: { category: 'news', notify: false, keep: true },
   },
 ];

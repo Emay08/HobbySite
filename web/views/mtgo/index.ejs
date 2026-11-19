@@ -68,6 +68,19 @@
               <div>
                 <strong><%= m.label || m._id %></strong>
                 <span class="muted small">checked <%= fmt.ago(m.lastChecked) %></span>
+                <% if (m._id === 'treasure-chest') { %>
+                  <% if (m.nextUpdateText) { %><span class="muted small">Next update: <%= m.nextUpdateText %></span><% } %>
+                  <span class="muted small">
+                    <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
+                    <% } else if (m.windowStart) { %>daily until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else { %>hourly (update date unknown)<% } %>
+                  </span>
+                  <% if (m.lastStatus === 'stale') { %><span class="error small">Last update: CHANGELIST not updated</span><% } %>
+                  <% if (m.lastStatus === 'mismatch') { %><span class="error small">Last update: CHANGELIST doesn't match the slot tables</span><% } %>
+                <% } %>
+                <% if (m._id === 'spoilers' && m.pages) { %>
+                  <span class="muted small"><%= m.pages.length %> pages · hourly 8 am–8 pm</span>
+                <% } %>
                 <% if (m.lastError) { %><span class="error small"><%= m.lastError %></span><% } %>
               </div>
             </li>

@@ -24,7 +24,7 @@ test('extracts news links and resolves relative URLs', () => {
 test('classifies treasure chest from article body and reprints from title', () => {
   const tc = classify(mtgoNews, 'Magic Online Announcements', 'Blah. The Treasure Chest will be updated on November 25 with new cards. More.');
   assert.strictEqual(tc.category, 'treasure-chest');
-  assert.strictEqual(tc.notify, true);
+  assert.strictEqual(tc.notify, false); // Telegram is reserved for the dedicated watchers
   assert.match(tc.snippet, /Treasure Chest will be updated/);
 
   const rp = classify(mtgoNews, 'Vintage Cube Returns!');

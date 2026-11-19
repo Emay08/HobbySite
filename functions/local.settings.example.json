@@ -13,10 +13,11 @@
     "MONITOR_SCHEDULE": "0 */30 * * * *",
     "PRICE_SYNC_SCHEDULE": "0 20 10 * * *",
 
-    "PRICE_ALERTS": "true",
-    "PRICE_ALERT_MIN_PCT": "25",
-    "PRICE_ALERT_MIN_TIX": "2",
     "WATCH_ALERT_PCT": "15",
+    "NOTIFY_PRICE_TARGETS": "false",
+    "NOTIFY_SWAPS": "false",
+    "NOTIFY_SHORT_WATCH": "false",
+    "NOTIFY_COLLECTION_MOVERS": "false",
 
     "GOATBOTS_PRICES_URL": "https://www.goatbots.com/download/price-history.zip",
     "GOATBOTS_CARDS_URL": "https://www.goatbots.com/download/card-definitions.zip"
