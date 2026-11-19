@@ -1,6 +1,6 @@
 <%- include('../partials/head') %>
 <div class="card-head">
-  <img class="card-art" src="<%= links.scryfallImage %>" alt="<%= name %>" loading="lazy" referrerpolicy="no-referrer">
+  <img class="card-art" id="card-art" src="<%= links.scryfallImage %>" data-preview="<%= links.scryfallLarge %>" alt="<%= name %>" referrerpolicy="no-referrer">
   <div class="card-head-main">
     <p class="eyebrow">MTGO · Card</p>
     <h1><%= name %></h1>
@@ -51,10 +51,14 @@
     </thead>
     <tbody>
     <% for (const v of versions) { const d = fmt.pct(v.d1); %>
-      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>" class="<%= v.qty ? 'row-owned' : '' %>">
-        <td>
-          <span class="setcode"><%= v.set %></span><% if (v.foil) { %> <span class="foil">✦</span><% } %>
-          <span class="muted small"><%= v.rarity %> · #<%= v.mtgoId %></span>
+      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>" data-img="<%= v.img.normal %>" data-large="<%= v.img.large %>"
+          class="version-row <%= v.qty ? 'row-owned' : '' %> <%= v.mtgoId === links.imageVersion ? 'selected' : '' %>" title="Show this version's image">
+        <td class="version-cell">
+          <% if (v.img.small) { %><img class="ver-thumb" src="<%= v.img.small %>" data-preview="<%= v.img.large %>" alt="" loading="lazy" referrerpolicy="no-referrer"><% } else { %><span class="ver-thumb ver-thumb-none" data-preview="<%= v.img.large %>"></span><% } %>
+          <span class="ver-text">
+            <span><span class="setcode"><%= v.set %></span><% if (v.foil) { %> <span class="foil">✦ foil</span><% } %> <%= v.label || '' %></span>
+            <span class="muted small block"><%= v.rarity %><%= v.collector ? ' · #' + v.collector : '' %> · MTGO <%= v.mtgoId %></span>
+          </span>
           <% for (const t of v.targets) { %><a class="tag" href="/mtgo/targets" title="Price target">🎯 <%= t.direction === 'below' ? '≤' : '≥' %> <%= t.target %></a><% } %>
         </td>
         <td class="num strong"><%= v.qty || '' %></td>

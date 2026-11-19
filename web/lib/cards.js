@@ -1,4 +1,5 @@
 const { getDb } = require('./db');
+const scryfall = require('./scryfall');
 
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const isoDaysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
@@ -32,10 +33,18 @@ async function search({ q = '', name = '', ownedOnly = false, limit = 25 }) {
   }
 
   const ids = rows.map((r) => r.mtgoId);
-  const [priceMap, ownedMap] = await Promise.all([getPrices(ids), getOwned(ids)]);
+  // versions of one card (picker step 2): add Scryfall's label + images to tell them apart
+  const [priceMap, ownedMap, info] = await Promise.all([getPrices(ids), getOwned(ids), name ? scryfall.versionInfo(db, ids) : new Map()]);
   for (const r of rows) {
     r.price = priceMap.get(r.mtgoId) ?? null;
     r.owned = ownedMap.get(r.mtgoId) || 0;
+    if (name) {
+      const i = info.get(r.mtgoId);
+      r.label = i ? i.label : '';
+      r.collector = i ? i.collector : '';
+      r.imgSmall = (i && i.img.small) || null;
+      r.imgLarge = (i && i.img.large) || scryfall.fallbackImage(r.mtgoId, 'large');
+    }
   }
 
   // Rank: exact name, then name starts with query, then owned, then price

@@ -49,6 +49,7 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
       SESSION_SECRET: 'test-secret',
       NODE_ENV: 'test',
       VENDOR_LIVE_DISABLED: '1',
+      SCRYFALL_DISABLED: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

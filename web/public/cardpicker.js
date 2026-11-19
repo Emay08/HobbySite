@@ -99,10 +99,13 @@
         list.append(el('li', 'picker-empty', input.value.trim().length < 2 && !api.printingsName ? 'Type at least 2 letters' : 'No matches'));
       }
       results.forEach((c, i) => {
+        const thumb = c.imgSmall ? Object.assign(el('img', 'ver-thumb'), { src: c.imgSmall, alt: '', loading: 'lazy', referrerPolicy: 'no-referrer' }) : el('span', 'ver-thumb ver-thumb-none');
         const li = el(
           'li',
-          'picker-option',
-          el('span', 'po-name', c.name, c.foil ? el('span', 'foil', ' ✦') : ''),
+          'picker-option' + (c.label !== undefined ? ' picker-version' : ''),
+          c.label !== undefined
+            ? el('span', 'po-name', thumb, el('span', '', c.foil ? el('span', 'foil', '✦ ') : '', c.label || c.name, c.collector ? el('span', 'muted small', ` #${c.collector}`) : ''))
+            : el('span', 'po-name', c.name, c.foil ? el('span', 'foil', ' ✦') : ''),
           el('span', 'setcode', c.set || '?'),
           el('span', 'po-owned muted small', c.owned ? `own ${c.owned}` : ''),
           el('span', 'po-price num', fmt(c.price))
@@ -113,6 +116,7 @@
           choose(c);
         });
         li.dataset.index = i;
+        if (c.imgLarge) li.dataset.preview = c.imgLarge; // hover shows the card (cardpreview.js)
         li.addEventListener('mouseenter', () => setActive(i));
         list.append(li);
       });

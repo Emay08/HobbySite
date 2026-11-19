@@ -58,6 +58,7 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
       SESSION_SECRET: 'test-secret',
       NODE_ENV: 'test',
       VENDOR_LIVE_DISABLED: '1',
+      SCRYFALL_DISABLED: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -216,6 +217,18 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
   assert.deepEqual((await r.json()).map((x) => x.name), ['Grim Monolith']);
   r = await req('/mtgo/api/suggest?q=mox&owned=1');
   assert.deepEqual(await r.json(), []);
+
+  // version labels + images from (cached) Scryfall details; owned version is shown first
+  await db.collection('scryfall_cards').insertOne({ _id: '60000', fetchedAt: new Date(), info: { label: 'Borderless · Showcase', collector: '365', setName: 'Urza', img: { small: 'https://cards.scryfall.io/small/x.jpg', normal: 'https://cards.scryfall.io/normal/x.jpg', large: 'https://cards.scryfall.io/large/x.jpg' } } });
+  {
+    const page = await html(`/mtgo/card/${encodeURIComponent('Grim Monolith')}`);
+    assert.match(page, /Borderless · Showcase/);
+    assert.match(page, /id="card-art" src="https:\/\/cards\.scryfall\.io\/normal\/x\.jpg" data-preview="https:\/\/cards\.scryfall\.io\/large\/x\.jpg"/);
+    assert.match(page, /class="version-row row-owned selected"/);
+    const versions = await (await req(`/mtgo/api/cards?name=${encodeURIComponent('Grim Monolith')}`)).json();
+    assert.equal(versions[0].label, 'Borderless · Showcase');
+    assert.equal(versions[0].imgLarge, 'https://cards.scryfall.io/large/x.jpg');
+  }
 
   // static links carry a content version so browsers refetch after deploys
   assert.match(await html('/mtgo/tc'), /\/static\/style\.css\?v=[0-9a-f]{10}/);

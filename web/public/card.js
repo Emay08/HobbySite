@@ -113,3 +113,18 @@
     status.textContent = `Live prices from ${time}${data.cached ? ' (cached)' : ''}.` + (problems.length ? ' ' + problems.join(' · ') : '') + ' Best offers are highlighted.';
   }
 })();
+
+// Clicking a version shows its image at the top of the page.
+(function () {
+  const art = document.getElementById('card-art');
+  if (!art) return;
+  document.querySelectorAll('tr.version-row').forEach((tr) => {
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('form, button, a, input')) return; // watch buttons etc. keep working
+      art.src = tr.dataset.img;
+      art.dataset.preview = tr.dataset.large;
+      document.querySelectorAll('tr.version-row.selected').forEach((r) => r.classList.remove('selected'));
+      tr.classList.add('selected');
+    });
+  });
+})();

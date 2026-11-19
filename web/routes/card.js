@@ -6,6 +6,7 @@ const vendors = require('../lib/vendors');
 const { reconcile, localDate } = require('../lib/reconcile');
 const search = require('../lib/search');
 const tcHistory = require('../lib/tcHistory');
+const scryfall = require('../lib/scryfall');
 const sheet = require('../lib/sheetTrades');
 
 const router = express.Router();
@@ -18,6 +19,19 @@ const num = (v, { min = -Infinity, max = Infinity } = {}) => {
 };
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const cardPath = (name) => `/mtgo/card/${encodeURIComponent(name)}`;
+
+/** Label, collector number and images for one version (Scryfall's, or its image redirect). */
+function versionLook(mtgoId, i) {
+  return {
+    label: i ? i.label : '',
+    collector: i ? i.collector : '',
+    img: {
+      small: (i && i.img.small) || null,
+      normal: (i && i.img.normal) || scryfall.fallbackImage(mtgoId, 'normal'),
+      large: (i && i.img.large) || scryfall.fallbackImage(mtgoId, 'large'),
+    },
+  };
+}
 
 /** Every MTGO version of a card name, with your quantities, daily prices and list memberships. */
 async function loadVersions(name) {
@@ -36,7 +50,7 @@ async function loadVersions(name) {
     if (o.mtgoId && !byId.has(o.mtgoId)) byId.set(o.mtgoId, { mtgoId: o.mtgoId, name: o.name, set: o.set, foil: !!o.foil, rarity: o.rarity || '' });
   }
   const ids = [...byId.keys()];
-  const [prices, history] = await Promise.all([cards.getPrices(ids), cards.getHistory(ids, 90)]);
+  const [prices, history, info] = await Promise.all([cards.getPrices(ids), cards.getHistory(ids, 90), scryfall.versionInfo(db, ids)]);
 
   const ownedById = new Map(owned.filter((o) => o.mtgoId).map((o) => [o.mtgoId, o.qty]));
   const versions = [...byId.values()].map((v) => {
@@ -49,6 +63,7 @@ async function loadVersions(name) {
       lists: watch.filter((w) => w.mtgoId === v.mtgoId).map((w) => w.list),
       targets: targets.filter((t) => t.mtgoId === v.mtgoId),
       history: history.get(v.mtgoId) || [],
+      ...versionLook(v.mtgoId, info.get(v.mtgoId)),
     };
   });
   versions.sort((a, b) => (b.qty > 0) - (a.qty > 0) || (b.price ?? -1) - (a.price ?? -1) || a.set.localeCompare(b.set) || a.foil - b.foil);
@@ -101,7 +116,10 @@ router.get('/card/:name', async (req, res, next) => {
         goatbots: vendors.goatbotsUrl(displayName),
         cardhoarder: `https://www.cardhoarder.com/cards?cardname=${encodeURIComponent(`"${displayName}"`)}`,
         dojo: 'https://www.dojotradebots.com/mtgoPrices',
-        scryfallImage: `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(displayName)}&format=image&version=normal`,
+        // an owned version's image if you have one (versions are sorted owned-first)
+        scryfallImage: versions.length ? versions[0].img.normal : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(displayName)}&format=image&version=normal`,
+        scryfallLarge: versions.length ? versions[0].img.large : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(displayName)}&format=image&version=large`,
+        imageVersion: versions.length ? versions[0].mtgoId : null,
       },
       today: new Date().toISOString().slice(0, 10),
       livePricesEnabled: process.env.VENDOR_LIVE_DISABLED !== '1',
@@ -235,4 +253,4 @@ router.post('/card/:name/trades/:id/delete', async (req, res, next) => {
   }
 });
 
-module.exports = { router, loadVersions, cardPath };
+module.exports = { versionLook, router, loadVersions, cardPath };

@@ -116,7 +116,7 @@ Items move between the short- and long-term lists with one click. Charts start f
 ### Card pages
 Click any card name (collection, watch lists, targets, swaps) to open its page:
 
-- **Your versions**: quantity, value, and what Cardhoarder and Dojo would pay you right now.
+- **Images and versions**: the image at the top is a version you own (if any); click any row in *All versions* to show that version instead. Hover any card image or version thumbnail (also in the watch-list / target / swap pickers) to see it full size next to the mouse. Each version is labelled from Scryfall — *Regular*, *Borderless · Showcase*, *Extended art*, *Retro frame*… plus its collector number — looked up by MTGO ID (one request per card, cached 30 days in `scryfall_cards`).
 - **All versions** on MTGO with: GoatBots' daily price (last night's average sell price, with 1-day change and a 90-day chart for tracked versions); **live** Cardhoarder and Dojo sell / buy prices and stock; the best offer in each row highlighted; *Short* / *Long* buttons to add or remove that version from either watch list.
 - **Trade history**: a log you fill in (bought / sold, version, quantity, tix each, with whom) with totals, plus the quantity changes recorded by each collection upload.
 
