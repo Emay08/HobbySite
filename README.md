@@ -244,7 +244,15 @@ Then:
    npm run monitors:run               # seed monitors (first run never notifies)
    ```
 
-To use your own domain later: App Service → *Custom domains* → add the domain plus a free managed certificate.
+### Your own domain (ericmay.org) via Cloudflare
+
+The free App Service plan can't take a custom domain, so a **Cloudflare Worker** serves the site at ericmay.org: it forwards every request to `hobbysite-6xrma0.azurewebsites.net` and passes the answer back. Cloudflare provides HTTPS. Code: `deploy/cloudflare-worker.js`.
+
+- Worker settings: `ORIGIN_HOST` = `hobbysite-6xrma0.azurewebsites.net` (text), `PROXY_SECRET` (secret).
+- App Service settings: `PUBLIC_HOST` = `ericmay.org`, `PROXY_SECRET` = the same value.
+- With both App Service settings set, the site only trusts requests that carry the secret (so the visitor's real IP is used for the login limit), and redirects anyone opening the azurewebsites.net address to ericmay.org — except `/healthz`, which the deploy workflow checks. Remove either setting to switch this off.
+
+If you move to a paid plan (Basic B1) later, you can instead add the domain under App Service → *Custom domains* with a free managed certificate, and delete the Worker.
 
 Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 
@@ -264,6 +272,8 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 | `DISPLAY_TIMEZONE` | no | default `America/Vancouver` |
 | `WATCH_ALERT_PCT` | no | default alert % shown on the short-term list; keep in step with the functions setting |
 | `VENDOR_LIVE_DISABLED` | no | `1` turns off live Cardhoarder / Dojo lookups on card pages |
+| `PUBLIC_HOST` / `PROXY_SECRET` | no | custom domain through the Cloudflare Worker (see *Your own domain*) |
+| `SCRYFALL_DISABLED` | no | `1` stops Scryfall lookups (used by the tests) |
 
 **functions** (`local.settings.json` / Function App settings)
 

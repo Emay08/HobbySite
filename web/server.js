@@ -40,6 +40,8 @@ async function main() {
   app.set('view engine', 'ejs');
   app.set('views', path.join(__dirname, 'views'));
   if (isProd) app.set('trust proxy', 1); // Azure App Service terminates TLS
+  // custom domain via the Cloudflare Worker (no-op unless PUBLIC_HOST + PROXY_SECRET are set)
+  app.use(require('./lib/proxy').proxyMiddleware());
   app.locals.fmt = require('./lib/format');
 
   app.use(

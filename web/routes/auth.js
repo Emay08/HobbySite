@@ -9,6 +9,8 @@ const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
+  // behind the Cloudflare Worker every request comes from Cloudflare; count per real visitor
+  keyGenerator: (req) => req.clientIp || req.ip,
   handler: (req, res) =>
     res.status(429).render('login', {
       title: 'Sign in',
