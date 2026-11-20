@@ -81,9 +81,20 @@
                 <% if (m._id === 'reprints') { %>
                   <span class="muted small"><% if (m.printings != null) { %><%= m.printings %> recent reprint printings · <% } %>hourly 8 am–8 pm</span>
                 <% } %>
-                <% if (m._id === 'banlist') { %><span class="muted small">"Banned" announcements only · every 30 min</span><% } %>
+                <% if (m._id === 'banlist') { %>
+                  <% if (m.nextAnnouncementText) { %><span class="muted small">Next announcement: <%= m.nextAnnouncementText %></span><% } %>
+                  <span class="muted small">"Banned" titles only ·
+                    <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
+                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else { %>hourly (next date unknown)<% } %>
+                  </span>
+                <% } %>
                 <% if (m._id === 'reward-packs') { %>
-                  <span class="muted small"><% if (m.cards) { %><%= m.cards %> cards · <% } %><% if (m.lastUpdatedText) { %>updated <%= m.lastUpdatedText %> · <% } %>every 6 hours</span>
+                  <span class="muted small"><% if (m.cards) { %><%= m.cards %> cards · <% } %><% if (m.lastUpdatedText) { %>updated <%= m.lastUpdatedText %> · <% } %>
+                    <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
+                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else { %>every 6 hours<% } %>
+                  </span>
                 <% } %>
                 <% if (m.lastError) { %><span class="error small"><%= m.lastError %></span><% } %>
               </div>

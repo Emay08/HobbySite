@@ -11,6 +11,8 @@
     "start": "func start",
     "monitors:dry-run": "node scripts/run-monitors.js --dry-run",
     "monitors:run": "node scripts/run-monitors.js",
+    "banlist:dry-run": "node scripts/run-monitors.js --dry-run",
+    "banlist:run": "node scripts/run-monitors.js",
     "prices:run": "node scripts/run-price-sync.js",
     "telegram:test": "node scripts/test-telegram.js",
     "telegram:chat-id": "node scripts/get-chat-id.js",

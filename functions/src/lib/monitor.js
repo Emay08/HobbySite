@@ -81,8 +81,8 @@ function extractPageText(html, monitor) {
   return clean(text);
 }
 
-async function fetchArticleText(url) {
-  const html = await fetchText(url);
+async function fetchArticleText(url, fetcher = fetchText) {
+  const html = await fetcher(url);
   const $ = cheerio.load(html);
   $('script,style,noscript,svg,iframe,nav,header,footer').remove();
   return clean($('article').text() || $('main').text() || $('body').text()).slice(0, 20000);
@@ -125,14 +125,13 @@ function snippetAround(text, re, radius = 160) {
  * would get one message per existing article), but items are still saved so the
  * website has something to show.
  */
-async function runMonitor(db, monitor, { dryRun = false, log = console.log } = {}) {
+async function runMonitor(db, monitor, { dryRun = false, log = console.log, fetcher = fetchText, now = new Date() } = {}) {
   const stateColl = db ? db.collection('monitor_state') : null;
   const state = (stateColl && (await stateColl.findOne({ _id: monitor.id }))) || { seen: [] };
   const firstRun = !state.lastChecked;
   const seen = new Set(state.seen || []);
-  const now = new Date();
 
-  const raw = await fetchText(monitor.url);
+  const raw = await fetcher(monitor.url);
   let candidates = [];
   let newPageHash = null;
 
@@ -160,7 +159,7 @@ async function runMonitor(db, monitor, { dryRun = false, log = console.log } = {
     let body = item.body || '';
     if (monitor.follow && item.url && monitor.follow.titlePattern.test(item.title)) {
       try {
-        body = await fetchArticleText(item.url);
+        body = await fetchArticleText(item.url, fetcher);
       } catch (err) {
         log(`  could not fetch article ${item.url}: ${err.message}`);
       }
@@ -175,7 +174,7 @@ async function runMonitor(db, monitor, { dryRun = false, log = console.log } = {
   if (dryRun) {
     for (const r of kept) log(`  [${r.category}${r.notify ? ', notify' : ''}] ${r.item.title}\n      ${r.item.url}`);
     if (candidates.length === 0) log('  ⚠ nothing extracted — check itemSelector / hrefPattern, or whether the page needs JavaScript');
-    return { monitor: monitor.id, extracted: candidates.length, fresh: fresh.length, kept: kept.length, notified: 0 };
+    return { monitor: monitor.id, extracted: candidates.length, fresh: fresh.length, kept: kept.length, notified: 0, items: kept.map((r) => r.item) };
   }
 
   const highlights = db.collection('highlights');
@@ -236,7 +235,7 @@ async function runMonitor(db, monitor, { dryRun = false, log = console.log } = {
     { upsert: true }
   );
 
-  return { monitor: monitor.id, extracted: candidates.length, fresh: fresh.length, kept: kept.length, notified, firstRun };
+  return { monitor: monitor.id, extracted: candidates.length, fresh: fresh.length, kept: kept.length, notified, firstRun, items: kept.map((r) => r.item) };
 }
 
 async function recordError(db, monitor, err) {
@@ -247,4 +246,4 @@ async function recordError(db, monitor, err) {
   );
 }
 
-module.exports = { runMonitor, recordError, extractLinks, extractRss, classify, snippetAround };
+module.exports = { runMonitor, recordError, extractLinks, extractRss, classify, snippetAround, fetchText, fetchArticleText };

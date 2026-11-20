@@ -2,8 +2,14 @@
  * Player Reward Pack contents (https://www.mtgo.com/player-rewards).
  *
  * The page has the same layout as the Treasure Chest page: a "Last Updated" line and a
- * "Card Name | Set | Treatment | Slots" table, so it's read with the same parser. Checked
- * every 6 hours (the contents change about once a month). When the table changes, the
+ * "Card Name | Set | Treatment | Slots" table, so it's read with the same parser.
+ *
+ * Reward periods start on the 1st of each month at 8 am PT, and the contents usually change
+ * then (November's list is dated November 2). So, on the 30-second tick: every tick from
+ * PRP_WINDOW_DAYS_BEFORE (7) days before the 1st until the page changes (or
+ * PRP_WINDOW_DAYS_AFTER (7) days after, if it's late); every PRP_IDLE_HOURS (6) otherwise.
+ *
+ * When the table changes, the
  * added and removed cards are saved as a highlight and sent by Telegram (NOTIFY_REWARD_PACKS
  * = false turns the message off); added cards you own or watch are put on the short-term
  * watch list. Every version of the contents is kept in `prp_snapshots`.
@@ -16,11 +22,31 @@ const { parseTreasureChest, cardKey } = require('./tcParse');
 const telegram = require('./telegram');
 const names = require('./names');
 const { recordFailure, successFields } = require('./health');
+const { plan, DAY } = require('./cadence');
+const { zonedToUtc, zonedParts, parseNextUpdate } = require('./time');
 
 const URL = 'https://www.mtgo.com/player-rewards';
 const STATE_ID = 'reward-packs';
 const LABEL = 'Player Reward Packs';
-const INTERVAL = 6 * 3600000;
+
+const cfg = () => ({
+  daysBefore: Number(process.env.PRP_WINDOW_DAYS_BEFORE || 7),
+  daysAfter: Number(process.env.PRP_WINDOW_DAYS_AFTER || 7),
+  idleHours: Number(process.env.PRP_IDLE_HOURS || 6),
+});
+
+/** 8 am PT on the 1st of this month and of next month. */
+function periodStarts(now) {
+  const { year, month } = zonedParts(now);
+  const next = month === 12 ? [year + 1, 1] : [year, month + 1];
+  return [zonedToUtc(year, month, 1, 8, 0), zonedToUtc(next[0], next[1], 1, 8, 0)];
+}
+
+/** The window for a period is over once the contents have changed since it opened. */
+function schedule(state, now = new Date(), c = cfg()) {
+  const since = state && state.contentsSince ? new Date(state.contentsSince) : null;
+  return plan({ state, now, targets: periodStarts(now), done: (t, start) => !!since && since >= start, ...c });
+}
 
 const sha1 = (s) => crypto.createHash('sha1').update(s).digest('hex');
 
@@ -62,10 +88,16 @@ function diff(before, after) {
 
 const version = (c) => `${c.set}${c.treatment ? ` ${c.treatment}` : ''}`;
 
+function modeFields(state, contentsSince, now) {
+  const after = schedule({ ...state, contentsSince, lastSuccess: now, lastAttempt: now }, now);
+  return { mode: after.mode, windowStart: after.mode === 'watching' ? null : after.windowStart };
+}
+
 async function runRewardPacks(db, { now = new Date(), force = false, fetcher = fetchPage, notify = true, log = () => {} } = {}) {
   const stateColl = db.collection('monitor_state');
   const state = (await stateColl.findOne({ _id: STATE_ID })) || {};
-  if (!force && state.lastAttempt && now - new Date(state.lastAttempt) < INTERVAL) return { skipped: 'checked less than 6 hours ago' };
+  const p = schedule(state, now);
+  if (!force && !p.due) return { skipped: true, mode: p.mode };
   if (notify) await stateColl.updateOne({ _id: STATE_ID }, { $set: { label: LABEL, url: URL, lastAttempt: now } }, { upsert: true });
 
   try {
@@ -74,6 +106,11 @@ async function runRewardPacks(db, { now = new Date(), force = false, fetcher = f
     const prev = await snaps.find().sort({ takenAt: -1 }).limit(1).next();
     const sig = sha1(JSON.stringify(page.cards.map((c) => [cardKey(c), c.slots]).sort()));
     let result = { firstRun: !prev, changed: false, added: [], removed: [], notified: false, autoAdded: [] };
+    // When the current contents started: the page's own date, or when we saw them change
+    const pageDate = parseNextUpdate(page.lastUpdatedText, new Date(now.getTime() - 400 * DAY));
+    let contentsSince = state.contentsSince ? new Date(state.contentsSince) : null;
+    if (pageDate && pageDate <= now && (!contentsSince || pageDate > contentsSince)) contentsSince = pageDate;
+    if (prev && prev.sig !== sig) contentsSince = now;
 
     if (!prev || prev.sig !== sig) {
       if (notify) await snaps.insertOne({ takenAt: now, sig, ...page });
@@ -130,15 +167,15 @@ async function runRewardPacks(db, { now = new Date(), force = false, fetcher = f
     if (notify) {
       await stateColl.updateOne(
         { _id: STATE_ID },
-        { $set: { label: LABEL, url: URL, lastChecked: now, cards: page.cards.length, lastUpdatedText: page.lastUpdatedText, ...successFields(now) } },
+        { $set: { label: LABEL, url: URL, lastChecked: now, cards: page.cards.length, lastUpdatedText: page.lastUpdatedText, contentsSince, ...successFields(now), ...modeFields(state, contentsSince, now) } },
         { upsert: true }
       );
     }
     return { ...result, cards: page.cards.length };
   } catch (err) {
-    if (notify) await recordFailure(db, STATE_ID, LABEL, err, { now, afterMs: 24 * 3600000 });
+    if (notify) await recordFailure(db, STATE_ID, LABEL, err, { now, afterMs: p.mode === 'watching' ? 30 * 60000 : 24 * 3600000 });
     throw err;
   }
 }
 
-module.exports = { runRewardPacks, parseRewards, diff, URL, STATE_ID };
+module.exports = { runRewardPacks, parseRewards, diff, schedule, periodStarts, URL, STATE_ID };

@@ -10,7 +10,6 @@
     "TELEGRAM_BOT_TOKEN": "123456789:AA...from-BotFather",
     "TELEGRAM_CHAT_ID": "123456789",
 
-    "MONITOR_SCHEDULE": "0 */30 * * * *",
     "PRICE_SYNC_SCHEDULE": "0 20 10 * * *",
 
     "WATCH_ALERT_PCT": "15",

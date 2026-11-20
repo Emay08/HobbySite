@@ -8,10 +8,12 @@ mtgo-manager/
 │                login → landing page → MTGO manager (highlights, collection browser, CSV upload)
 │                                     → Show Order (dance recital running-order planner)
 └── functions/   Azure Functions app (timer triggers)
-                 treasureChest – Treasure Chest page: every 30 s near an update, daily otherwise  → Telegram
+                 watchers      – one 30-second tick; each page is checked every tick near its
+                                 expected update, lazily otherwise:                               → Telegram
+                                   Treasure Chest (window around "Next Update", daily otherwise)
+                                   Banlist (window around "Next announcement", every 6 h otherwise)
+                                   Player Reward Packs (window around the 1st, every 6 h otherwise)
                  spoilerWatch  – Scryfall, hourly 8 am–8 pm PT: reprints of your cards           → Telegram
-                 siteMonitor   – every 30 min: Wizards "Banned" announcements                    → Telegram
-                                 + Player Reward Pack contents (every 6 h)                      → Telegram
                  priceSync     – daily: GoatBots cards + prices → value history, tracked-card history,
                                  target / swap status for the website
 ```
@@ -35,7 +37,7 @@ mtgo-manager/
 | `monitor_state` | functions            | Each watcher's state: last run, last error, schedule |
 | `tc_snapshots`  | functions/treasureChest | Parsed copies of the Treasure Chest page (last 30 changes) |
 | `reprint_seen`  | functions/spoilerWatch  | Scryfall printing IDs the reprint watch has already looked at |
-| `prp_snapshots` | functions/siteMonitor   | Every version of the Player Reward Pack contents |
+| `prp_snapshots` | functions/watchers      | Every version of the Player Reward Pack contents |
 | `meta`          | functions/priceSync  | Last price sync time |
 | `trades`        | web                  | Per-card trade entries: logged by hand on card pages, or imported from GoatBots |
 | `gb_trades`     | web                  | Imported GoatBots trades (one doc per trade, with all items) |
@@ -183,17 +185,28 @@ Asks Scryfall's search API hourly between 8 am and 8 pm Pacific for every reprin
 - Every printing not seen before is matched against your collection and watch lists by name. Matches are sent in one Telegram message grouped by set (with release date and prices), saved as highlights, and added to the short-term watch list.
 - The first run only records what's already there: highlights, but no Telegram message and no watch-list additions.
 
-### Banlist — `functions/src/lib/monitors.config.js`
+### Banlist — `functions/src/lib/banlist.js`
 
-Reads https://magic.wizards.com/en/news/announcements every 30 minutes and keeps only announcements with "Banned" in the title (e.g. *Banned and Restricted Announcement — October 12, 2026*). Everything else on that page is ignored. New ones become highlights and a Telegram message (`NOTIFY_BANLIST=false` turns the message off). The page shows only the latest 8 announcements, so an announcement is caught as long as the watcher runs within a few weeks of it. The first run records the page without sending anything.
+Reads https://magic.wizards.com/en/news/announcements and keeps only announcements with "Banned" in the title (e.g. *Banned and Restricted Announcement — October 12, 2026*); everything else on that page is ignored (rules in `monitors.config.js`). New ones become highlights and a Telegram message (`NOTIFY_BANLIST=false` turns the message off). The first run records the page without sending anything.
+
+- **When:** each banned & restricted article ends with "Next announcement: November 30, 2026". The watcher reads that date from the newest one (the very first time, from the October 12 article) and checks **every 30 seconds** from 7 days before it until a new "Banned" announcement appears, or until 7 days after the date if it's late. Otherwise it checks **every 6 hours**, so an unscheduled emergency ban is still caught the same day. If an announcement doesn't state a next date: hourly.
+- The page only shows the latest 8 announcements, which is plenty at these intervals.
 
 ### Player Reward Packs — `functions/src/lib/rewardPacks.js`
 
-Reads https://www.mtgo.com/player-rewards every 6 hours with the Treasure Chest parser (same page layout). When the card table changes, the added, removed and re-slotted cards are saved as a highlight and sent by Telegram (`NOTIFY_REWARD_PACKS=false` turns the message off); added cards you own or watch are put on the short-term watch list. Every version is kept in `prp_snapshots`. The first check only records the page.
+Reads https://www.mtgo.com/player-rewards with the Treasure Chest parser (same page layout). When the card table changes, the added, removed and re-slotted cards are saved as a highlight and sent by Telegram (`NOTIFY_REWARD_PACKS=false` turns the message off); added cards you own or watch are put on the short-term watch list. Every version is kept in `prp_snapshots`. The first check only records the page.
+
+- **When:** reward periods start on the 1st of each month at 8 am PT and the list changes around then (November's is dated November 2). The watcher checks **every 30 seconds** from 7 days before the 1st until the list changes (or 7 days after the 1st, if it's late), and **every 6 hours** otherwise.
+
+### One timer, and the free grant
+
+The Treasure Chest, banlist and reward pack watchers share one 30-second timer (`functions/src/functions/watchers.js`). Each tick reads three small state documents and only fetches the pages that are due, in parallel. That's about 86,400 executions a month whatever the number of watchers, about a third of Flex Consumption's free 250,000. Execution time is billed per GB-second while an instance is busy; most ticks take a fraction of a second, and the fetches inside windows a second or two. Check Function App → *Metrics* → *On Demand Function Execution Units* / *On Demand Function Execution Count* after the first week to see the real numbers.
+
+Window lengths and idle intervals can be changed with `TC_WINDOW_DAYS_*`, `BANLIST_WINDOW_DAYS_BEFORE` / `_AFTER`, `BANLIST_IDLE_HOURS`, `PRP_WINDOW_DAYS_BEFORE` / `_AFTER`, `PRP_IDLE_HOURS`.
 
 ### If a watcher breaks
 
-Every watcher records errors on the website (Highlights → Monitors, in red). If the Treasure Chest page can't be read for 30 minutes during an update window (6 hours otherwise), Scryfall for 6 hours, or the Player Rewards page for a day, you get one Telegram warning a day.
+Every watcher records errors on the website (Highlights → Monitors, in red), and the panel shows each watcher's schedule. If a page can't be read for 30 minutes during its fast-check window (Treasure Chest 6 hours, banlist 12 hours, Player Rewards a day otherwise), or Scryfall for 6 hours, you get one Telegram warning a day.
 
 ### Running the price sync now
 
@@ -216,7 +229,8 @@ npm run spoilers:dry-run   # list Scryfall reprints of cards you own or watch; s
 npm run spoilers:run       # one real reprint check now
 npm run rewards:dry-run    # parse the live Player Rewards page; saves nothing
 npm run rewards:run        # one real Player Reward Pack check now
-npm run monitors:dry-run   # what the banlist watch would keep from the announcements page
+npm run banlist:dry-run    # what the banlist watch keeps from the announcements page + the next announcement date
+npm run banlist:run        # one real banlist check now
 ```
 
 ### Nothing else
@@ -266,7 +280,7 @@ Then:
    ```bash
    cd functions
    npm run prices:run -- --no-alert   # card list + prices
-   npm run monitors:run               # seed monitors (first run never notifies)
+   npm run banlist:run                # seed the banlist watch (first run never notifies)
    ```
 
 ### Your own domain (ericmay.org) via Cloudflare
@@ -306,11 +320,12 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 |------|-------|
 | `MONGODB_URI`, `MONGODB_DB` | same database as the website |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | leave empty to disable Telegram |
-| `MONITOR_SCHEDULE` | NCRONTAB (6 fields, UTC). Default every 30 min |
 | `PRICE_SYNC_SCHEDULE` | NCRONTAB, UTC. Default 10:20 UTC daily |
 | `TC_WINDOW_DAYS_BEFORE` / `TC_WINDOW_DAYS_AFTER` | Treasure Chest fast-check window around "Next Update" (default 7 / 7) |
 | `TC_IDLE_HOURS` | Treasure Chest check interval outside the window (default 24) |
 | `SPOILER_HOURS` | reprint watch active hours, Pacific (default `8-20`) |
+| `BANLIST_WINDOW_DAYS_BEFORE` / `_AFTER`, `BANLIST_IDLE_HOURS` | banlist fast-check window around "Next announcement" (default 7 / 7) and interval outside it (default 6) |
+| `PRP_WINDOW_DAYS_BEFORE` / `_AFTER`, `PRP_IDLE_HOURS` | reward pack fast-check window around the 1st (default 7 / 7) and interval outside it (default 6) |
 | `NOTIFY_BANLIST`, `NOTIFY_REWARD_PACKS` | set to `false` to keep banlist / reward pack changes off Telegram (on by default) |
 | `NOTIFY_PRICE_TARGETS`, `NOTIFY_SWAPS`, `NOTIFY_SHORT_WATCH`, `NOTIFY_COLLECTION_MOVERS` | set to `true` to also get Telegram messages for these (all off by default) |
 | `PRICE_ALERT_MIN_PCT` / `PRICE_ALERT_MIN_TIX` | thresholds for the collection-movers message, if turned on (default 25 % and 2 tix) |

@@ -48,3 +48,27 @@ test('parses a GoatBots-style price zip', () => {
   assert.strictEqual(prices.get('90542'), 41.5);
   assert.strictEqual(prices.has('12'), false);
 });
+
+test('reads the next banned & restricted date from an article', () => {
+  const { parseNextAnnouncement } = require('../src/lib/banlist');
+  const a = parseNextAnnouncement('Changes effective as of October 12, 2026. View the list. Next announcement: November 30, 2026', new Date('2026-10-12'));
+  assert.strictEqual(a.date.toISOString(), '2026-11-30T08:00:00.000Z'); // midnight Pacific
+  const b = parseNextAnnouncement('…the next banned and restricted announcement will be on January 18, 2027.');
+  assert.strictEqual(b.text, 'January 18, 2027');
+  assert.strictEqual(parseNextAnnouncement('No date here'), null);
+});
+
+test('cadence: lazy outside the window, every tick inside it', () => {
+  const { plan } = require('../src/lib/cadence');
+  const t = new Date('2026-11-30T08:00:00Z');
+  const state = { lastSuccess: new Date('2026-11-20T12:00:00Z'), lastAttempt: new Date('2026-11-20T12:00:00Z') };
+  const at = (iso, extra = {}) => plan({ state, now: new Date(iso), targets: [t], idleHours: 6, ...extra });
+  assert.deepStrictEqual([at('2026-11-20T13:00:00Z').due, at('2026-11-20T13:00:00Z').mode], [false, 'idle']);
+  assert.strictEqual(at('2026-11-20T18:01:00Z').due, true); // 6 h later
+  assert.strictEqual(at('2026-11-20T13:00:00Z').windowStart.toISOString(), '2026-11-23T08:00:00.000Z');
+  assert.deepStrictEqual([at('2026-11-23T08:00:30Z').due, at('2026-11-23T08:00:30Z').mode], [true, 'watching']);
+  assert.strictEqual(at('2026-11-25T00:00:00Z', { done: () => true }).mode, 'idle');
+  assert.strictEqual(at('2026-12-07T09:00:00Z').mode, 'idle'); // 7 days late → give up
+  assert.strictEqual(plan({ state, now: new Date('2026-11-20T13:30:00Z'), targets: [null], unknownHours: 1 }).due, true);
+  assert.strictEqual(plan({ state: null, now: new Date(), targets: [] }).due, true);
+});

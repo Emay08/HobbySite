@@ -262,7 +262,9 @@ test('Player Reward Pack watcher end to end', { skip: !URI && 'TEST_MONGODB_URI 
     assert.match(h.summary, /Yours: Crucible of Worlds/);
     assert.strictEqual(await db.collection('prp_snapshots').countDocuments(), 2);
 
-    // Throttled to every 6 hours
+    // The change closes this month's window: lazy (every 6 h) until a week before the next 1st
+    const st = await db.collection('monitor_state').findOne({ _id: 'reward-packs' });
+    assert.strictEqual(st.mode, 'idle');
     r = await runRewardPacks(db, { fetcher });
     assert.ok(r.skipped);
 
@@ -276,3 +278,66 @@ test('Player Reward Pack watcher end to end', { skip: !URI && 'TEST_MONGODB_URI 
     await client.close();
   }
 });
+
+test('banlist watcher: schedule from the next announcement date', { skip: !URI && 'TEST_MONGODB_URI not set' }, async () => {
+  const client = await new MongoClient(URI).connect();
+  const db = client.db('mtgo_banlist_test');
+  await db.dropDatabase();
+  const tg = fakeTelegram();
+  const { runBanlist, SEED_ARTICLE } = require('../src/lib/banlist');
+  const link = (slug, title) => `<a data-navigation-type="server-side" href="/en/news/announcements/${slug}"><h3 class="css-mbeyN">${title}</h3></a>`;
+  let list = [link('mtg-arena-patch', 'MTG Arena Patch Notes'), link('magic-online-schedule', 'Magic Online Schedule')];
+  const articles = {
+    [SEED_ARTICLE]: '<article><p>Changes effective as of October 12, 2026.</p><p>Next announcement: November 30, 2026</p></article>',
+    'https://magic.wizards.com/en/news/announcements/banned-and-restricted-november-30-2026':
+      '<article><p>Brainstorm is banned in Legacy.</p><p>Next announcement: January 18, 2027</p></article>',
+  };
+  const fetched = [];
+  const fetcher = async (url) => {
+    fetched.push(url);
+    if (url === 'https://magic.wizards.com/en/news/announcements') return `<html><body><main>${list.join('')}</main></body></html>`;
+    if (articles[url]) return `<html><body>${articles[url]}</body></html>`;
+    throw new Error('HTTP 404 for ' + url);
+  };
+  await db.collection('monitor_state').insertOne({ _id: 'reddit-mtgo', label: 'r/mtgo' });
+  await db.collection('highlights').insertOne({ _id: 'old', monitorId: 'mtgo-news', title: 'noise' });
+  try {
+    // First run: nothing banned on the page → next date learned from the seed article
+    let r = await runBanlist(db, { now: new Date('2026-11-20T20:00:00Z'), fetcher });
+    assert.strictEqual(r.kept, 0);
+    let st = await db.collection('monitor_state').findOne({ _id: 'banlist' });
+    assert.strictEqual(st.nextAnnouncement.toISOString(), '2026-11-30T08:00:00.000Z');
+    assert.deepStrictEqual([st.mode, st.windowStart.toISOString()], ['idle', '2026-11-23T08:00:00.000Z']);
+    assert.strictEqual(await db.collection('monitor_state').countDocuments({ _id: 'reddit-mtgo' }), 0);
+    assert.strictEqual(await db.collection('highlights').countDocuments({ monitorId: 'mtgo-news' }), 0);
+
+    // Lazy: not due an hour later; due inside the window, every tick
+    assert.ok((await runBanlist(db, { now: new Date('2026-11-20T21:00:00Z'), fetcher })).skipped);
+    r = await runBanlist(db, { now: new Date('2026-11-29T18:00:00Z'), fetcher });
+    assert.strictEqual(r.mode, 'watching');
+    r = await runBanlist(db, { now: new Date('2026-11-29T18:00:30Z'), fetcher });
+    assert.ok(!r.skipped);
+    assert.strictEqual(tg.sent.length, 0);
+
+    // The announcement appears → Telegram, highlight, next date moves to January, back to lazy
+    list = [link('banned-and-restricted-november-30-2026', 'Banned and Restricted Announcement — November 30, 2026'), ...list];
+    r = await runBanlist(db, { now: new Date('2026-11-30T17:00:00Z'), fetcher });
+    assert.strictEqual(r.kept, 1);
+    assert.strictEqual(tg.sent.length, 1);
+    assert.match(tg.sent[0], /🔨 <b>Banned and Restricted Announcement — November 30, 2026<\/b>/);
+    st = await db.collection('monitor_state').findOne({ _id: 'banlist' });
+    assert.deepStrictEqual([st.nextAnnouncement.toISOString(), st.mode], ['2027-01-18T08:00:00.000Z', 'idle']);
+    assert.ok((await runBanlist(db, { now: new Date('2026-11-30T17:00:30Z'), fetcher })).skipped);
+    assert.ok(await db.collection('highlights').findOne({ category: 'banlist' }));
+
+    // Page broken → error recorded
+    list = [];
+    await assert.rejects(runBanlist(db, { now: new Date('2026-12-01T00:00:00Z'), fetcher }), /No announcements found/);
+    assert.match((await db.collection('monitor_state').findOne({ _id: 'banlist' })).lastError, /No announcements/);
+  } finally {
+    tg.restore();
+    await db.dropDatabase();
+    await client.close();
+  }
+});
+

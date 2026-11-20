@@ -1,29 +1,29 @@
 #!/usr/bin/env node
-// Usage:
-//   node scripts/run-monitors.js --dry-run            # fetch + show what would be stored; no DB, no Telegram
-//   node scripts/run-monitors.js --dry-run mtgo-news  # just one monitor
-//   node scripts/run-monitors.js                      # real run against MongoDB (+ Telegram)
+// Banlist watch, once.
+//   node scripts/run-monitors.js --dry-run   what it would keep from the announcements page + the next
+//                                            announcement date; no DB, no Telegram
+//   node scripts/run-monitors.js             real run now (ignores the schedule)
 require('./env');
-const { runMonitor, recordError } = require('../src/lib/monitor');
+const { runMonitor, fetchArticleText } = require('../src/lib/monitor');
+const { runBanlist, parseNextAnnouncement, SEED_ARTICLE } = require('../src/lib/banlist');
 const monitors = require('../src/lib/monitors.config');
 const { getDb, close } = require('../src/lib/db');
 
 (async () => {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes('--dry-run');
-  const only = args.filter((a) => !a.startsWith('--'));
-  const list = monitors.filter((m) => (only.length ? only.includes(m.id) : m.enabled));
-  const db = dryRun ? null : await getDb();
-
-  for (const m of list) {
-    console.log(`\n▶ ${m.id} — ${m.url}`);
-    try {
-      const r = await runMonitor(db, m, { dryRun });
-      console.log('  result:', r);
-    } catch (err) {
-      console.error(`  ✖ ${err.message}`);
-      if (db) await recordError(db, m, err);
-    }
+  if (process.argv.includes('--dry-run')) {
+    const m = monitors.find((x) => x.id === 'banlist');
+    console.log(`▶ ${m.url}`);
+    const r = await runMonitor(null, m, { dryRun: true });
+    const article = (r.items[0] && r.items[0].url) || SEED_ARTICLE;
+    const next = parseNextAnnouncement(await fetchArticleText(article));
+    console.log(`  next announcement (from ${article}): ${next ? next.date.toISOString() + ` ("${next.text}")` : 'not found'}`);
+  } else {
+    const db = await getDb();
+    console.log(await runBanlist(db, { force: true, log: console.log }));
   }
   await close();
-})();
+})().catch(async (e) => {
+  console.error(e.message);
+  await close();
+  process.exit(1);
+});

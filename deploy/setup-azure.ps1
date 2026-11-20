@@ -185,7 +185,6 @@ if (-not (Test-Az functionapp show -g $ResourceGroup -n $names.FunctionApp)) {
 $fnSettings = @(
   @{ name = 'MONGODB_URI';          value = $mongoUri;            slotSetting = $false },
   @{ name = 'MONGODB_DB';           value = $mongoDb;             slotSetting = $false },
-  @{ name = 'MONITOR_SCHEDULE';     value = '0 */30 * * * *';     slotSetting = $false },
   @{ name = 'PRICE_SYNC_SCHEDULE';  value = '0 20 10 * * *';      slotSetting = $false },
   @{ name = 'WATCH_ALERT_PCT';      value = '15';                 slotSetting = $false }
 )
