@@ -365,7 +365,7 @@ a.cardlink:hover { color: var(--accent); text-decoration: underline; text-underl
 
 /* ---- spreadsheet import review */
 .review-table td { vertical-align: top; }
-.review-table input[type="text"] { width: 100%; min-width: 12rem; }
+.review-table input[type="text"] { width: 100%; min-width: 17rem; }
 .review-table .raw { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; }
 .match-check td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
 .match-none td:first-child { box-shadow: inset 3px 0 0 var(--bad); }

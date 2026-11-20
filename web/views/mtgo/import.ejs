@@ -41,8 +41,7 @@
               <td class="small muted"><%= columns[r.column] %> #<%= r.seq + 1 %></td>
               <td class="raw"><%= r.raw %></td>
               <td>
-                <input type="text" name="fix:<%= id %>" value="<%= r.name || '' %>" list="dl-<%= r.column %>-<%= r.seq %>" placeholder="card name" autocomplete="off" aria-label="Card for <%= r.raw %>">
-                <% if (r.candidates.length > 1) { %><datalist id="dl-<%= r.column %>-<%= r.seq %>"><% for (const c of r.candidates) { %><option value="<%= c %>"><% } %></datalist><% } %>
+                <input type="text" name="fix:<%= id %>" value="<%= r.name || '' %>" data-name-suggest data-candidates="<%= r.candidates.join('|') %>" placeholder="card name" autocomplete="off" aria-label="Card for <%= r.raw %>">
                 <% if (r.foil || r.hints) { %><span class="small muted"><%= r.foil ? 'foil ' : '' %><%= r.hints %></span><% } %>
               </td>
               <td class="num"><%= r.qty %></td>
@@ -108,8 +107,7 @@
               <td>
                 <form method="post" action="/mtgo/import/fix" class="inline-form">
                   <input type="hidden" name="id" value="<%= e._id %>">
-                  <input type="text" name="name" list="dl-<%= e.column %>-<%= e.seq %>" placeholder="card name" autocomplete="off" required aria-label="Card for <%= e.raw %>">
-                  <% if ((e.candidates || []).length) { %><datalist id="dl-<%= e.column %>-<%= e.seq %>"><% for (const c of e.candidates) { %><option value="<%= c %>"><% } %></datalist><% } %>
+                  <input type="text" name="name" data-name-suggest data-candidates="<%= (e.candidates || []).join('|') %>" placeholder="card name" autocomplete="off" required aria-label="Card for <%= e.raw %>">
                   <button class="btn small-btn" type="submit">Save</button>
                 </form>
               </td>
@@ -155,4 +153,5 @@
 </div>
 <% } %>
 <script src="/static/upload.js?v=<%= assetV %>" defer></script>
+<script src="/static/namesuggest.js?v=<%= assetV %>" defer></script>
 <%- include('../partials/foot') %>
