@@ -291,4 +291,31 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.match(await html('/mtgo/collection'), /Most valuable cards/);
     assert.match(await html('/home'), /MTGO Collection Manager/);
   });
+
+  await t.test('show order: page, save and load a project', async () => {
+    assert.match(await html('/home'), /Show Order/);
+    assert.match(await html('/showorder'), /Find schedules/);
+    const empty = await (await req('/showorder/api/project', { headers: { accept: 'application/json' } })).json();
+    assert.strictEqual(empty.project, null);
+    // bigger than the site-wide 20 kB JSON limit, like a real studio's lists
+    const dancers = Array.from({ length: 600 }, (_, i) => ({ name: `Dancer number ${i}`, age: 4 + (i % 14), family: i % 9 ? '' : `Family ${i}` }));
+    const body = {
+      raw: { dancers, enrollments: [{ class: 'Tiny Tap', dancer: 'Dancer number 0' }], dances: [{ name: 'Tap', classes: 'Tiny Tap', hair: 'down' }] },
+      source: 'test',
+      settings: { nights: 2, minGap: 2 },
+      results: [{ label: 'Option 1', named: { nights: [{ seq: ['Tap'], split: 1 }] }, locks: { tap: { night: 0, act: 0, slot: 1 } } }],
+      active: 0,
+    };
+    const put = await req('/showorder/api/project', { method: 'PUT', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify(body) });
+    assert.strictEqual(put.status, 200);
+    const got = (await (await req('/showorder/api/project', { headers: { accept: 'application/json' } })).json()).project;
+    assert.strictEqual(got.raw.dancers.length, 600);
+    assert.deepStrictEqual(got.results[0].locks, { tap: { night: 0, act: 0, slot: 1 } });
+    assert.strictEqual(got.settings.minGap, 2);
+    const bad = await req('/showorder/api/project', { method: 'PUT', headers: { 'content-type': 'application/json', accept: 'application/json' }, body: JSON.stringify({ raw: { dancers: 'nope' } }) });
+    assert.strictEqual(bad.status, 400);
+    // still small everywhere else
+    const big = await req('/mtgo/watch/short', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pad: 'x'.repeat(30000) }) });
+    assert.strictEqual(big.status, 413);
+  });
 });

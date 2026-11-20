@@ -6,6 +6,7 @@ Two deployables that share one MongoDB database:
 mtgo-manager/
 ├── web/         Express website (Azure App Service)
 │                login → landing page → MTGO manager (highlights, collection browser, CSV upload)
+│                                     → Show Order (dance recital running-order planner)
 └── functions/   Azure Functions app (timer triggers)
                  treasureChest – Treasure Chest page: every 30 s near an update, daily otherwise  → Telegram
                  spoilerWatch  – MagicSpoiler, hourly 8 am–8 pm PT: reprints of your cards       → Telegram
@@ -42,6 +43,7 @@ mtgo-manager/
 | `sheet_trades`  | web                  | Entries from the spreadsheet import (as typed, resolved card name, duplicate/date-range info) |
 | `import_staging`| web                  | A spreadsheet import waiting for review |
 | `sessions`      | web                  | Login sessions |
+| `showorder`     | web                  | One doc (`_id: 'project'`): Show Order lists, rules, saved schedules and their locks |
 
 Prices come from GoatBots' public daily price file, keyed by MTGO catalog ID — the same number as the `ID #` column in the MTGO CSV export — so cards match exactly, including foils and different printings.
 
@@ -305,6 +307,34 @@ export TEST_MONGODB_URI="mongodb://127.0.0.1:27017/?directConnection=true"
 cd web && npm test          # + login, upload, card search, watch lists, targets, swaps, card pages, spreadsheet import through the real server
 cd functions && npm test    # + daily job, Treasure Chest scenarios (stale / wrong / late CHANGELIST), reprint watcher
 ```
+
+## Show Order — recital running-order planner (`/showorder`)
+
+Plans the running order of a multi-night dance recital. Everything is solved in the browser (`web/public/showorder-solver.js`); the server only renders the page and saves the project.
+
+**Data** — three CSVs, dropped together or one at a time (column names are matched loosely):
+
+| File | Columns |
+|------|---------|
+| Dancers | `name` (or `first name` + `last name`), `age`, `family` (same text for siblings, optional) |
+| Class lists | `class`, `dancer` — one row per dancer per class (or `class` + `dancers` separated by `;`) |
+| Dances | `dance`, `class` (several separated by `;`), `hair` (`up` / `down` / blank = either), optional `minutes` (default 3), `night`, `act`, `position` (`first`, `last` or a number) |
+
+A dance's dancers are everyone in its class(es). **Generate** makes a simulated studio (≈200 dancers, ≈40 classes, siblings, Company opening each night) from a seed, and the lists can be downloaded as CSV templates.
+
+**Firm rules** (each break costs 1000 points, so a schedule shows ✓ only when none are broken):
+- at least *N* dances between two of a dancer's dances (default 2; the intermission counts as enough time unless unticked);
+- hair: once a dancer has been in a hair-down dance, no hair-up dance for her later that night (optionally reset at intermission);
+- dancers under the age limit (default 7) only before intermission;
+- fixed `night` / `act` / `position` from the dances file, and locked dances.
+
+**Preferences** (weights editable on the page): dancers with ≤ 2 dances on one night, families with ≤ 4 dances on one night, younger → older through each night (years away from a perfectly sorted night), roomier costume changes than the minimum, nights and acts the same length.
+
+**Search**: simulated annealing (swaps, moves between nights/acts, short reversals, intermission shifts) run several times from different random starts; the best different schedules are kept and ranked. About half a second per run at *Normal* effort for a 47-dance show.
+
+**Working with the results**: tabs per schedule with a scorecard; click a dance to see its dancers and where else each dances (shared dances highlighted); find a dancer or family; drag dances (also across the intermission or to the other night) and the page re-checks instantly; 🔒 a dance to keep it in its slot, then **Re-solve around locked** (the schedule before the re-solve is kept as a tab). Locks belong to that schedule. Exports: running order CSV, per-dancer list CSV (nights, slots, closest change), and a print layout. **Save** stores everything in MongoDB.
+
+Tests: `web/test/showorder.test.js` (rules, solver, locks, sample data).
 
 ## Adding more tools later
 

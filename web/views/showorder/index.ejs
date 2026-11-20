@@ -1,0 +1,128 @@
+<%- include('../partials/head') %>
+<div class="page-head so-head">
+  <div>
+    <p class="eyebrow">Recital planner</p>
+    <h1>Show order</h1>
+    <p class="muted lede">Load the dancer, class and dance lists, set the rules, and let the solver propose running orders. Lock the dances you like, drag the rest around, and re-solve.</p>
+  </div>
+  <div class="so-save">
+    <span id="so-saved" class="muted small" aria-live="polite"></span>
+    <button id="so-save" class="btn" type="button">Save</button>
+  </div>
+</div>
+
+<div class="so-top">
+  <!-- 1 · data -->
+  <section class="card so-data">
+    <h2><span class="so-step">1</span> Data</h2>
+    <label id="so-drop" class="dropzone so-drop" for="so-files">
+      <input id="so-files" type="file" accept=".csv,text/csv" multiple hidden>
+      <strong>Drop the CSV files here</strong>
+      <span class="muted small">dancers, class lists and dances — one at a time or all together</span>
+    </label>
+    <div id="so-filechips" class="so-filechips"></div>
+
+    <div class="so-sample">
+      <span class="small strong">Or try a simulated studio</span>
+      <label class="so-inline small">Seed <input id="so-seed" type="text" inputmode="numeric" value="1" class="tiny"></label>
+      <label class="so-inline small">Dancers <input id="so-ndancers" type="text" inputmode="numeric" value="200" class="tiny"></label>
+      <button id="so-generate" class="btn small-btn" type="button">Generate</button>
+    </div>
+
+    <div id="so-summary" class="so-summary"></div>
+    <ul id="so-issues" class="so-issues"></ul>
+
+    <details class="so-help small">
+      <summary>What the CSV files look like</summary>
+      <p>Column names are matched loosely; extra columns are ignored. Download the simulated studio as CSVs below to see a full example.</p>
+      <table class="table compact">
+        <tr><th>File</th><th>Columns</th></tr>
+        <tr><td>Dancers</td><td><code>name</code>, <code>age</code>, <code>family</code> (same text for siblings; optional) — or <code>first name</code> + <code>last name</code></td></tr>
+        <tr><td>Class lists</td><td><code>class</code>, <code>dancer</code> — one row per dancer per class (or a <code>dancers</code> column with names separated by <code>;</code>)</td></tr>
+        <tr><td>Dances</td><td><code>dance</code>, <code>class</code> (several separated by <code>;</code>), <code>hair</code> (up / down / blank = either), optional <code>minutes</code> (default 3), <code>night</code>, <code>act</code>, <code>position</code> (first, last or a number)</td></tr>
+      </table>
+      <p class="so-downloads"><span class="muted">Download current data:</span>
+        <button class="link" type="button" data-download="dancers">dancers.csv</button> ·
+        <button class="link" type="button" data-download="classes">classes.csv</button> ·
+        <button class="link" type="button" data-download="dances">dances.csv</button></p>
+    </details>
+  </section>
+
+  <!-- 2 · rules -->
+  <section class="card so-rules">
+    <h2><span class="so-step">2</span> Rules</h2>
+    <form id="so-settings" class="so-settings" autocomplete="off">
+      <h3>Firm</h3>
+      <div class="so-grid">
+        <label>Nights <input name="nights" type="text" inputmode="numeric" class="tiny"></label>
+        <label>Dances in between a dancer's numbers, at least <input name="minGap" type="text" inputmode="numeric" class="tiny"></label>
+        <label>Dancers under this age only dance before intermission <input name="youngAge" type="text" inputmode="decimal" class="tiny"></label>
+      </div>
+      <label class="so-check"><input name="gapResetAtIntermission" type="checkbox"> Intermission gives enough time for any costume change</label>
+      <label class="so-check"><input name="hairResetAtIntermission" type="checkbox"> Hair can be put back up during intermission</label>
+      <p class="muted small">Hair: once a dancer has done a hair-down dance, she can't do a hair-up dance later that night.</p>
+
+      <h3>Preferences <span class="muted small">(weight = how much it matters)</span></h3>
+      <table class="so-prefs">
+        <tr><td>Keep dancers with <input name="dancerSameNightMax" type="text" inputmode="numeric" class="tiny"> dances or fewer on one night</td><td><input name="w.dancerSplit" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per dancer</span></td></tr>
+        <tr><td>Keep families with <input name="familySameNightMax" type="text" inputmode="numeric" class="tiny"> dances or fewer on one night</td><td><input name="w.familySplit" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per family</span></td></tr>
+        <tr><td>Younger to older through each night</td><td><input name="w.ageOrder" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per year out of order</span></td></tr>
+        <tr><td>Roomier costume changes (more than the minimum gap)</td><td><input name="w.tight" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per tight change</span></td></tr>
+        <tr><td>Nights the same length</td><td><input name="w.nightBalance" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per minute</span></td></tr>
+        <tr><td>Acts the same length</td><td><input name="w.actBalance" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per minute</span></td></tr>
+      </table>
+      <p class="muted small">Company opening the show: put <code>first</code> in the dances' <code>position</code> column. <button id="so-defaults" class="link small" type="button">Reset to defaults</button></p>
+
+      <div class="so-run">
+        <label class="so-inline small">Effort
+          <select name="effort">
+            <option value="60000">Quick</option>
+            <option value="200000">Normal</option>
+            <option value="600000">Thorough</option>
+          </select>
+        </label>
+        <label class="so-inline small">Schedules <input name="keep" type="text" inputmode="numeric" class="tiny"></label>
+        <button id="so-solve" class="btn primary" type="submit">Find schedules</button>
+      </div>
+      <div id="so-progress" class="so-progress hidden"><div class="so-progress-bar"></div><span class="small muted"></span></div>
+    </form>
+  </section>
+</div>
+
+<!-- 3 · schedules -->
+<section id="so-results" class="so-results hidden">
+  <div class="so-results-head">
+    <h2><span class="so-step">3</span> Schedules</h2>
+    <div id="so-tabs" class="chips so-tabs" role="tablist"></div>
+  </div>
+
+  <div id="so-scorecard" class="so-scorecard"></div>
+
+  <div class="so-toolbar">
+    <div class="so-find">
+      <input id="so-find" type="search" list="so-people" placeholder="Find a dancer or family…" aria-label="Find a dancer or family">
+      <datalist id="so-people"></datalist>
+      <span id="so-find-info" class="small muted"></span>
+    </div>
+    <div class="so-actions">
+      <button id="so-resolve" class="btn small-btn" type="button" title="Search again starting from this schedule; locked dances stay where they are">Re-solve around locked</button>
+      <button id="so-unlock" class="link small" type="button">Unlock all</button>
+      <button class="btn small-btn" type="button" data-export="order">Running order CSV</button>
+      <button class="btn small-btn" type="button" data-export="dancers">Dancer list CSV</button>
+      <button id="so-print" class="btn small-btn" type="button">Print</button>
+    </div>
+  </div>
+  <p class="muted small so-hint">Drag dances to reorder (also across the intermission or to the other night). Click a dance to see who's in it and where else they dance. 🔒 keeps a dance in its slot when re-solving.</p>
+
+  <div class="so-body">
+    <div id="so-nights" class="so-nights"></div>
+    <aside id="so-detail" class="card so-detail"></aside>
+  </div>
+
+  <div id="so-notes" class="card so-notes"></div>
+</section>
+
+<script src="/static/showorder-solver.js?v=<%= assetV %>" defer></script>
+<script src="/static/showorder-sample.js?v=<%= assetV %>" defer></script>
+<script src="/static/showorder.js?v=<%= assetV %>" defer></script>
+<%- include('../partials/foot') %>
