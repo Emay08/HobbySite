@@ -77,7 +77,8 @@ function pickVersion(cands, row, labels, price) {
 
 async function mapVersions(db, rows) {
   const names = [...new Set(rows.map((r) => r.name.toLowerCase()))];
-  const cards = names.length ? await db.collection('cards').find({ nameLower: { $in: names } }, { projection: { nameLower: 1, set: 1, foil: 1 } }).toArray() : [];
+  const cards = names.length ? await db.collection('cards').find({ nameLower: { $in: names } }, { projection: { nameLower: 1, set: 1, foil: 1, firstSeen: 1 } }).toArray() : [];
+  const firstSeen = new Map(cards.map((c) => [c._id, c.firstSeen || null]));
   const ids = cards.map((c) => c._id);
   const [labels, prices] = await Promise.all([
     db.collection('scryfall_cards').find({ _id: { $in: ids } }, { projection: { 'info.label': 1 } }).toArray(),
@@ -87,6 +88,7 @@ async function mapVersions(db, rows) {
   const priceMap = new Map(prices.map((p) => [p._id, p.price]));
   return {
     priceMap,
+    firstSeen,
     idFor: (row) =>
       pickVersion(
         cards.filter((c) => c.nameLower === row.name.toLowerCase() && String(c.set).toUpperCase() === String(row.set).toUpperCase()),
@@ -95,6 +97,21 @@ async function mapVersions(db, rows) {
         priceMap
       ),
   };
+}
+
+const NEW_WINDOW = 2 * DAY;
+
+/**
+ * A printing GoatBots only started listing around this update. Its early prices are rough
+ * guesses that swing until enough copies have traded, so it's kept out of the average.
+ * Printings already listed in the very first card sync (or stored before firstSeen was
+ * recorded) existed before tracking began, so they're never "new".
+ */
+function isNewPrinting(firstSeen, recordedAt, firstSyncAt) {
+  if (!firstSeen) return false;
+  const t = new Date(firstSeen).getTime();
+  if (firstSyncAt && t - new Date(firstSyncAt).getTime() < 6 * 3600000) return false;
+  return t >= new Date(recordedAt).getTime() - NEW_WINDOW;
 }
 
 /** Average price of the given MTGO IDs per day since `since`, from price_daily (+ today's prices). */
@@ -158,13 +175,16 @@ async function currentChest(db) {
     ((hist && hist.changes) || []).filter((r) => r.slots > 0 && r.slots - (r.change || 0) <= 0).map((r) => tc.versionKey(r))
   );
   const added = first.cards.filter((c) => !tc.isProduct(c.name) && addedKeys.has(tc.versionKey(c)));
-  const map = await mapVersions(db, added);
+  const [map, syncMeta] = await Promise.all([mapVersions(db, added), db.collection('meta').findOne({ _id: 'cardSync' }, { projection: { firstSyncAt: 1 } })]);
   for (const a of added) {
     a.mtgoId = map.idFor(a);
     a.price = a.mtgoId ? map.priceMap.get(a.mtgoId) ?? null : null;
+    // left out of the graph: new printings (volatile early prices) and ones GoatBots doesn't list yet
+    a.newPrinting = !a.mtgoId || isNewPrinting(map.firstSeen.get(a.mtgoId), recordedAt, syncMeta && syncMeta.firstSyncAt);
   }
   added.sort((a, b) => (b.price ?? -1) - (a.price ?? -1));
-  const series = await dailyAverages(db, added.map((a) => a.mtgoId).filter(Boolean), recordedAt, map.priceMap);
+  const graphed = added.filter((a) => !a.newPrinting);
+  const series = await dailyAverages(db, graphed.map((a) => a.mtgoId), recordedAt, map.priceMap);
 
   // ---- your cards in any curated table, by name
   const inChest = new Map(); // nameKey → { name, rows: [{ table, set, treatment, slots }] }
@@ -272,9 +292,10 @@ async function currentChest(db) {
     firstTable: first.name,
     hasHistory: !!hist,
     added,
+    graphedCount: graphed.length,
     series,
     mine,
   };
 }
 
-module.exports = { currentChest, priceStats, pickVersion, curatedTables, contentsSig, OFFICIAL_URL };
+module.exports = { currentChest, priceStats, pickVersion, isNewPrinting, curatedTables, contentsSig, OFFICIAL_URL };

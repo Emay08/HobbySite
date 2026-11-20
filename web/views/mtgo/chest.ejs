@@ -42,6 +42,7 @@
   </div>
   <div class="stat chest-graph">
     <span class="stat-label">New in <%= c.firstTable %> · average price</span>
+    <span class="stat-sub muted small">The <%= c.graphedCount %> card<%= c.graphedCount === 1 ? '' : 's' %> added to the first curated table this update, by day since the update was recorded<% const left = c.added.length - c.graphedCount; %>. Whole sets<%= left ? ` and ${left} new printing${left === 1 ? '' : 's'} (unsettled prices)` : '' %> left out.</span>
       <%
         const pts = c.series;
         const W = 300, H = 120, L = 42, R = 8, T = 8, B = 22;
@@ -58,6 +59,8 @@
       %>
       <% if (!c.added.length) { %>
         <p class="small muted"><%= c.hasHistory ? 'Nothing new in that table this update.' : 'No changelist recorded for this update yet.' %></p>
+      <% } else if (!c.graphedCount) { %>
+        <p class="small muted">Every new card this update is a new printing, so nothing is settled enough to graph yet.</p>
       <% } else if (!chart) { %>
         <p class="small muted">No prices recorded since the update yet — the daily price job adds a point each morning.</p>
       <% } else { %>
@@ -80,7 +83,7 @@
         <table class="table compact">
           <tbody>
           <% for (const a of c.added) { %>
-            <tr <% if (a.mtgoId) { %>data-preview="<%= img(a.mtgoId) %>"<% } %>><td><a href="<%= fmt.cardUrl(a.name) %>"><%= a.name %></a> <span class="setcode"><%= a.set %></span> <span class="muted"><%= a.treatment %></span></td><td class="num"><%= a.price == null ? (a.mtgoId ? '—' : 'no match') : fmt.tix(a.price) %></td></tr>
+            <tr <% if (a.mtgoId) { %>data-preview="<%= img(a.mtgoId) %>"<% } %>><td><a href="<%= fmt.cardUrl(a.name) %>"><%= a.name %></a> <span class="setcode"><%= a.set %></span> <span class="muted"><%= a.treatment %></span></td><td class="small muted"><%= a.newPrinting ? (a.mtgoId ? 'new printing · not graphed' : 'not on GoatBots yet') : '' %></td><td class="num"><%= a.price == null ? '—' : fmt.tix(a.price) %></td></tr>
           <% } %>
           </tbody>
         </table>

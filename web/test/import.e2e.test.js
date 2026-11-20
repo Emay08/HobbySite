@@ -246,6 +246,7 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
     assert.match(page, /mtgo-treasure-chest-info/);
     assert.match(page, /Mar 4, 2026/); // recorded = when the snapshot was taken (4 p.m. Vancouver), not the page date
     assert.match(page, /New in CURATED SLOT/);
+    assert.match(page, /The 1 card added to the first curated table/); // Mox Opal: long-listed, so graphed
     assert.match(page, /class="chest-chart"/);
     assert.match(page, /12\.00 tix/); // latest average
     assert.match(page, /Ancient Tomb/);
@@ -254,6 +255,17 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
     assert.match(page, /<th>Card<\/th>\s*<th class="num">Price<\/th>\s*<th class="num"[^>]*>Change<\/th>\s*<th class="num"[^>]*>Low<\/th>/);
     assert.doesNotMatch(page, /first check by the watcher/);
     assert.match(page, /short-term/);
+    // a printing GoatBots only started listing at the update is left out of the graph
+    await db.collection('meta').updateOne({ _id: 'cardSync' }, { $set: { firstSyncAt: new Date('2026-01-01T00:00:00Z') } }, { upsert: true });
+    await db.collection('cards').updateOne({ _id: '70000' }, { $set: { firstSeen: new Date('2026-03-04T12:00:00Z') } });
+    {
+      const p2 = await html('/mtgo/chest');
+      assert.match(p2, /The 0 cards added/);
+      assert.match(p2, /1 new printing \(unsettled prices\) left out/);
+      assert.match(p2, /new printing · not graphed/);
+      assert.doesNotMatch(p2, /class="chest-chart"/);
+    }
+    await db.collection('cards').updateOne({ _id: '70000' }, { $unset: { firstSeen: '' } });
     r = await form(`/mtgo/watch/item/${tomb.insertedId}/move`, { back: '/mtgo/chest' });
     assert.equal(r.status, 303);
     assert.equal(r.headers.get('location'), '/mtgo/chest');

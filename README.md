@@ -22,7 +22,7 @@ mtgo-manager/
 | `collection`    | web (CSV upload)     | One doc per MTGO catalog ID: name, qty, set, rarity, foil |
 | `uploads`       | web                  | Upload log with added/removed/changed counts |
 | `prices`        | functions/priceSync  | `_id` = MTGO catalog ID, `price`, `prevPrice` (tix) |
-| `cards`         | functions/priceSync  | Every MTGO printing (name, set, foil) — powers the card search |
+| `cards`         | functions/priceSync  | Every MTGO printing (name, set, foil, `firstSeen` = when GoatBots first listed it) — powers the card search |
 | `price_history` | both                 | Daily price per tracked card (anything on a watch list, target or swap) |
 | `watchlist`     | web                  | Short- and long-term watch-list entries (`list: 'short' \| 'long'`) |
 | `targets`       | web + priceSync      | Price targets; the daily job sets `hit` / `hitAt` |
@@ -102,7 +102,7 @@ Your Google Sheet (Treasure Chest tabs + `buysell`) was converted to `vault-impo
 ### Current Treasure Chest — **MTGO → Chest**
 `/mtgo/chest`, built from the watcher's page snapshots:
 - **Last update recorded**: when the watcher first saw the chest's current contents (not the "Last Updated" date printed on the page). If the watcher started after the update, it says so. **Next update** comes from the page; there's a link to the official page.
-- **New in the first curated table**: the average GoatBots price, per day since the update was recorded, of the cards newly added this update to the first table of the curated section (whole sets left out). Points come from the daily `price_daily` snapshot plus today's prices. Each chest version is matched to an MTGO ID by name + set (+ foil); when a set has several printings, Scryfall's version label is matched against the page's Treatment, otherwise the cheapest printing is used.
+- **New in the first curated table**: the average GoatBots price, per day since the update was recorded, of the cards newly added this update to the first table of the curated section (whole sets left out). Points come from the daily `price_daily` snapshot plus today's prices. **New printings are left out**: a printing GoatBots first listed within two days before the update was recorded, or later, or one GoatBots doesn't list yet, has rough, volatile early prices. (The daily sync stamps each printing's `firstSeen` the first time GoatBots lists it; printings from the very first sync, or stored before `firstSeen` existed, count as established.) Each chest version is matched to an MTGO ID by name + set (+ foil); when a set has several printings, Scryfall's version label is matched against the page's Treatment, otherwise the cheapest printing is used.
 - **Your cards in the chest**: everything you own or watch that is in any curated table, matched by name, most expensive first. Columns: price (the card's most expensive chest version), **change** since the update (vs. the first price recorded after it was recorded), **low** (lowest price recorded since), your quantity, watch lists, and the chest versions. **↘ sold** marks cards you've sold since the update was recorded (GoatBots or logged trades, or unconfirmed drops in your collection) — hover it for details. Watched cards can be moved between short/long or removed right there; owned cards that aren't watched get + Short / + Long.
 
 Prices below 0.10 tix are shown to three decimals everywhere.

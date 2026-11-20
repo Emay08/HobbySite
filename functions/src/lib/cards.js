@@ -40,13 +40,29 @@ async function storeCards(db, cards) {
   const coll = db.collection('cards');
   await coll.createIndex({ name: 1 });
   await coll.createIndex({ nameLower: 1 });
+  const now = new Date();
   for (let i = 0; i < cards.length; i += 5000) {
-    const ops = cards.slice(i, i + 5000).map((c) => ({
-      replaceOne: { filter: { _id: c._id }, replacement: { ...c, nameLower: c.name.toLowerCase() }, upsert: true },
-    }));
+    // firstSeen: when GoatBots first listed this printing (only set when it's inserted), so
+    // brand-new printings can be told apart. Cards stored before this field existed have none.
+    const ops = cards.slice(i, i + 5000).map((c) => {
+      const { _id, ...fields } = c;
+      return {
+        updateOne: {
+          filter: { _id },
+          update: { $set: { ...fields, nameLower: c.name.toLowerCase() }, $setOnInsert: { firstSeen: now } },
+          upsert: true,
+        },
+      };
+    });
     await coll.bulkWrite(ops, { ordered: false });
   }
-  await db.collection('meta').updateOne({ _id: 'cardSync' }, { $set: { updatedAt: new Date(), count: cards.length } }, { upsert: true });
+  // firstSyncAt: the earliest sync that stored cards; printings first seen then were already
+  // on MTGO before tracking started, not new.
+  await db.collection('meta').updateOne(
+    { _id: 'cardSync' },
+    { $set: { updatedAt: now, count: cards.length }, $min: { firstSyncAt: now } },
+    { upsert: true }
+  );
   return cards.length;
 }
 

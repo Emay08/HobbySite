@@ -26,3 +26,14 @@ test('curated tables: by section when recorded, else all', () => {
   assert.deepEqual(curatedTables(parsed).map((t) => t.name), ['CURATED SLOT', 'SET DEBUT SLOT']);
   assert.equal(curatedTables({ slots: [{ name: 'A', cards: [] }] }).length, 1);
 });
+
+test('new printings: listed by GoatBots around the update, not before tracking began', () => {
+  const { isNewPrinting } = require('../lib/chest');
+  const rec = new Date('2026-12-09T18:00:00Z');
+  const firstSync = new Date('2026-11-20T10:20:00Z');
+  assert.equal(isNewPrinting(null, rec, firstSync), false); // stored before firstSeen existed
+  assert.equal(isNewPrinting(new Date('2026-11-20T10:21:00Z'), rec, firstSync), false); // in the first sync
+  assert.equal(isNewPrinting(new Date('2026-11-30T10:20:00Z'), rec, firstSync), false); // listed well before the update
+  assert.equal(isNewPrinting(new Date('2026-12-08T10:20:00Z'), rec, firstSync), true); // a day before (previews)
+  assert.equal(isNewPrinting(new Date('2026-12-10T10:20:00Z'), rec, firstSync), true); // after
+});
