@@ -30,6 +30,7 @@ function normaliseCards(json) {
       set: String(v.cardset ?? v.set ?? '').toUpperCase(),
       rarity: String(v.rarity ?? ''),
       foil: v.foil === true || v.foil === 1 || v.foil === '1' || v.foil === 'true',
+      collector: String(v.version ?? ''), // GoatBots' "version": the collector number ("19", "84", "33/195")
     });
   }
   if (!out.length) throw new Error('Card definitions parsed but no cards found');

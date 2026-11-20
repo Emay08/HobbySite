@@ -270,6 +270,30 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
     assert.equal(r.status, 303);
     assert.equal(r.headers.get('location'), '/mtgo/chest');
     assert.equal((await db.collection('watchlist').findOne({ _id: tomb.insertedId })).list, 'long');
+
+    // two SOM Mox Opals: the Treatment ("Retro Frame") picks the retro one first…
+    await db.collection('cards').insertOne({ _id: '70001', name: 'Mox Opal', nameLower: 'mox opal', set: 'SOM', rarity: 'Mythic', foil: false });
+    await db.collection('scryfall_cards').insertMany([
+      { _id: '70000', v: 2, fetchedAt: new Date(), info: { label: 'Regular', collector: '179', setName: 'Scars of Mirrodin', img: {} } },
+      { _id: '70001', v: 2, fetchedAt: new Date(), info: { label: 'Retro frame', collector: '400', setName: 'Scars of Mirrodin', img: {} } },
+    ]);
+    let pg = await html('/mtgo/chest');
+    assert.equal((await db.collection('tc_versions').findOne({ name: 'Mox Opal' })).mtgoId, '70001');
+    // …then GoatBots' list says the chest has the plain printing: corrected, with a notice
+    await db.collection('gb_chest').insertOne({ _id: 'current', fetchedAt: new Date(), entries: [{ name: 'Mox Opal', variant: '', set: 'SOM', foil: false }] });
+    pg = await html('/mtgo/chest');
+    const v = await db.collection('tc_versions').findOne({ name: 'Mox Opal' });
+    assert.deepEqual([v.mtgoId, v.via], ['70000', 'goatbots']);
+    assert.match(pg, /class="via via-goatbots"/);
+    const hl = await db.collection('highlights').findOne({ title: /version corrected: Mox Opal/ });
+    assert.ok(hl, 'notice added to Highlights');
+    assert.match(hl.summary, /#70000 \(Regular #179\), not #70001 — confirmed by GoatBots/);
+    // a later, weaker answer (GoatBots' list no longer has the card) doesn't undo it
+    await db.collection('gb_chest').updateOne({ _id: 'current' }, { $set: { entries: [] } });
+    await html('/mtgo/chest');
+    assert.equal((await db.collection('tc_versions').findOne({ name: 'Mox Opal' })).mtgoId, '70000');
+    assert.equal(await db.collection('highlights').countDocuments({ title: /version corrected/ }), 1);
+    await db.collection('cards').deleteOne({ _id: '70001' });
   }
 
   // undo

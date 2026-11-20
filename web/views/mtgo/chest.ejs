@@ -21,6 +21,11 @@
 
 <%
   const pct = (v) => v == null ? '' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+  const VIA = {
+    goatbots: ['✓', "Version confirmed by GoatBots' Treasure Chest list"],
+    guess: ['?', "Several printings in this set and nothing to tell them apart yet — cheapest shown. GoatBots' Treasure Chest list usually settles it within a day or two."],
+  };
+  const viaMark = (via) => VIA[via] ? `<span class="via via-${via}" title="${VIA[via][1].replace(/"/g, '&quot;')}">${VIA[via][0]}</span>` : '';
 %>
 <div class="stats chest-stats">
   <div class="stat stat-hero">
@@ -83,7 +88,7 @@
         <table class="table compact">
           <tbody>
           <% for (const a of c.added) { %>
-            <tr <% if (a.mtgoId) { %>data-preview="<%= img(a.mtgoId) %>"<% } %>><td><a href="<%= fmt.cardUrl(a.name) %>"><%= a.name %></a> <span class="setcode"><%= a.set %></span> <span class="muted"><%= a.treatment %></span></td><td class="small muted"><%= a.newPrinting ? (a.mtgoId ? 'new printing · not graphed' : 'not on GoatBots yet') : '' %></td><td class="num"><%= a.price == null ? '—' : fmt.tix(a.price) %></td></tr>
+            <tr <% if (a.mtgoId) { %>data-preview="<%= img(a.mtgoId) %>"<% } %>><td><a href="<%= fmt.cardUrl(a.name) %>"><%= a.name %></a> <span class="setcode"><%= a.set %></span> <span class="muted"><%= a.treatment %></span><%- viaMark(a.via) %></td><td class="small muted"><%= a.newPrinting ? (a.mtgoId ? 'new printing · not graphed' : 'not on GoatBots yet') : '' %></td><td class="num"><%= a.price == null ? '—' : fmt.tix(a.price) %></td></tr>
           <% } %>
           </tbody>
         </table>
@@ -95,7 +100,7 @@
 <div class="card" id="mine">
   <div class="section-head">
     <h3>Your cards in the chest <span class="muted small">(<%= c.mine.length %>)</span></h3>
-    <span class="small muted">owned or on a watch list · any curated table · matched by name · most expensive first</span>
+    <span class="small muted">owned or on a watch list · any curated table · matched by name · most expensive first<% if (c.gbFetchedAt) { %> · ✓ = version confirmed by GoatBots (list read <%= fmt.ago(c.gbFetchedAt) %>)<% } %></span>
   </div>
   <% if (!c.mine.length) { %>
     <p class="muted small">None of your cards or watched cards are in a curated table right now.</p>
@@ -139,7 +144,7 @@
         </td>
         <td class="small chest-versions">
           <% for (const v of m.versions) { %>
-            <div <% if (v.mtgoId) { %>data-preview="<%= img(v.mtgoId) %>"<% } %>><span class="setcode"><%= v.set %></span> <span class="muted"><%= v.treatment %></span> · <%= v.table %> · <%= v.slots %> slot<%= v.slots === 1 ? '' : 's' %></div>
+            <div <% if (v.mtgoId) { %>data-preview="<%= img(v.mtgoId) %>"<% } %>><span class="setcode"><%= v.set %></span> <span class="muted"><%= v.treatment %></span><%- viaMark(v.via) %> · <%= v.table %> · <%= v.slots %> slot<%= v.slots === 1 ? '' : 's' %></div>
           <% } %>
         </td>
       </tr>

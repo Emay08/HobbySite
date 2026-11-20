@@ -530,3 +530,6 @@ form.inline { display: inline; }
 .chest-graph .chest-chart { margin: .3rem 0 .1rem; }
 .chest-graph p { margin: .2rem 0; }
 @media (max-width: 1000px) { .stats.chest-stats { grid-template-columns: 1fr 1fr; } }
+.via { display: inline-block; margin-left: .3rem; font-size: .72rem; font-weight: 700; cursor: help; }
+.via-goatbots { color: #6fcf97; }
+.via-guess { color: #f2c94c; border: 1px solid rgba(242,201,76,.5); border-radius: 50%; width: 1.05em; height: 1.05em; line-height: 1em; text-align: center; }

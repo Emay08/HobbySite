@@ -37,15 +37,20 @@ const PROMO_TYPES = {
   promopack: 'Promo pack',
 };
 
-/** "Borderless · Showcase", "Retro frame", "Regular"… */
+const LANGS = { ja: 'Japanese', de: 'German', fr: 'French', it: 'Italian', es: 'Spanish', pt: 'Portuguese', ru: 'Russian', ko: 'Korean', zhs: 'Chinese', zht: 'Chinese', ph: 'Phyrexian' };
+// bump when the label wording changes, so cached labels are fetched again
+const CACHE_V = 2;
+
+/** "Borderless · Showcase", "Retro frame", "Japanese", "Regular"… */
 function variantLabel(c) {
   const parts = [];
   if (c.border_color === 'borderless') parts.push('Borderless');
+  if (c.border_color === 'white') parts.push('White border');
   for (const fe of c.frame_effects || []) if (FRAME_EFFECTS[fe] && !parts.includes(FRAME_EFFECTS[fe])) parts.push(FRAME_EFFECTS[fe]);
   if (c.full_art && !parts.includes('Full art') && c.type_line && !/Basic Land/.test(c.type_line)) parts.push('Full art');
   if (c.frame === '1993' || c.frame === '1997') parts.push('Retro frame');
   for (const p of c.promo_types || []) if (PROMO_TYPES[p]) parts.push(PROMO_TYPES[p]);
-  if (c.lang && c.lang !== 'en') parts.push(c.lang.toUpperCase());
+  if (c.lang && c.lang !== 'en') parts.push(LANGS[c.lang] || c.lang.toUpperCase());
   return parts.length ? parts.join(' · ') : 'Regular';
 }
 
@@ -86,12 +91,14 @@ async function versionInfo(db, ids, { fetchImpl = fetch, timeoutMs = 5000 } = {}
   if (!unique.length) return result;
   const coll = db.collection('scryfall_cards');
   const now = Date.now();
+  const stale = new Map();
   try {
     const cached = await coll.find({ _id: { $in: unique } }).toArray();
     const fresh = new Set();
+    for (const d of cached) if (!d.missing && d.info) stale.set(d._id, d.info); // fallback if a refresh fails
     for (const d of cached) {
       const age = now - new Date(d.fetchedAt).getTime();
-      if (d.missing ? age < MISS_TTL : age < TTL) {
+      if (d.v === CACHE_V && (d.missing ? age < MISS_TTL : age < TTL)) {
         fresh.add(d._id);
         if (!d.missing) result.set(d._id, d.info);
       }
@@ -113,7 +120,7 @@ async function versionInfo(db, ids, { fetchImpl = fetch, timeoutMs = 5000 } = {}
         batch.map((id) => ({
           replaceOne: {
             filter: { _id: id },
-            replacement: found.has(id) ? { _id: id, info: found.get(id), fetchedAt: at } : { _id: id, missing: true, fetchedAt: at },
+            replacement: found.has(id) ? { _id: id, v: CACHE_V, info: found.get(id), fetchedAt: at } : { _id: id, v: CACHE_V, missing: true, fetchedAt: at },
             upsert: true,
           },
         })),
@@ -124,6 +131,7 @@ async function versionInfo(db, ids, { fetchImpl = fetch, timeoutMs = 5000 } = {}
   } catch (err) {
     console.warn('Scryfall lookup failed:', err.message);
   }
+  for (const [id, info] of stale) if (!result.has(id)) result.set(id, info);
   return result;
 }
 

@@ -10,6 +10,7 @@
  *    table now, matched by name, with sales since the update was recorded
  */
 const tc = require('./tcHistory');
+const scryfall = require('./scryfall');
 const { localDate } = require('./reconcile');
 
 const OFFICIAL_URL = 'https://www.mtgo.com/news/mtgo-treasure-chest-info';
@@ -44,59 +45,132 @@ async function currentSnapshot(db) {
   return { parsed: snaps[0].parsed, latestAt: snaps[0].takenAt, recordedAt: first.takenAt, sinceWatcherStart };
 }
 
-/**
- * Picks the MTGO ID for a chest version (name, set, treatment). GoatBots' card list has
- * name, set and foil but no treatment, so when a set has several printings of the card,
- * Scryfall's version label (cached in scryfall_cards) is matched against the treatment
- * text; otherwise the lowest-priced printing is used.
- */
-function pickVersion(cands, row, labels, price) {
-  if (!cands.length) return null;
-  const foil = /foil/i.test(row.treatment || '');
-  let pool = cands.filter((c) => !!c.foil === foil);
-  if (!pool.length) pool = cands;
-  if (pool.length === 1) return pool[0]._id;
-  const words = String(row.treatment || '')
+const STOP = new Set(['foil', 'the', 'and', 'of', 'mystical', 'archive', 'frame', 'art', 'sos', 'soa']);
+const words = (t) =>
+  String(t || '')
     .toLowerCase()
-    .replace(/foil/g, '')
     .split(/[^a-z]+/)
-    .filter((w) => w.length > 3);
-  if (words.length) {
-    const hit = pool.filter((c) => {
-      const l = String(labels.get(c._id) || '').toLowerCase();
-      return words.some((w) => l.includes(w));
-    });
-    if (hit.length === 1) return hit[0]._id;
-    if (hit.length) pool = hit;
-  } else {
-    const regular = pool.filter((c) => labels.get(c._id) === 'Regular');
-    if (regular.length === 1) return regular[0]._id;
-  }
-  return [...pool].sort((a, b) => (price.get(a._id) ?? Infinity) - (price.get(b._id) ?? Infinity))[0]._id;
+    .filter((w) => w.length > 2 && !STOP.has(w));
+
+/** Candidates whose Scryfall label (or set name) contains any of the words. */
+function byWords(pool, ws, info) {
+  if (!ws.length) return [];
+  return pool.filter((c) => {
+    const i = info.get(c._id);
+    const text = `${(i && i.label) || ''} ${(i && i.setName) || ''}`.toLowerCase();
+    return ws.some((w) => text.includes(w));
+  });
 }
 
-async function mapVersions(db, rows) {
+/**
+ * Picks the MTGO ID for one chest version (name, set, treatment). GoatBots' card list has
+ * name, set and foil but no treatment, so when a set has several printings of the card:
+ *   1. GoatBots' own Treasure Chest list names the variant ("Japanese", "Retro", or none
+ *      for the regular printing) — matched against Scryfall's version labels   → 'goatbots'
+ *   2. the official page's Treatment text, matched the same way                → 'treatment'
+ *   3. no treatment: the printing Scryfall calls "Regular"                    → 'regular'
+ *   4. otherwise the cheapest printing                                        → 'guess'
+ */
+function pickVersion(cands, row, info, price, gbEntry) {
+  if (!cands.length) return { mtgoId: null, via: 'none' };
+  const foil = /foil/i.test(row.treatment || '') || !!row.foil;
+  let pool = cands.filter((c) => !!c.foil === foil);
+  if (!pool.length) pool = cands;
+  if (pool.length === 1) return { mtgoId: pool[0]._id, via: 'single' };
+  if (gbEntry) {
+    const hit = gbEntry.variant ? byWords(pool, words(gbEntry.variant), info) : pool.filter((c) => (info.get(c._id) || {}).label === 'Regular');
+    if (hit.length === 1) return { mtgoId: hit[0]._id, via: 'goatbots' };
+    if (hit.length) pool = hit;
+  }
+  const tw = words(row.treatment);
+  if (tw.length) {
+    const hit = byWords(pool, tw, info);
+    if (hit.length === 1) return { mtgoId: hit[0]._id, via: 'treatment' };
+    if (hit.length) pool = hit;
+  } else {
+    const regular = pool.filter((c) => (info.get(c._id) || {}).label === 'Regular');
+    if (regular.length === 1) return { mtgoId: regular[0]._id, via: 'regular' };
+  }
+  const cheapest = [...pool].sort((a, b) => (price.get(a._id) ?? Infinity) - (price.get(b._id) ?? Infinity))[0];
+  return { mtgoId: cheapest._id, via: 'guess' };
+}
+
+/** GoatBots' entry for a chest version: same name, set and foil; among several, the variant matching the treatment. */
+function gbEntryFor(row, gbEntries) {
+  const foil = /foil/i.test(row.treatment || '');
+  const same = gbEntries.filter((e) => tc.keyPart(e.name) === tc.keyPart(row.name) && e.set === String(row.set).toUpperCase() && e.foil === foil);
+  if (same.length <= 1) return same[0] || null;
+  const tw = words(row.treatment);
+  if (!tw.length) return same.find((e) => !e.variant) || null;
+  return same.find((e) => words(e.variant).some((w) => tw.includes(w))) || null;
+}
+
+const VIA_RANK = { none: 0, guess: 1, regular: 2, treatment: 3, goatbots: 4, single: 5 };
+
+/**
+ * Resolves chest rows to MTGO IDs and remembers the answer per update in `tc_versions`.
+ * A better-grounded answer (e.g. GoatBots' list appearing a day or two after the update)
+ * replaces a weaker one, with a notice on the Highlights page; a weaker one never
+ * overwrites a stronger one.
+ */
+async function resolveVersions(db, rows, { pageDate }) {
   const names = [...new Set(rows.map((r) => r.name.toLowerCase()))];
-  const cards = names.length ? await db.collection('cards').find({ nameLower: { $in: names } }, { projection: { nameLower: 1, set: 1, foil: 1, firstSeen: 1 } }).toArray() : [];
-  const firstSeen = new Map(cards.map((c) => [c._id, c.firstSeen || null]));
-  const ids = cards.map((c) => c._id);
-  const [labels, prices] = await Promise.all([
-    db.collection('scryfall_cards').find({ _id: { $in: ids } }, { projection: { 'info.label': 1 } }).toArray(),
-    db.collection('prices').find({ _id: { $in: ids } }, { projection: { price: 1 } }).toArray(),
+  const [cards, gbDoc] = await Promise.all([
+    names.length
+      ? db.collection('cards').find({ nameLower: { $in: names } }, { projection: { nameLower: 1, set: 1, foil: 1, firstSeen: 1, collector: 1 } }).toArray()
+      : [],
+    db.collection('gb_chest').findOne({ _id: 'current' }, { projection: { entries: 1, fetchedAt: 1 } }),
   ]);
-  const labelMap = new Map(labels.map((l) => [l._id, l.info && l.info.label]));
+  const gbEntries = (gbDoc && gbDoc.entries) || [];
+  const candsFor = (r) => cards.filter((c) => c.nameLower === r.name.toLowerCase() && String(c.set).toUpperCase() === String(r.set).toUpperCase());
+  const ambiguousIds = [...new Set(rows.flatMap((r) => { const c = candsFor(r); return c.length > 1 ? c.map((x) => x._id) : []; }))];
+  const [info, prices] = await Promise.all([
+    scryfall.versionInfo(db, ambiguousIds), // fetched (and cached) only where several printings compete
+    db.collection('prices').find({ _id: { $in: cards.map((c) => c._id) } }, { projection: { price: 1 } }).toArray(),
+  ]);
   const priceMap = new Map(prices.map((p) => [p._id, p.price]));
-  return {
-    priceMap,
-    firstSeen,
-    idFor: (row) =>
-      pickVersion(
-        cards.filter((c) => c.nameLower === row.name.toLowerCase() && String(c.set).toUpperCase() === String(row.set).toUpperCase()),
-        row,
-        labelMap,
-        priceMap
-      ),
-  };
+  const firstSeen = new Map(cards.map((c) => [c._id, c.firstSeen || null]));
+
+  const coll = db.collection('tc_versions');
+  const keys = rows.map((r) => `${pageDate || 'current'}|${tc.versionKey(r)}`);
+  const stored = new Map((await coll.find({ _id: { $in: keys } }).toArray()).map((d) => [d._id, d]));
+  const out = new Map();
+  const ops = [];
+  const notices = [];
+  rows.forEach((r, i) => {
+    const key = keys[i];
+    const fresh = pickVersion(candsFor(r), r, info, priceMap, gbEntryFor(r, gbEntries));
+    const old = stored.get(key);
+    let use = fresh;
+    // "only printing" stops being true when GoatBots lists another one, so it doesn't stick
+    if (old && old.mtgoId && old.via !== 'single' && VIA_RANK[old.via] > VIA_RANK[fresh.via]) use = { mtgoId: old.mtgoId, via: old.via };
+    out.set(tc.versionKey(r), use);
+    if (!old || old.mtgoId !== use.mtgoId || old.via !== use.via) {
+      stored.set(key, { ...use });
+      ops.push({ replaceOne: { filter: { _id: key }, replacement: { _id: key, ...use, name: r.name, set: r.set, treatment: r.treatment, at: new Date() }, upsert: true } });
+      if (old && old.mtgoId && old.via !== 'single' && use.mtgoId && old.mtgoId !== use.mtgoId) notices.push({ r, from: old.mtgoId, to: use.mtgoId, via: use.via });
+    }
+  });
+  if (ops.length) await coll.bulkWrite(ops, { ordered: false });
+  for (const n of notices) {
+    const i = info.get(n.to) || {};
+    await db.collection('highlights').updateOne(
+      { _id: `tc-version|${pageDate}|${tc.versionKey(n.r)}|${n.to}` },
+      {
+        $setOnInsert: {
+          source: 'Treasure Chest',
+          category: 'treasure-chest',
+          title: `Treasure Chest version corrected: ${n.r.name}`,
+          summary: `${n.r.set}${n.r.treatment ? ` · ${n.r.treatment}` : ''} is MTGO #${n.to}${i.label ? ` (${i.label}${i.collector ? ` #${i.collector}` : ''})` : ''}, not #${n.from}${n.via === 'goatbots' ? " — confirmed by GoatBots' Treasure Chest list" : ''}.`,
+          url: '/mtgo/chest',
+          detectedAt: new Date(),
+          notified: false,
+        },
+      },
+      { upsert: true }
+    );
+  }
+  return { versions: out, priceMap, firstSeen, gbFetchedAt: gbDoc && gbDoc.fetchedAt };
 }
 
 const NEW_WINDOW = 2 * DAY;
@@ -175,9 +249,11 @@ async function currentChest(db) {
     ((hist && hist.changes) || []).filter((r) => r.slots > 0 && r.slots - (r.change || 0) <= 0).map((r) => tc.versionKey(r))
   );
   const added = first.cards.filter((c) => !tc.isProduct(c.name) && addedKeys.has(tc.versionKey(c)));
-  const [map, syncMeta] = await Promise.all([mapVersions(db, added), db.collection('meta').findOne({ _id: 'cardSync' }, { projection: { firstSyncAt: 1 } })]);
+  const [map, syncMeta] = await Promise.all([resolveVersions(db, added, { pageDate: date }), db.collection('meta').findOne({ _id: 'cardSync' }, { projection: { firstSyncAt: 1 } })]);
   for (const a of added) {
-    a.mtgoId = map.idFor(a);
+    const v = map.versions.get(tc.versionKey(a));
+    a.mtgoId = v.mtgoId;
+    a.via = v.via;
     a.price = a.mtgoId ? map.priceMap.get(a.mtgoId) ?? null : null;
     // left out of the graph: new printings (volatile early prices) and ones GoatBots doesn't list yet
     a.newPrinting = !a.mtgoId || isNewPrinting(map.firstSeen.get(a.mtgoId), recordedAt, syncMeta && syncMeta.firstSyncAt);
@@ -209,7 +285,7 @@ async function currentChest(db) {
   }
   const mineKeys = [...inChest.keys()].filter((k) => ownedBy.has(k) || watchBy.has(k));
   const mineRows = mineKeys.flatMap((k) => inChest.get(k).rows);
-  const map2 = await mapVersions(db, mineRows);
+  const map2 = await resolveVersions(db, mineRows, { pageDate: date });
 
   // sales since the update was recorded: trades (GoatBots or logged) and unconfirmed collection drops
   const lowers = mineKeys.map((k) => inChest.get(k).name.toLowerCase());
@@ -246,8 +322,8 @@ async function currentChest(db) {
     mineKeys.map((k) => [
       k,
       inChest.get(k).rows.map((r) => {
-        const mtgoId = map2.idFor(r);
-        return { ...r, mtgoId, price: mtgoId ? map2.priceMap.get(mtgoId) ?? null : null };
+        const { mtgoId, via } = map2.versions.get(tc.versionKey(r));
+        return { ...r, mtgoId, via, price: mtgoId ? map2.priceMap.get(mtgoId) ?? null : null };
       }),
     ])
   );
@@ -292,10 +368,11 @@ async function currentChest(db) {
     firstTable: first.name,
     hasHistory: !!hist,
     added,
+    gbFetchedAt: map2.gbFetchedAt || map.gbFetchedAt || null,
     graphedCount: graphed.length,
     series,
     mine,
   };
 }
 
-module.exports = { currentChest, priceStats, pickVersion, isNewPrinting, curatedTables, contentsSig, OFFICIAL_URL };
+module.exports = { currentChest, priceStats, pickVersion, gbEntryFor, resolveVersions, isNewPrinting, curatedTables, contentsSig, OFFICIAL_URL };

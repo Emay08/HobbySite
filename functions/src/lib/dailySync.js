@@ -2,6 +2,7 @@ const prices = require('./prices');
 const cards = require('./cards');
 const alerts = require('./alerts');
 const chestPrices = require('./chestPrices');
+const gbChest = require('./gbChest');
 
 /**
  * The whole daily job, shared by the Azure timer and the local script:
@@ -13,7 +14,7 @@ const chestPrices = require('./chestPrices');
  *   5. price targets / version swaps: update hit & ready flags for the website
  *      (Telegram for these is off unless enabled with NOTIFY_* settings)
  */
-async function runDailySync(db, { log = console.log, sendAlerts = true } = {}) {
+async function runDailySync(db, { log = console.log, sendAlerts = true, ...opts } = {}) {
   try {
     const defs = await cards.downloadCardDefinitions();
     log(`Stored ${await cards.storeCards(db, defs)} card definitions`);
@@ -29,6 +30,14 @@ async function runDailySync(db, { log = console.log, sendAlerts = true } = {}) {
     log(`Recorded daily prices for ${await chestPrices.recordChestPrices(db, map)} Treasure Chest / owned cards`);
   } catch (err) {
     log(`Daily chest prices skipped: ${err.message}`);
+  }
+  // GoatBots' Treasure Chest list, to pin down which printing each chest card is
+  if (!opts.skipGoatbotsChest) {
+    try {
+      await gbChest.runGbChest(db, { log });
+    } catch (err) {
+      log(`GoatBots Treasure Chest list skipped: ${err.message}`);
+    }
   }
 
   const yesterday = await db.collection('value_history').find().sort({ date: -1 }).limit(1).next();
