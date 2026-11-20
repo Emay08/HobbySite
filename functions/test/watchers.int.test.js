@@ -164,72 +164,112 @@ test('Treasure Chest watcher end to end', { skip: !URI && 'TEST_MONGODB_URI not 
   }
 });
 
-test('reprint watcher end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async () => {
+test('reprint watcher (Scryfall) end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async () => {
   const client = await new MongoClient(URI).connect();
-  const db = client.db('mtgo_spoiler_test');
+  const db = client.db('mtgo_reprint_test');
   await db.dropDatabase();
   await seed(db);
   const tg = fakeTelegram();
-  const { runSpoilers, inActiveHours } = require('../src/lib/spoilers');
+  const { runReprints, inActiveHours, searchUrl } = require('../src/lib/reprints');
+  const card = (id, name, set, setName) => ({ id, name, set, set_name: setName, released_at: '2026-12-05', scryfall_uri: `https://scryfall.com/card/${set}/${id}` });
 
-  const site = {
-    'https://www.magicspoiler.com/': `<html><body><header><ul id="menu-main" class="menu">
-      <li><a href="https://www.magicspoiler.com/mtg-set/nauctis/">Nauctis</a>
-        <ul class="sub-menu"><li><a href="https://www.magicspoiler.com/mtg-set/nauctis-commander/">Commander</a></li></ul></li>
-      <li><a href="https://www.magicspoiler.com/mtg-news/secret-lair-drop/">SL: Drop</a></li>
-      <li><a href="#">…</a></li><li><a href="https://www.magicspoiler.com/mtg-spoilers/">MTG Spoilers</a></li>
-    </ul></header></body></html>`,
-    'https://www.magicspoiler.com/mtg-set/nauctis/': `<html><body><main id="main">
-      <div class="set-card-2"><a href="https://www.magicspoiler.com/mtg-spoiler/abyssal-lotus/" title="Abyssal Lotus"><img alt="Abyssal Lotus - Nauctis MtG Spoiler"></a></div>
-      <a href="https://www.magicspoiler.com/mtg-spoiler/abyssal-lotus/">Abyssal Lotus</a>
-      <a href="https://www.magicspoiler.com/mtg-spoiler/angel-token/" title="Angel Token">Angel Token</a>
-      <a href="https://www.magicspoiler.com/mtg-set/nauctis/page/2/">2</a></main></body></html>`,
-    'https://www.magicspoiler.com/mtg-set/nauctis/page/2/': `<html><body><main id="main">
-      <a href="https://www.magicspoiler.com/mtg-spoiler/crucible-of-worlds/" title="Crucible of Worlds"><img alt="Crucible of Worlds"></a></main></body></html>`,
-    'https://www.magicspoiler.com/mtg-set/nauctis-commander/': `<html><body><main id="main"></main></body></html>`,
-    'https://www.magicspoiler.com/mtg-news/secret-lair-drop/': `<html><body><main id="main"><article><div class="entry-content">
-      <p>Contents:<br>1x Lightning Bolt as &#8220;Zap&#8221;<br>1x Wurm Token</p>
-      <p>Spend $200 for a bonus: Return of the Wildspeaker as “Transporter Boondoggle!”</p></div></article></main></body></html>`,
-  };
-  let fetches = 0;
+  let pages;
+  const urls = [];
   const fetcher = async (url) => {
-    fetches++;
-    if (!(url in site)) throw new Error('404 ' + url);
-    return site[url];
+    urls.push(url);
+    const i = url.includes('page=2') ? 1 : 0;
+    return pages[i];
   };
+  const now = new Date('2026-11-20T18:00:00Z');
+  pages = [
+    { data: [card('a1', 'Crucible of Worlds', 'nau', 'Nauctis'), card('a2', 'Shock', 'nau', 'Nauctis')], has_more: true, next_page: 'https://api.scryfall.com/cards/search?page=2' },
+    { data: [card('b1', 'Lightning Bolt', 'sld', 'Secret Lair Drop'), card('b2', 'Lightning Bolt', 'sld', 'Secret Lair Drop')], has_more: false },
+  ];
 
   try {
-    let r = await runSpoilers(db, { force: true, fetcher, delayMs: 0 });
-    assert.deepStrictEqual(r.pages.map((p) => [p.page, p.cards]), [['Nauctis', 2], ['Nauctis › Commander', 0], ['SL: Drop', 2]]);
-    assert.deepStrictEqual(r.found.map((f) => f.card).sort(), ['Crucible of Worlds', 'Lightning Bolt', 'Return of the Wildspeaker']);
-    assert.strictEqual(tg.sent.length, 1);
-    assert.match(tg.sent[0], /Reprints spotted/);
-    assert.match(tg.sent[0], /<b>Nauctis<\/b>[\s\S]*<b>Crucible of Worlds<\/b> — own 2 · 5\.25 tix \(5DN\)/);
-    assert.match(tg.sent[0], /<b>SL: Drop<\/b>[\s\S]*<b>Lightning Bolt<\/b>/);
-    assert.match(tg.sent[0], /Added to your short-term watch list: 3/);
-    const short = await db.collection('watchlist').find({ list: 'short' }).toArray();
-    assert.ok(short.find((s) => s.name === 'Crucible of Worlds' && s.note === 'Auto-added: reprint in Nauctis'));
+    // First run: records everything, highlights only
+    let r = await runReprints(db, { now, force: true, fetcher, delayMs: 0 });
+    assert.strictEqual(r.firstRun, true);
+    assert.strictEqual(r.printings, 4);
+    assert.deepStrictEqual(r.found.map((f) => f.card).sort(), ['Crucible of Worlds', 'Lightning Bolt']); // two Bolt printings → one entry
+    assert.strictEqual(tg.sent.length, 0);
+    assert.strictEqual(await db.collection('watchlist').countDocuments({ list: 'short' }), 0);
+    assert.strictEqual(await db.collection('highlights').countDocuments({ category: 'reprint', source: 'Scryfall' }), 2);
+    assert.match(urls[0], /is%3Areprint.*date%3E%3D2026-11-06/);
+    assert.match(searchUrl('2026-11-06'), /order=spoiled/);
 
-    // Nothing new → no message
-    r = await runSpoilers(db, { force: true, fetcher, delayMs: 0 });
-    assert.deepStrictEqual(r.found, []);
-    assert.strictEqual(tg.sent.length, 1);
+    // Nothing new → nothing sent
+    urls.length = 0;
+    r = await runReprints(db, { now, force: true, fetcher, delayMs: 0 });
+    assert.deepStrictEqual([r.fresh, r.found.length], [0, 0]);
 
-    // A new owned card appears in the Commander sub-page
-    site['https://www.magicspoiler.com/mtg-set/nauctis-commander/'] = `<html><body><main id="main">
-      <a href="https://www.magicspoiler.com/mtg-spoiler/force-of-will/" title="Force of Will">Force of Will</a></main></body></html>`;
-    r = await runSpoilers(db, { force: true, fetcher, delayMs: 0 });
-    assert.deepStrictEqual(r.found, [{ page: 'Nauctis › Commander', card: 'Force of Will' }]);
-    assert.match(tg.sent[1], /Force of Will<\/b> — own 5/);
+    // A newly previewed reprint of an owned card
+    pages = [{ data: [card('c1', 'Force of Will', 'nau', 'Nauctis'), card('a1', 'Crucible of Worlds', 'nau', 'Nauctis')], has_more: false }];
+    r = await runReprints(db, { now, force: true, fetcher, delayMs: 0 });
+    assert.deepStrictEqual(r.found, [{ set: 'Nauctis', card: 'Force of Will' }]);
+    assert.strictEqual(tg.sent.length, 1);
+    assert.match(tg.sent[0], /Reprints of cards you own or watch/);
+    assert.match(tg.sent[0], /<b>Nauctis<\/b> \(NAU, 2026-12-05\)[\s\S]*<b>Force of Will<\/b> — own 5/);
+    assert.ok(await db.collection('watchlist').findOne({ list: 'short', name: 'Force of Will', note: 'Auto-added: reprint in Nauctis' }));
+
+    // Scryfall answers 404 when nothing matches
+    pages = [{ data: [], has_more: false }];
+    r = await runReprints(db, { now, force: true, fetcher, delayMs: 0 });
+    assert.strictEqual(r.printings, 0);
 
     // Throttle + active hours
-    r = await runSpoilers(db, { now: new Date(), fetcher, delayMs: 0 });
+    r = await runReprints(db, { now: new Date('2026-11-20T18:20:00Z'), fetcher, delayMs: 0 });
     assert.ok(r.skipped);
     assert.strictEqual(inActiveHours(new Date('2026-11-19T15:30:00Z')), false); // 7:30 PST
     assert.strictEqual(inActiveHours(new Date('2026-11-19T16:05:00Z')), true); // 8:05
-    assert.strictEqual(inActiveHours(new Date('2026-11-20T04:05:00Z')), true); // 20:05
     assert.strictEqual(inActiveHours(new Date('2026-11-20T05:05:00Z')), false); // 21:05
-    assert.ok(fetches > 0);
+    const st = await db.collection('monitor_state').findOne({ _id: 'reprints' });
+    assert.strictEqual(st.lastError, null);
+  } finally {
+    tg.restore();
+    await db.dropDatabase();
+    await client.close();
+  }
+});
+
+test('Player Reward Pack watcher end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async () => {
+  const client = await new MongoClient(URI).connect();
+  const db = client.db('mtgo_prp_test');
+  await db.dropDatabase();
+  await seed(db);
+  const tg = fakeTelegram();
+  const { runRewardPacks } = require('../src/lib/rewardPacks');
+  const { prpHtml } = require('./fixtures/prpPage');
+  let html = prpHtml([['Refute Destiny', 'FRA', 'FOIL Braintwister', '1'], ['Shock', 'M21', '', '1']]);
+  const fetcher = async () => html;
+  try {
+    let r = await runRewardPacks(db, { force: true, fetcher });
+    assert.deepStrictEqual([r.firstRun, r.changed, r.cards], [true, false, 2]);
+    assert.strictEqual(tg.sent.length, 0);
+
+    r = await runRewardPacks(db, { force: true, fetcher });
+    assert.strictEqual(r.changed, false);
+
+    html = prpHtml([['Shock', 'M21', '', '1'], ['Crucible of Worlds', '5DN', 'FOIL', '1'], ['Opt', 'XLN', '', '2']], 'December 1, 2026');
+    r = await runRewardPacks(db, { force: true, fetcher });
+    assert.deepStrictEqual([r.changed, r.added.map((c) => c.name), r.removed.map((c) => c.name)], [true, ['Crucible of Worlds', 'Opt'], ['Refute Destiny']]);
+    assert.deepStrictEqual(r.autoAdded, ['Crucible of Worlds']);
+    assert.strictEqual(tg.sent.length, 1);
+    assert.match(tg.sent[0], /Player Reward Packs changed<\/b> \(Last Updated: December 1, 2026\)/);
+    assert.match(tg.sent[0], /<b>Crucible of Worlds<\/b> — own 2[^\n]*— 5DN FOIL/);
+    assert.match(tg.sent[0], /Removed \(1\)<\/b>\n• Refute Destiny/);
+    const h = await db.collection('highlights').findOne({ category: 'reward-pack' });
+    assert.match(h.summary, /Yours: Crucible of Worlds/);
+    assert.strictEqual(await db.collection('prp_snapshots').countDocuments(), 2);
+
+    // Throttled to every 6 hours
+    r = await runRewardPacks(db, { fetcher });
+    assert.ok(r.skipped);
+
+    // A broken page records the failure
+    html = '<html><body>maintenance</body></html>';
+    await assert.rejects(runRewardPacks(db, { force: true, fetcher }), /No card table/);
+    assert.match((await db.collection('monitor_state').findOne({ _id: 'reward-packs' })).lastError, /No card table/);
   } finally {
     tg.restore();
     await db.dropDatabase();

@@ -197,7 +197,7 @@ async function runMonitor(db, monitor, { dryRun = false, log = console.log } = {
 
   for (const r of toNotify) {
     const e = telegram.escapeHtml;
-    const icon = r.category === 'treasure-chest' ? '💰' : r.category === 'reprint' ? '♻️' : '📰';
+    const icon = r.category === 'treasure-chest' ? '💰' : r.category === 'reprint' ? '♻️' : r.category === 'banlist' ? '🔨' : '📰';
     const msg =
       `${icon} <b>${e(r.item.title)}</b>\n` +
       (r.snippet ? `<i>${e(r.snippet.slice(0, 600))}</i>\n` : '') +

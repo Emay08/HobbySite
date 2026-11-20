@@ -12,6 +12,8 @@
   --reprint: #7aa7ff;
   --chest: #e8b04b;
   --news: #a58cf5;
+  --banlist: #f07171;
+  --reward: #5fcf9a;
   --radius: 10px;
   --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -187,6 +189,8 @@ a.feed-title:hover { color: var(--accent); }
 .badge-reprint { color: var(--reprint); }
 .badge-treasure-chest { color: var(--chest); }
 .badge-news { color: var(--news); }
+.badge-banlist { color: var(--banlist); }
+.badge-reward-pack { color: var(--reward); }
 
 .monitor-list { list-style: none; padding: 0; margin: 0; }
 .monitor-list li { display: flex; gap: .6rem; padding: .45rem 0; border-bottom: 1px solid var(--line); }

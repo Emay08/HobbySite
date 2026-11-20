@@ -5,39 +5,30 @@ const { extractLinks, extractRss, classify } = require('../src/lib/monitor');
 const { parsePriceZip } = require('../src/lib/prices');
 const monitors = require('../src/lib/monitors.config');
 
-const mtgoNews = monitors.find((m) => m.id === 'mtgo-news');
+const banlist = monitors.find((m) => m.id === 'banlist');
 
-test('extracts news links and resolves relative URLs', () => {
-  const html = `
-    <main>
-      <a href="/news/magic-online-announcements-november-18-2026"><h3>Magic Online Announcements – November 18, 2026</h3></a>
-      <a href="/news/vintage-cube-returns">Vintage Cube Returns!</a>
-      <a href="/news/vintage-cube-returns">Read more</a>
-      <a href="/store">Store</a>
-    </main>`;
-  const items = extractLinks(html, mtgoNews);
-  assert.strictEqual(items.length, 2);
-  assert.strictEqual(items[0].url, 'https://www.mtgo.com/news/magic-online-announcements-november-18-2026');
-  assert.match(items[0].title, /Announcements/);
+test('only the banlist monitor is configured', () => {
+  assert.deepStrictEqual(monitors.filter((m) => m.enabled).map((m) => m.id), ['banlist']);
+  assert.ok(monitors.retired.includes('mtgo-news') && monitors.retired.includes('reddit-mtgo'));
 });
 
-test('classifies treasure chest from article body and reprints from title', () => {
-  const tc = classify(mtgoNews, 'Magic Online Announcements', 'Blah. The Treasure Chest will be updated on November 25 with new cards. More.');
-  assert.strictEqual(tc.category, 'treasure-chest');
-  assert.strictEqual(tc.notify, false); // Telegram is reserved for the dedicated watchers
-  assert.match(tc.snippet, /Treasure Chest will be updated/);
-
-  const rp = classify(mtgoNews, 'Vintage Cube Returns!');
-  assert.strictEqual(rp.category, 'reprint');
-
-  const other = classify(mtgoNews, 'Server maintenance');
-  assert.deepStrictEqual([other.category, other.notify, other.keep], ['news', false, true]);
-});
-
-test('reddit monitor drops posts that match no rule', () => {
-  const reddit = monitors.find((m) => m.id === 'reddit-mtgo');
-  assert.strictEqual(classify(reddit, 'Anyone want to trade?').keep, false);
-  assert.strictEqual(classify(reddit, 'Treasure chest update leaked').category, 'treasure-chest');
+test('banlist monitor keeps only announcements with "Banned" in the title', () => {
+  // Same shape as magic.wizards.com/en/news/announcements
+  const html = `<main>
+    <a data-navigation-type="server-side" href="/en/news/announcements">Announcements</a>
+    <a data-navigation-type="server-side" href="/en/news/announcements/banned-and-restricted-october-12-2026"><div><h3 class="css-mbeyN">Banned and Restricted Announcement — October 12, 2026</h3></div></a>
+    <a data-navigation-type="server-side" href="/en/news/announcements/mtg-arena-patch-notes-2026-11"><h3 class="css-mbeyN">MTG Arena Patch Notes</h3></a>
+    <a href="/en/news/feature/something"><h3>Feature</h3></a>
+  </main>`;
+  const items = extractLinks(html, banlist);
+  assert.deepStrictEqual(
+    items.map((i) => i.url),
+    ['https://magic.wizards.com/en/news/announcements/banned-and-restricted-october-12-2026', 'https://magic.wizards.com/en/news/announcements/mtg-arena-patch-notes-2026-11']
+  );
+  const b = classify(banlist, items[0].title);
+  assert.deepStrictEqual([b.category, b.keep, b.notify], ['banlist', true, true]);
+  assert.strictEqual(classify(banlist, items[1].title).keep, false);
+  assert.strictEqual(classify(banlist, 'Unbanning a classic').keep, false);
 });
 
 test('parses Atom feeds (Reddit)', () => {

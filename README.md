@@ -9,8 +9,9 @@ mtgo-manager/
 │                                     → Show Order (dance recital running-order planner)
 └── functions/   Azure Functions app (timer triggers)
                  treasureChest – Treasure Chest page: every 30 s near an update, daily otherwise  → Telegram
-                 spoilerWatch  – MagicSpoiler, hourly 8 am–8 pm PT: reprints of your cards       → Telegram
-                 siteMonitor   – every 30 min: MTGO news + r/mtgo headlines for the website
+                 spoilerWatch  – Scryfall, hourly 8 am–8 pm PT: reprints of your cards           → Telegram
+                 siteMonitor   – every 30 min: Wizards "Banned" announcements                    → Telegram
+                                 + Player Reward Pack contents (every 6 h)                      → Telegram
                  priceSync     – daily: GoatBots cards + prices → value history, tracked-card history,
                                  target / swap status for the website
 ```
@@ -30,10 +31,11 @@ mtgo-manager/
 | `targets`       | web + priceSync      | Price targets; the daily job sets `hit` / `hitAt` |
 | `swaps`         | web + priceSync      | Version swaps; the daily job sets `good` when the wanted printing is cheaper |
 | `value_history` | both                 | One doc per day: total collection value |
-| `highlights`    | functions            | Items shown on the MTGO front page (news, Treasure Chest updates, reprints) |
+| `highlights`    | functions            | Items shown on the MTGO front page (Treasure Chest updates, reprints, banlist announcements, reward pack changes) |
 | `monitor_state` | functions            | Each watcher's state: last run, last error, schedule |
 | `tc_snapshots`  | functions/treasureChest | Parsed copies of the Treasure Chest page (last 30 changes) |
-| `spoiler_pages` | functions/spoilerWatch  | Card names already seen on each MagicSpoiler page |
+| `reprint_seen`  | functions/spoilerWatch  | Scryfall printing IDs the reprint watch has already looked at |
+| `prp_snapshots` | functions/siteMonitor   | Every version of the Player Reward Pack contents |
 | `meta`          | functions/priceSync  | Last price sync time |
 | `trades`        | web                  | Per-card trade entries: logged by hand on card pages, or imported from GoatBots |
 | `gb_trades`     | web                  | Imported GoatBots trades (one doc per trade, with all items) |
@@ -174,18 +176,24 @@ Reads https://www.mtgo.com/news/mtgo-treasure-chest-info.
 - **History:** each update is also written to `tc_history` (date from the page's "Last Updated"), with the full contents and the changes — see *Treasure Chest history* above.
 - The first check only records the page; nothing is sent.
 
-### Reprints — `functions/src/lib/spoilers.js`
+### Reprints — `functions/src/lib/reprints.js`
 
-Reads https://www.magicspoiler.com hourly between 8 am and 8 pm Pacific.
+Asks Scryfall's search API hourly between 8 am and 8 pm Pacific for every reprint printing (paper or MTGO) in sets released from two weeks ago onward: `is:reprint (game:paper or game:mtgo) date>=…`. Scryfall adds preview cards as they're revealed, so upcoming sets and Secret Lair drops show up during spoiler season. (This replaced MagicSpoiler, which blocks Azure behind Cloudflare.)
 
-- The pages to check are taken from the site's navigation bar on every run, including sub-menus (e.g. *Star Trek › Star Trek Commander*), so new sets are picked up automatically.
-- Set pages: every card, following page 2, 3, …. News posts (e.g. Secret Lair drops): "1x Card Name" lines, plus names of your cards mentioned in the text (some posts only show cards as images; those can't be read).
-- Every card not seen before on that page is matched against your collection and watch lists by name. Matches are sent in one Telegram message with prices, saved as highlights, and added to the short-term watch list.
-- The very first run treats everything already on the site as new, so expect one larger message listing current reprints of cards you own.
+- Every printing not seen before is matched against your collection and watch lists by name. Matches are sent in one Telegram message grouped by set (with release date and prices), saved as highlights, and added to the short-term watch list.
+- The first run only records what's already there: highlights, but no Telegram message and no watch-list additions.
+
+### Banlist — `functions/src/lib/monitors.config.js`
+
+Reads https://magic.wizards.com/en/news/announcements every 30 minutes and keeps only announcements with "Banned" in the title (e.g. *Banned and Restricted Announcement — October 12, 2026*). Everything else on that page is ignored. New ones become highlights and a Telegram message (`NOTIFY_BANLIST=false` turns the message off). The page shows only the latest 8 announcements, so an announcement is caught as long as the watcher runs within a few weeks of it. The first run records the page without sending anything.
+
+### Player Reward Packs — `functions/src/lib/rewardPacks.js`
+
+Reads https://www.mtgo.com/player-rewards every 6 hours with the Treasure Chest parser (same page layout). When the card table changes, the added, removed and re-slotted cards are saved as a highlight and sent by Telegram (`NOTIFY_REWARD_PACKS=false` turns the message off); added cards you own or watch are put on the short-term watch list. Every version is kept in `prp_snapshots`. The first check only records the page.
 
 ### If a watcher breaks
 
-Both watchers record errors on the website (Highlights → Monitors, in red). If the Treasure Chest page can't be read for 30 minutes during an update window (6 hours otherwise), or MagicSpoiler for 6 hours, you get one Telegram warning a day. MagicSpoiler sits behind Cloudflare; if it starts blocking Azure, the warning will say so.
+Every watcher records errors on the website (Highlights → Monitors, in red). If the Treasure Chest page can't be read for 30 minutes during an update window (6 hours otherwise), Scryfall for 6 hours, or the Player Rewards page for a day, you get one Telegram warning a day.
 
 ### Running the price sync now
 
@@ -204,13 +212,16 @@ It answers straight away (202) and runs in the background for a minute or two; t
 cd functions
 npm run tc:dry-run         # parse the live Treasure Chest page and print what was found
 npm run tc:run             # one real check now (ignores the schedule)
-npm run spoilers:dry-run   # list pages + cards you own that are on them; saves nothing
-npm run spoilers:run       # one real check now
+npm run spoilers:dry-run   # list Scryfall reprints of cards you own or watch; saves nothing
+npm run spoilers:run       # one real reprint check now
+npm run rewards:dry-run    # parse the live Player Rewards page; saves nothing
+npm run rewards:run        # one real Player Reward Pack check now
+npm run monitors:dry-run   # what the banlist watch would keep from the announcements page
 ```
 
-### News feed (website only)
+### Nothing else
 
-`functions/src/lib/monitors.config.js` also fetches mtgo.com/news and r/mtgo headlines every 30 minutes for the Highlights page. These never send Telegram messages. Check them with `npm run monitors:dry-run`.
+The MTGO.com news and r/mtgo monitors were removed to keep the feed to these four things; their old highlights are cleared on the next run. Earlier MagicSpoiler reprint highlights are kept.
 
 ## 5. Deploy to Azure
 
@@ -299,7 +310,8 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 | `PRICE_SYNC_SCHEDULE` | NCRONTAB, UTC. Default 10:20 UTC daily |
 | `TC_WINDOW_DAYS_BEFORE` / `TC_WINDOW_DAYS_AFTER` | Treasure Chest fast-check window around "Next Update" (default 7 / 7) |
 | `TC_IDLE_HOURS` | Treasure Chest check interval outside the window (default 24) |
-| `SPOILER_HOURS` | MagicSpoiler active hours, Pacific (default `8-20`) |
+| `SPOILER_HOURS` | reprint watch active hours, Pacific (default `8-20`) |
+| `NOTIFY_BANLIST`, `NOTIFY_REWARD_PACKS` | set to `false` to keep banlist / reward pack changes off Telegram (on by default) |
 | `NOTIFY_PRICE_TARGETS`, `NOTIFY_SWAPS`, `NOTIFY_SHORT_WATCH`, `NOTIFY_COLLECTION_MOVERS` | set to `true` to also get Telegram messages for these (all off by default) |
 | `PRICE_ALERT_MIN_PCT` / `PRICE_ALERT_MIN_TIX` | thresholds for the collection-movers message, if turned on (default 25 % and 2 tix) |
 | `WATCH_ALERT_PCT` | default daily-move alert for the short-term watch list (default 15) |

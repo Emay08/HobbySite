@@ -17,10 +17,14 @@ const upload = multer({
 });
 
 const CATEGORY_LABELS = {
-  reprint: 'Reprints',
   'treasure-chest': 'Treasure Chest',
-  news: 'News',
+  reprint: 'Reprints',
+  banlist: 'Banlist',
+  'reward-pack': 'Reward packs',
 };
+
+// The watchers shown in the Monitors panel, in this order.
+const MONITORS = ['treasure-chest', 'reprints', 'banlist', 'reward-packs'];
 
 // ---- Highlights front page -------------------------------------------------
 router.get('/', async (req, res, next) => {
@@ -30,11 +34,12 @@ router.get('/', async (req, res, next) => {
     const db = getDb();
     const [highlights, monitors, summary, targetsHit, swapsReady] = await Promise.all([
       db.collection('highlights').find(filter).sort({ detectedAt: -1 }).limit(60).toArray(),
-      db.collection('monitor_state').find({}, { projection: { seen: 0 } }).sort({ _id: 1 }).toArray(),
+      db.collection('monitor_state').find({ _id: { $in: MONITORS } }, { projection: { seen: 0 } }).toArray(),
       col.getSummary(),
       db.collection('targets').countDocuments({ hit: true }),
       db.collection('swaps').countDocuments({ good: true }),
     ]);
+    monitors.sort((a, b) => MONITORS.indexOf(a._id) - MONITORS.indexOf(b._id));
     res.render('mtgo/index', {
       targetsHit,
       swapsReady,

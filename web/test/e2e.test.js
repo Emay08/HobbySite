@@ -288,6 +288,19 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
 
   await t.test('other pages still render', async () => {
     assert.match(await html('/mtgo'), /Your lists/);
+
+    // Highlights: only the four watchers are listed, banlist highlights get their own chip
+    await db.collection('monitor_state').insertMany([
+      { _id: 'reddit-mtgo', label: 'r/mtgo', lastError: 'HTTP 404' },
+      { _id: 'banlist', label: 'Banlist (Wizards announcements)', lastChecked: new Date() },
+      { _id: 'reward-packs', label: 'Player Reward Packs', lastChecked: new Date(), cards: 12, lastUpdatedText: 'November 2, 2026' },
+    ]);
+    await db.collection('highlights').insertOne({ _id: 'b1', source: 'Banlist', monitorId: 'banlist', title: 'Banned and Restricted Announcement', url: 'https://magic.wizards.com/x', category: 'banlist', detectedAt: new Date() });
+    const hl = await html('/mtgo');
+    assert.doesNotMatch(hl, /r\/mtgo/);
+    assert.match(hl, /Banlist \(Wizards announcements\)[\s\S]*Player Reward Packs[\s\S]*12 cards · updated November 2, 2026/);
+    assert.match(hl, /badge-banlist/);
+    assert.match(await html('/mtgo?category=reward-pack'), /class="chip active">Reward packs/);
     assert.match(await html('/mtgo/collection'), /Most valuable cards/);
     assert.match(await html('/home'), /MTGO Collection Manager/);
   });

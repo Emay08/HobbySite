@@ -23,7 +23,7 @@
     <% if (highlights.length === 0) { %>
       <div class="card empty-card">
         <p><strong>Nothing yet.</strong></p>
-        <p class="muted">Highlights appear here once the Azure monitor function has run. Each new article or page change it finds is stored as a highlight.</p>
+        <p class="muted">Highlights appear here once the Azure monitor function has run. They cover Treasure Chest changes, reprints of your cards, banlist announcements and Player Reward Pack contents.</p>
       </div>
     <% } else { %>
       <ol class="feed">
@@ -78,8 +78,12 @@
                   <% if (m.lastStatus === 'stale') { %><span class="error small">Last update: CHANGELIST not updated</span><% } %>
                   <% if (m.lastStatus === 'mismatch') { %><span class="error small">Last update: CHANGELIST doesn't match the slot tables</span><% } %>
                 <% } %>
-                <% if (m._id === 'spoilers' && m.pages) { %>
-                  <span class="muted small"><%= m.pages.length %> pages · hourly 8 am–8 pm</span>
+                <% if (m._id === 'reprints') { %>
+                  <span class="muted small"><% if (m.printings != null) { %><%= m.printings %> recent reprint printings · <% } %>hourly 8 am–8 pm</span>
+                <% } %>
+                <% if (m._id === 'banlist') { %><span class="muted small">"Banned" announcements only · every 30 min</span><% } %>
+                <% if (m._id === 'reward-packs') { %>
+                  <span class="muted small"><% if (m.cards) { %><%= m.cards %> cards · <% } %><% if (m.lastUpdatedText) { %>updated <%= m.lastUpdatedText %> · <% } %>every 6 hours</span>
                 <% } %>
                 <% if (m.lastError) { %><span class="error small"><%= m.lastError %></span><% } %>
               </div>
