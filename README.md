@@ -98,6 +98,14 @@ Your Google Sheet (Treasure Chest tabs + `buysell`) was converted to `vault-impo
 - **buysell** (rebought / recently bought / sold, oldest first, no dates): names are matched to MTGO cards (shorthand, typos, "(f)" = foil, "x4" = quantity, other notes kept). An entry is a **GoatBots duplicate** when the same card, direction and price (to the cent) appear in your GoatBots trades *in the same order as the sheet* — the longest such chain per column is used, so one stray match can't throw off the rest. Duplicates aren't added. Everything else becomes a trade with no date and the **range between its nearest matched neighbours** (shown on card pages, tagged *Spreadsheet*). Uploading another GoatBots history re-runs the matching, so older histories remove more duplicates and narrow the ranges.
 - Entries without a card name wait on the import page to be named or skipped; *remove* on a card page skips one for good.
 
+### Current Treasure Chest — **MTGO → Chest**
+`/mtgo/chest`, built from the watcher's page snapshots:
+- **Last update recorded**: when the watcher first saw the chest's current contents (not the "Last Updated" date printed on the page). If the watcher started after the update, it says so. **Next update** comes from the page; there's a link to the official page.
+- **New in the first curated table**: the average GoatBots price, per day since the update was recorded, of the cards newly added this update to the first table of the curated section (whole sets left out). Points come from the daily `price_daily` snapshot plus today's prices. Each chest version is matched to an MTGO ID by name + set (+ foil); when a set has several printings, Scryfall's version label is matched against the page's Treatment, otherwise the cheapest printing is used.
+- **Your cards in the chest**: everything you own or watch that is in any curated table, matched by name, most expensive first. **↘ sold** marks cards you've sold since the update was recorded (GoatBots or logged trades, or unconfirmed drops in your collection) — hover it for details. Watched cards can be moved between short/long or removed right there; owned cards that aren't watched get + Short / + Long.
+
+Prices below 0.10 tix are shown to three decimals everywhere.
+
 ### Treasure Chest history — **Highlights → Treasure Chest → Update history**
 Every recorded update (`/mtgo/tc`): added / removed / changed counts, cards and total slots in the chest, and a page per update with the changes, the full contents and which of them you own. Card pages have a **Treasure Chest** section: when each version was in the chest (added, removed, how many updates, max slots) and every changelist row that mentions it. The watcher writes each new update to the same place, contents and all.
 

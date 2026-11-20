@@ -109,7 +109,7 @@ function parseTreasureChest(document) {
     if (iChange >= 0 || /changelist/i.test(h1 || '')) {
       result.changelist = { title: h1 || 'CHANGELIST', rows: parsed };
     } else {
-      result.slots.push({ name: h2 || h1 || 'SLOT', rdrText, cards: parsed });
+      result.slots.push({ name: h2 || h1 || 'SLOT', section: h1 || '', rdrText, cards: parsed });
     }
   }
   return result;

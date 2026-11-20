@@ -1,6 +1,6 @@
 // Card search pickers (no inline scripts: the site's CSP only allows files from /static).
 (function () {
-  const fmt = (n) => (n == null ? '—' : n.toFixed(2) + ' tix');
+  const fmt = (n) => (n == null ? '—' : n.toFixed(n !== 0 && Math.abs(n) < 0.1 ? 3 : 2) + ' tix');
   const debounce = (fn, ms) => {
     let t;
     return (...a) => {

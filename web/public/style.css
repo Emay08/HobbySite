@@ -511,3 +511,16 @@ tr.version-row.selected td:first-child { box-shadow: inset 3px 0 0 var(--accent)
   .so-hair, .so-hair-up, .so-hair-down { color: #000; border-color: #999; }
   .so-interval { color: #000; border-color: #999; background: none; }
 }
+
+/* ---- current Treasure Chest page */
+form.inline { display: inline; }
+.watch-actions > div { margin: .1rem 0; white-space: nowrap; }
+.sold-flag { display: inline-block; margin-left: .4rem; font-size: .72rem; font-weight: 600; color: #f08a6b; border: 1px solid rgba(240,138,107,.45); border-radius: 999px; padding: .02rem .45rem; cursor: help; }
+.stat-value.small-value { font-size: 1.15rem; line-height: 1.35; }
+.chest-chart { width: 100%; height: auto; display: block; margin: .4rem 0; }
+.chest-chart .axis { stroke: var(--line); stroke-width: 1; }
+.chest-chart .lbl { fill: var(--muted); font-size: 9px; }
+.chest-chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.chest-chart .dot { fill: var(--accent); }
+.chest-versions { min-width: 20rem; }
+.chest-versions > div { white-space: nowrap; }

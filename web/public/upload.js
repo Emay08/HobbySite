@@ -7,8 +7,10 @@
   const status = document.getElementById('status');
   if (!zone) return;
 
-  const fmtTix = (n) =>
-    new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' tix';
+  const fmtTix = (n) => {
+    const d = n !== 0 && Math.abs(n) < 0.1 ? 3 : 2;
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }).format(n) + ' tix';
+  };
   const fmtInt = (n) => new Intl.NumberFormat('en-US').format(n);
 
   function el(tag, attrs, ...children) {

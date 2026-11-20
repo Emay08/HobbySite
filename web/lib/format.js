@@ -1,10 +1,13 @@
 const tixFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const tixFmt3 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 const TZ = process.env.DISPLAY_TIMEZONE || 'America/Vancouver';
 const intFmt = new Intl.NumberFormat('en-US');
 
 function tix(n) {
   if (n === null || n === undefined) return '—';
-  return `${tixFmt.format(n)} tix`;
+  // cheap cards differ in the third decimal (0.002 vs 0.020 tix)
+  const f = n !== 0 && Math.abs(n) < 0.1 ? tixFmt3 : tixFmt;
+  return `${f.format(n)} tix`;
 }
 
 function int(n) {

@@ -17,7 +17,7 @@
   </a>
   <% if (path && path.startsWith('/mtgo') || (typeof section !== 'undefined' && section === 'mtgo')) { %>
   <nav class="subnav">
-    <% const navItems = [['/mtgo', 'Highlights', true], ['/mtgo/collection', 'Collection'], ['/mtgo/watch/short', 'Short watch'], ['/mtgo/watch/long', 'Long watch'], ['/mtgo/targets', 'Targets'], ['/mtgo/swaps', 'Swaps'], ['/mtgo/trades', 'Trades'], ['/mtgo/upload', 'Update']]; %>
+    <% const navItems = [['/mtgo', 'Highlights', true], ['/mtgo/chest', 'Chest'], ['/mtgo/collection', 'Collection'], ['/mtgo/watch/short', 'Short watch'], ['/mtgo/watch/long', 'Long watch'], ['/mtgo/targets', 'Targets'], ['/mtgo/swaps', 'Swaps'], ['/mtgo/trades', 'Trades'], ['/mtgo/upload', 'Update']]; %>
     <% for (const [href, label, exact] of navItems) { const active = exact ? (path === href || path === href + '/') : path.startsWith(href); %>
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>
     <% } %>

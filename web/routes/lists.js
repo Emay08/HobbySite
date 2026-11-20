@@ -26,7 +26,9 @@ function takeFlash(req) {
   return f || null;
 }
 function back(res, path) {
-  return res.redirect(303, path);
+  // forms on other pages (e.g. the Treasure Chest page) can ask to come back to them
+  const b = String((res.req && res.req.body && res.req.body.back) || '');
+  return res.redirect(303, b.startsWith('/mtgo/') && !b.includes('//') ? b : path);
 }
 
 // ---------------------------------------------------------------- card search API

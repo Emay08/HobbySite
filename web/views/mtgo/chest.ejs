@@ -1,0 +1,148 @@
+<%- include('../partials/head') %>
+<%
+  const img = (id) => `https://api.scryfall.com/cards/mtgo/${encodeURIComponent(id)}?format=image&version=large`;
+  const back = '/mtgo/chest';
+%>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO · Treasure Chest</p>
+    <h1>Current Treasure Chest</h1>
+    <p class="small"><a href="<%= officialUrl %>" target="_blank" rel="noopener">Official Treasure Chest page ↗</a> · <a href="/mtgo/tc">Update history</a></p>
+  </div>
+</div>
+<%- include('../partials/flash') %>
+
+<% if (!c) { %>
+  <div class="card empty-card">
+    <p><strong>No snapshot of the Treasure Chest page yet.</strong></p>
+    <p class="muted">The watcher checks the page once a day (every 30 seconds around an update). This page fills in after its first check.</p>
+  </div>
+<% } else { %>
+
+<div class="stats">
+  <div class="stat stat-hero">
+    <span class="stat-label">Last update recorded</span>
+    <span class="stat-value"><%= fmt.date(c.recordedAt) %></span>
+    <span class="stat-sub muted"><%= fmt.dateTime(c.recordedAt) %><%= c.sinceWatcherStart ? ' · first check by the watcher; the update itself was earlier' : '' %></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Next update</span>
+    <span class="stat-value small-value"><%= c.nextUpdateText || '—' %></span>
+    <span class="stat-sub muted">from the official page</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Curated tables</span>
+    <span class="stat-value"><%= c.tables.length %></span>
+    <span class="stat-sub muted"><%= c.tables.map((t) => t.name).join(' · ') %></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Last checked</span>
+    <span class="stat-value small-value"><%= fmt.ago(c.checkedAt) %></span>
+    <span class="stat-sub muted">page says “Last Updated: <%= c.lastUpdatedText || '?' %>”</span>
+  </div>
+</div>
+
+<div class="layout-2">
+  <section>
+    <div class="card" id="mine">
+      <div class="section-head">
+        <h3>Your cards in the chest <span class="muted small">(<%= c.mine.length %>)</span></h3>
+        <span class="small muted">owned or on a watch list · any curated table · matched by name · most expensive first</span>
+      </div>
+      <% if (!c.mine.length) { %>
+        <p class="muted small">None of your cards or watched cards are in a curated table right now.</p>
+      <% } else { %>
+      <div class="table-scroll">
+      <table class="table compact">
+        <thead><tr><th>Card</th><th>In the chest</th><th class="num">Price</th><th class="num">You own</th><th>Watch lists</th></tr></thead>
+        <tbody>
+        <% for (const m of c.mine) { const v0 = m.versions.find((v) => v.mtgoId); %>
+          <tr>
+            <td>
+              <a href="<%= fmt.cardUrl(m.name) %>" <% if (v0) { %>data-preview="<%= img(v0.mtgoId) %>"<% } %>><strong><%= m.name %></strong></a>
+              <% if (m.sold) { %>
+                <span class="sold-flag" title="<%= m.sold.qty ? `Sold ${m.sold.qty} since this update was recorded (last ${fmt.date(m.sold.last)})` : '' %><%= m.sold.qty && m.sold.unconfirmed ? '; ' : '' %><%= m.sold.unconfirmed ? `${m.sold.unconfirmed} fewer in your collection, not yet matched to a trade` : '' %>">↘ sold</span>
+              <% } %>
+            </td>
+            <td class="small chest-versions">
+              <% for (const v of m.versions) { %>
+                <div <% if (v.mtgoId) { %>data-preview="<%= img(v.mtgoId) %>"<% } %>><span class="setcode"><%= v.set %></span> <span class="muted"><%= v.treatment %></span> · <%= v.table %> · <%= v.slots %> slot<%= v.slots === 1 ? '' : 's' %><% if (v.price != null) { %> · <%= fmt.tix(v.price) %><% } %></div>
+              <% } %>
+            </td>
+            <td class="num"><%= fmt.tix(m.price) %></td>
+            <td class="num"><%= m.owned ? fmt.int(m.owned) : '' %></td>
+            <td class="small watch-actions">
+              <% for (const w of m.watch) { %>
+                <div>
+                  <span class="tier tier-<%= w.list %>"><%= w.list %>-term</span> <span class="muted"><%= w.set %><%= w.foil ? ' ✦' : '' %></span>
+                  <form method="post" action="/mtgo/watch/item/<%= w._id %>/move" class="inline"><input type="hidden" name="back" value="<%= back %>"><button class="link small" type="submit">→ <%= w.list === 'short' ? 'long' : 'short' %></button></form>
+                  <form method="post" action="/mtgo/watch/item/<%= w._id %>/delete" class="inline"><input type="hidden" name="back" value="<%= back %>"><button class="link small danger" type="submit">remove</button></form>
+                </div>
+              <% } %>
+              <% if (!m.watch.length && v0) { %>
+                <form method="post" action="/mtgo/watch/short" class="inline"><input type="hidden" name="mtgoId" value="<%= v0.mtgoId %>"><input type="hidden" name="back" value="<%= back %>"><button class="pill-btn" type="submit">+ Short</button></form>
+                <form method="post" action="/mtgo/watch/long" class="inline"><input type="hidden" name="mtgoId" value="<%= v0.mtgoId %>"><input type="hidden" name="back" value="<%= back %>"><button class="pill-btn" type="submit">+ Long</button></form>
+              <% } %>
+            </td>
+          </tr>
+        <% } %>
+        </tbody>
+      </table>
+      </div>
+      <% } %>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h3>New in <%= c.firstTable %></h3>
+      <p class="small muted">Average GoatBots price of the <%= c.added.length %> card<%= c.added.length === 1 ? '' : 's' %> added to the first curated table this update (whole sets left out), per day since the update was recorded.</p>
+      <%
+        const pts = c.series;
+        const W = 300, H = 120, L = 42, R = 8, T = 8, B = 22;
+        let chart = null;
+        if (pts.length) {
+          const maxDay = Math.max(7, ...pts.map((p) => p.day));
+          const lo = Math.min(...pts.map((p) => p.avg)), hi = Math.max(...pts.map((p) => p.avg));
+          const pad = (hi - lo) * 0.15 || hi * 0.1 || 1;
+          const y0 = Math.max(0, lo - pad), y1 = hi + pad;
+          const x = (d) => L + (d / maxDay) * (W - L - R);
+          const y = (v) => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+          chart = { maxDay, y0, y1, x, y, line: pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.day).toFixed(1)},${y(p.avg).toFixed(1)}`).join(' ') };
+        }
+      %>
+      <% if (!c.added.length) { %>
+        <p class="small muted"><%= c.hasHistory ? 'Nothing new in that table this update.' : 'No changelist recorded for this update yet.' %></p>
+      <% } else if (!chart) { %>
+        <p class="small muted">No prices recorded since the update yet — the daily price job adds a point each morning.</p>
+      <% } else { %>
+        <svg class="chest-chart" viewBox="0 0 <%= W %> <%= H %>" role="img" aria-label="Average price by day since the update">
+          <line class="axis" x1="<%= L %>" y1="<%= H - B %>" x2="<%= W - R %>" y2="<%= H - B %>"/>
+          <line class="axis" x1="<%= L %>" y1="<%= T %>" x2="<%= L %>" y2="<%= H - B %>"/>
+          <text class="lbl" x="<%= L - 4 %>" y="<%= T + 8 %>" text-anchor="end"><%= chart.y1.toFixed(chart.y1 < 1 ? 3 : 2) %></text>
+          <text class="lbl" x="<%= L - 4 %>" y="<%= H - B %>" text-anchor="end"><%= chart.y0.toFixed(chart.y0 < 1 && chart.y0 > 0 ? 3 : 2) %></text>
+          <text class="lbl" x="<%= L %>" y="<%= H - 6 %>" text-anchor="start">day 0</text>
+          <text class="lbl" x="<%= W - R %>" y="<%= H - 6 %>" text-anchor="end">day <%= chart.maxDay %></text>
+          <path class="line" d="<%= chart.line %>"/>
+          <% for (const p of pts) { %><circle class="dot" cx="<%= chart.x(p.day).toFixed(1) %>" cy="<%= chart.y(p.avg).toFixed(1) %>" r="2.5"><title>Day <%= p.day %> (<%= fmt.date(p.date) %>): <%= fmt.tix(p.avg) %> average of <%= p.n %><%= p.live ? ' · today, live' : '' %></title></circle><% } %>
+        </svg>
+        <p class="small">Now <strong><%= fmt.tix(pts[pts.length - 1].avg) %></strong><% if (pts.length > 1) { const d = (pts[pts.length - 1].avg / pts[0].avg - 1) * 100; %> · <span class="<%= d >= 0 ? 'up' : 'down' %>"><%= d >= 0 ? '+' : '' %><%= d.toFixed(1) %>%</span> since day <%= pts[0].day %><% } %></p>
+        <% if (pts[0].day > 1) { %><p class="small muted">Daily prices have only been recorded since <%= fmt.date(pts[0].date) %>, so this update's line starts at day <%= pts[0].day %>.</p><% } %>
+      <% } %>
+      <% if (c.added.length) { %>
+      <details class="small">
+        <summary>The <%= c.added.length %> new cards</summary>
+        <table class="table compact">
+          <tbody>
+          <% for (const a of c.added) { %>
+            <tr <% if (a.mtgoId) { %>data-preview="<%= img(a.mtgoId) %>"<% } %>><td><a href="<%= fmt.cardUrl(a.name) %>"><%= a.name %></a> <span class="setcode"><%= a.set %></span> <span class="muted"><%= a.treatment %></span></td><td class="num"><%= a.price == null ? (a.mtgoId ? '—' : 'no match') : fmt.tix(a.price) %></td></tr>
+          <% } %>
+          </tbody>
+        </table>
+      </details>
+      <% } %>
+    </div>
+  </aside>
+</div>
+<% } %>
+<%- include('../partials/foot') %>

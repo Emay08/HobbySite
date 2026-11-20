@@ -233,6 +233,30 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
   // static links carry a content version so browsers refetch after deploys
   assert.match(await html('/mtgo/tc'), /\/static\/style\.css\?v=[0-9a-f]{10}/);
 
+  // current Treasure Chest page
+  {
+    const tomb = await db.collection('watchlist').insertOne({ list: 'short', mtgoId: '80000', name: 'Ancient Tomb', set: 'UMA', foil: false, addedAt: new Date() });
+    await db.collection('trades').insertOne({ source: 'manual', name: 'Ancient Tomb', nameLower: 'ancient tomb', mtgoId: '80000', direction: 'sell', qty: 2, price: 30, at: new Date('2026-03-10T12:00:00Z'), date: '2026-03-10' });
+    await db.collection('price_daily').insertMany([
+      { _id: '2026-03-06', date: '2026-03-06', prices: { 70000: 10 } },
+      { _id: '2026-03-08', date: '2026-03-08', prices: { 70000: 12 } },
+    ]);
+    const page = await html('/mtgo/chest');
+    assert.match(page, /Current Treasure Chest/);
+    assert.match(page, /mtgo-treasure-chest-info/);
+    assert.match(page, /Mar 4, 2026/); // recorded = when the snapshot was taken (4 p.m. Vancouver), not the page date
+    assert.match(page, /New in CURATED SLOT/);
+    assert.match(page, /class="chest-chart"/);
+    assert.match(page, /12\.00 tix/); // latest average
+    assert.match(page, /Ancient Tomb/);
+    assert.match(page, /↘ sold/);
+    assert.match(page, /short-term/);
+    r = await form(`/mtgo/watch/item/${tomb.insertedId}/move`, { back: '/mtgo/chest' });
+    assert.equal(r.status, 303);
+    assert.equal(r.headers.get('location'), '/mtgo/chest');
+    assert.equal((await db.collection('watchlist').findOne({ _id: tomb.insertedId })).list, 'long');
+  }
+
   // undo
   r = await form('/mtgo/import/undo', { confirm: 'yes' });
   assert.equal(r.status, 303);

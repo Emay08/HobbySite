@@ -1,6 +1,7 @@
 const express = require('express');
 const { getDb } = require('../lib/db');
 const tc = require('../lib/tcHistory');
+const chest = require('../lib/chest');
 
 const router = express.Router();
 
@@ -31,6 +32,18 @@ router.get('/tc', async (req, res, next) => {
     const flash = req.session.flash || null;
     delete req.session.flash;
     res.render('mtgo/tchistory', { title: 'Treasure Chest history', updates, meta, snapshots, flash });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/chest', async (req, res, next) => {
+  try {
+    const db = getDb();
+    const c = await chest.currentChest(db);
+    const flash = req.session.flash || null;
+    delete req.session.flash;
+    res.render('mtgo/chest', { title: 'Treasure Chest', c, officialUrl: chest.OFFICIAL_URL, flash });
   } catch (err) {
     next(err);
   }

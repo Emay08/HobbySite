@@ -18,6 +18,7 @@ test('parses the page structure (and ignores the JSON-LD copy)', () => {
   assert.strictEqual(p.nextUpdateText, 'December 9, 10 a.m.');
   assert.match(p.effectiveText, /^11\/10\/2026 10 a\.m\. PT/);
   assert.deepStrictEqual(p.slots.map((s) => [s.name, s.cards.length]), [['CURATED SLOT', 2], ['SET DEBUT SLOT', 2]]);
+  assert.ok(p.slots.every((s) => /CURATED CARD LISTS/.test(s.section)));
   assert.strictEqual(p.slots[0].cards[0].treatment, '');
   assert.strictEqual(p.slots[1].cards[1].treatment, 'Schematic');
   assert.strictEqual(p.changelist.title, 'CHANGELIST - November 10');
