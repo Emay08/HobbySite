@@ -243,13 +243,24 @@ async function preview(db, staged) {
 
 // --------------------------------------------------------------- confirm, sync, fix, undo
 
+/**
+ * The real MTGO card name for what was typed, ignoring case, accents and punctuation
+ * (’ vs ', commas, hyphens). Checked against the same names as the nav search: GoatBots'
+ * card definitions, your collection and watch lists.
+ */
+const exactIndex = new WeakMap();
 async function cardExists(db, name) {
-  const lower = String(name || '').trim().toLowerCase();
-  if (!lower) return null;
-  const c =
-    (await db.collection('cards').findOne({ nameLower: lower }, { projection: { name: 1 } })) ||
-    (await db.collection('collection').findOne({ name: { $regex: `^${lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } }, { projection: { name: 1 } }));
-  return c ? c.name : null;
+  const key = nameMatch.simp(name);
+  if (!key) return null;
+  const idx = await search.getIndex();
+  if (!exactIndex.has(idx)) exactIndex.set(idx, new Map(idx.entries.map((e) => [nameMatch.simp(e.name), e.name])));
+  return exactIndex.get(idx).get(key) || null;
+}
+
+/** How many card names the import can match against (for error messages). */
+async function knownNames() {
+  const idx = await search.getIndex();
+  return idx.entries.length;
 }
 
 /**
@@ -267,7 +278,7 @@ async function confirmTrades(db, staged, { fixes = {}, skips = new Set() } = {})
     if (fix && fix !== t.name) {
       const real = await cardExists(db, fix);
       if (real) name = real;
-      else problems.push(`“${fix}” (for “${t.raw}”) isn't an MTGO card name — left unresolved.`);
+      else problems.push(`“${fix}” (for “${t.raw}”) isn't in the ${(await knownNames()).toLocaleString('en-US')} card names known to the site — left unresolved.`);
     }
     const status = skips.has(t._id) ? 'skipped' : name ? 'resolved' : 'unresolved';
     docs.push({
@@ -390,7 +401,13 @@ async function fixEntry(db, id, name, { skip = false } = {}) {
     await coll.updateOne({ _id: id }, { $set: { status: 'skipped' } });
   } else {
     const real = await cardExists(db, name);
-    if (!real) return { ok: false, message: `“${name}” isn't an MTGO card name.` };
+    if (!real) {
+      const n = await knownNames();
+      return {
+        ok: false,
+        message: `“${name}” isn't in the ${n.toLocaleString('en-US')} card names known to the site (GoatBots' card list + your collection).${n < 20000 ? ' That list looks incomplete — has the daily price sync run successfully?' : ''}`,
+      };
+    }
     await coll.updateOne({ _id: id }, { $set: { name: real, nameLower: real.toLowerCase(), status: 'resolved', reviewed: true } });
   }
   await syncSheetTrades(db);

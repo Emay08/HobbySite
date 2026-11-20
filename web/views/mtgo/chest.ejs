@@ -19,16 +19,16 @@
   </div>
 <% } else { %>
 
-<div class="stats">
+<%
+  const pct = (v) => v == null ? '' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+%>
+<div class="stats chest-stats">
   <div class="stat stat-hero">
     <span class="stat-label">Last update recorded</span>
     <span class="stat-value"><%= fmt.date(c.recordedAt) %></span>
-    <span class="stat-sub muted"><%= fmt.dateTime(c.recordedAt) %><%= c.sinceWatcherStart ? ' · first check by the watcher; the update itself was earlier' : '' %></span>
-  </div>
-  <div class="stat">
-    <span class="stat-label">Next update</span>
-    <span class="stat-value small-value"><%= c.nextUpdateText || '—' %></span>
-    <span class="stat-sub muted">from the official page</span>
+    <span class="stat-sub muted"><%= fmt.dateTime(c.recordedAt) %></span>
+    <span class="stat-label next-label">Next update</span>
+    <span class="stat-next"><%= c.nextUpdateText || '—' %></span>
   </div>
   <div class="stat">
     <span class="stat-label">Curated tables</span>
@@ -40,63 +40,8 @@
     <span class="stat-value small-value"><%= fmt.ago(c.checkedAt) %></span>
     <span class="stat-sub muted">page says “Last Updated: <%= c.lastUpdatedText || '?' %>”</span>
   </div>
-</div>
-
-<div class="layout-2">
-  <section>
-    <div class="card" id="mine">
-      <div class="section-head">
-        <h3>Your cards in the chest <span class="muted small">(<%= c.mine.length %>)</span></h3>
-        <span class="small muted">owned or on a watch list · any curated table · matched by name · most expensive first</span>
-      </div>
-      <% if (!c.mine.length) { %>
-        <p class="muted small">None of your cards or watched cards are in a curated table right now.</p>
-      <% } else { %>
-      <div class="table-scroll">
-      <table class="table compact">
-        <thead><tr><th>Card</th><th>In the chest</th><th class="num">Price</th><th class="num">You own</th><th>Watch lists</th></tr></thead>
-        <tbody>
-        <% for (const m of c.mine) { const v0 = m.versions.find((v) => v.mtgoId); %>
-          <tr>
-            <td>
-              <a href="<%= fmt.cardUrl(m.name) %>" <% if (v0) { %>data-preview="<%= img(v0.mtgoId) %>"<% } %>><strong><%= m.name %></strong></a>
-              <% if (m.sold) { %>
-                <span class="sold-flag" title="<%= m.sold.qty ? `Sold ${m.sold.qty} since this update was recorded (last ${fmt.date(m.sold.last)})` : '' %><%= m.sold.qty && m.sold.unconfirmed ? '; ' : '' %><%= m.sold.unconfirmed ? `${m.sold.unconfirmed} fewer in your collection, not yet matched to a trade` : '' %>">↘ sold</span>
-              <% } %>
-            </td>
-            <td class="small chest-versions">
-              <% for (const v of m.versions) { %>
-                <div <% if (v.mtgoId) { %>data-preview="<%= img(v.mtgoId) %>"<% } %>><span class="setcode"><%= v.set %></span> <span class="muted"><%= v.treatment %></span> · <%= v.table %> · <%= v.slots %> slot<%= v.slots === 1 ? '' : 's' %><% if (v.price != null) { %> · <%= fmt.tix(v.price) %><% } %></div>
-              <% } %>
-            </td>
-            <td class="num"><%= fmt.tix(m.price) %></td>
-            <td class="num"><%= m.owned ? fmt.int(m.owned) : '' %></td>
-            <td class="small watch-actions">
-              <% for (const w of m.watch) { %>
-                <div>
-                  <span class="tier tier-<%= w.list %>"><%= w.list %>-term</span> <span class="muted"><%= w.set %><%= w.foil ? ' ✦' : '' %></span>
-                  <form method="post" action="/mtgo/watch/item/<%= w._id %>/move" class="inline"><input type="hidden" name="back" value="<%= back %>"><button class="link small" type="submit">→ <%= w.list === 'short' ? 'long' : 'short' %></button></form>
-                  <form method="post" action="/mtgo/watch/item/<%= w._id %>/delete" class="inline"><input type="hidden" name="back" value="<%= back %>"><button class="link small danger" type="submit">remove</button></form>
-                </div>
-              <% } %>
-              <% if (!m.watch.length && v0) { %>
-                <form method="post" action="/mtgo/watch/short" class="inline"><input type="hidden" name="mtgoId" value="<%= v0.mtgoId %>"><input type="hidden" name="back" value="<%= back %>"><button class="pill-btn" type="submit">+ Short</button></form>
-                <form method="post" action="/mtgo/watch/long" class="inline"><input type="hidden" name="mtgoId" value="<%= v0.mtgoId %>"><input type="hidden" name="back" value="<%= back %>"><button class="pill-btn" type="submit">+ Long</button></form>
-              <% } %>
-            </td>
-          </tr>
-        <% } %>
-        </tbody>
-      </table>
-      </div>
-      <% } %>
-    </div>
-  </section>
-
-  <aside>
-    <div class="card">
-      <h3>New in <%= c.firstTable %></h3>
-      <p class="small muted">Average GoatBots price of the <%= c.added.length %> card<%= c.added.length === 1 ? '' : 's' %> added to the first curated table this update (whole sets left out), per day since the update was recorded.</p>
+  <div class="stat chest-graph">
+    <span class="stat-label">New in <%= c.firstTable %> · average price</span>
       <%
         const pts = c.series;
         const W = 300, H = 120, L = 42, R = 8, T = 8, B = 22;
@@ -141,8 +86,65 @@
         </table>
       </details>
       <% } %>
-    </div>
-  </aside>
+  </div>
+</div>
+
+<div class="card" id="mine">
+  <div class="section-head">
+    <h3>Your cards in the chest <span class="muted small">(<%= c.mine.length %>)</span></h3>
+    <span class="small muted">owned or on a watch list · any curated table · matched by name · most expensive first</span>
+  </div>
+  <% if (!c.mine.length) { %>
+    <p class="muted small">None of your cards or watched cards are in a curated table right now.</p>
+  <% } else { %>
+  <div class="table-scroll">
+  <table class="table compact">
+    <thead><tr>
+      <th>Card</th>
+      <th class="num">Price</th>
+      <th class="num" title="Compared with the first price recorded since the update (for now, prices are only recorded from Nov 20)">Change</th>
+      <th class="num" title="Lowest price recorded since the update">Low</th>
+      <th class="num">You own</th>
+      <th>Watch lists</th>
+      <th>In the chest</th>
+    </tr></thead>
+    <tbody>
+    <% for (const m of c.mine) { const v0 = m.versions.find((v) => v.mtgoId); %>
+      <tr>
+        <td>
+          <a href="<%= fmt.cardUrl(m.name) %>" <% if (v0) { %>data-preview="<%= img(v0.mtgoId) %>"<% } %>><strong><%= m.name %></strong></a>
+          <% if (m.sold) { %>
+            <span class="sold-flag" title="<%= m.sold.qty ? `Sold ${m.sold.qty} since this update was recorded (last ${fmt.date(m.sold.last)})` : '' %><%= m.sold.qty && m.sold.unconfirmed ? '; ' : '' %><%= m.sold.unconfirmed ? `${m.sold.unconfirmed} fewer in your collection, not yet matched to a trade` : '' %>">↘ sold</span>
+          <% } %>
+        </td>
+        <td class="num"><%= fmt.tix(m.price) %></td>
+        <td class="num <%= m.change == null ? '' : m.change >= 0 ? 'up' : 'down' %>" <% if (m.basePrice != null) { %>title="<%= fmt.tix(m.basePrice) %> on <%= fmt.date(m.baseDate) %>"<% } %>><%= m.change == null ? '—' : pct(m.change) %></td>
+        <td class="num"><%= fmt.tix(m.low) %></td>
+        <td class="num"><%= m.owned ? fmt.int(m.owned) : '' %></td>
+        <td class="small watch-actions">
+          <% for (const w of m.watch) { %>
+            <div>
+              <span class="tier tier-<%= w.list %>"><%= w.list %>-term</span> <span class="muted"><%= w.set %><%= w.foil ? ' ✦' : '' %></span>
+              <form method="post" action="/mtgo/watch/item/<%= w._id %>/move" class="inline"><input type="hidden" name="back" value="<%= back %>"><button class="link small" type="submit">→ <%= w.list === 'short' ? 'long' : 'short' %></button></form>
+              <form method="post" action="/mtgo/watch/item/<%= w._id %>/delete" class="inline"><input type="hidden" name="back" value="<%= back %>"><button class="link small danger" type="submit">remove</button></form>
+            </div>
+          <% } %>
+          <% if (!m.watch.length && v0) { %>
+            <form method="post" action="/mtgo/watch/short" class="inline"><input type="hidden" name="mtgoId" value="<%= v0.mtgoId %>"><input type="hidden" name="back" value="<%= back %>"><button class="pill-btn" type="submit">+ Short</button></form>
+            <form method="post" action="/mtgo/watch/long" class="inline"><input type="hidden" name="mtgoId" value="<%= v0.mtgoId %>"><input type="hidden" name="back" value="<%= back %>"><button class="pill-btn" type="submit">+ Long</button></form>
+          <% } %>
+        </td>
+        <td class="small chest-versions">
+          <% for (const v of m.versions) { %>
+            <div <% if (v.mtgoId) { %>data-preview="<%= img(v.mtgoId) %>"<% } %>><span class="setcode"><%= v.set %></span> <span class="muted"><%= v.treatment %></span> · <%= v.table %> · <%= v.slots %> slot<%= v.slots === 1 ? '' : 's' %></div>
+          <% } %>
+        </td>
+      </tr>
+    <% } %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
 </div>
 <% } %>
 <%- include('../partials/foot') %>

@@ -122,6 +122,28 @@ async function dailyAverages(db, ids, since, priceMap) {
     .map((p) => ({ ...p, day: Math.round((new Date(`${p.date}T00:00:00Z`).getTime() - t0) / DAY) }));
 }
 
+/**
+ * Per MTGO ID since `since`: the first recorded price (the baseline for "change since the
+ * update") and the lowest price, from price_daily plus today's price.
+ */
+async function priceStats(db, ids, since, priceMap) {
+  const out = new Map();
+  if (!ids.length) return out;
+  const docs = await db
+    .collection('price_daily')
+    .find({ _id: { $gte: localDate(since) } }, { projection: Object.fromEntries(ids.map((id) => [`prices.${id}`, 1])) })
+    .sort({ _id: 1 })
+    .toArray();
+  for (const id of ids) {
+    const series = docs.map((d) => d.prices && d.prices[id]).filter((v) => typeof v === 'number');
+    const now = priceMap.get(id);
+    if (typeof now === 'number') series.push(now);
+    if (!series.length) continue;
+    out.set(id, { base: series[0], baseDate: docs.find((d) => d.prices && typeof d.prices[id] === 'number')?._id || null, low: Math.min(...series) });
+  }
+  return out;
+}
+
 async function currentChest(db) {
   const snap = await currentSnapshot(db);
   if (!snap) return null;
@@ -200,17 +222,36 @@ async function currentChest(db) {
     soldBy.set(k, cur);
   }
 
+  const mineVersions = new Map(
+    mineKeys.map((k) => [
+      k,
+      inChest.get(k).rows.map((r) => {
+        const mtgoId = map2.idFor(r);
+        return { ...r, mtgoId, price: mtgoId ? map2.priceMap.get(mtgoId) ?? null : null };
+      }),
+    ])
+  );
+  const stats = await priceStats(
+    db,
+    [...new Set([...mineVersions.values()].flat().map((v) => v.mtgoId).filter(Boolean))],
+    recordedAt,
+    map2.priceMap
+  );
+
   const mine = mineKeys.map((k) => {
     const c = inChest.get(k);
-    const versions = c.rows.map((r) => {
-      const mtgoId = map2.idFor(r);
-      return { ...r, mtgoId, price: mtgoId ? map2.priceMap.get(mtgoId) ?? null : null };
-    });
-    const prices = versions.map((v) => v.price).filter((p) => p != null);
+    const versions = mineVersions.get(k);
+    // the card's price = its most expensive chest version; change and low follow that version
+    const top = versions.filter((v) => v.price != null).sort((a, b) => b.price - a.price)[0] || null;
+    const st = top && stats.get(top.mtgoId);
     return {
       name: (ownedBy.get(k) && ownedBy.get(k).name) || c.name,
       versions,
-      price: prices.length ? Math.max(...prices) : null,
+      price: top ? top.price : null,
+      basePrice: st ? st.base : null,
+      baseDate: st ? st.baseDate : null,
+      change: st && st.base > 0 && top ? (top.price / st.base - 1) * 100 : null,
+      low: st ? st.low : null,
       owned: ownedBy.has(k) ? ownedBy.get(k).qty : 0,
       watch: watchBy.get(k) || [],
       sold: soldBy.get(k) || null,
@@ -236,4 +277,4 @@ async function currentChest(db) {
   };
 }
 
-module.exports = { currentChest, pickVersion, curatedTables, contentsSig, OFFICIAL_URL };
+module.exports = { currentChest, priceStats, pickVersion, curatedTables, contentsSig, OFFICIAL_URL };

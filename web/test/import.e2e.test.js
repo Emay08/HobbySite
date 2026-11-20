@@ -250,6 +250,9 @@ test('spreadsheet import end to end', { skip: !URI && 'TEST_MONGODB_URI not set'
     assert.match(page, /12\.00 tix/); // latest average
     assert.match(page, /Ancient Tomb/);
     assert.match(page, /↘ sold/);
+    // columns: Card, Price, Change, Low, You own, Watch lists, In the chest
+    assert.match(page, /<th>Card<\/th>\s*<th class="num">Price<\/th>\s*<th class="num"[^>]*>Change<\/th>\s*<th class="num"[^>]*>Low<\/th>/);
+    assert.doesNotMatch(page, /first check by the watcher/);
     assert.match(page, /short-term/);
     r = await form(`/mtgo/watch/item/${tomb.insertedId}/move`, { back: '/mtgo/chest' });
     assert.equal(r.status, 303);

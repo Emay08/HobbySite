@@ -524,3 +524,9 @@ form.inline { display: inline; }
 .chest-chart .dot { fill: var(--accent); }
 .chest-versions { min-width: 20rem; }
 .chest-versions > div { white-space: nowrap; }
+.stats.chest-stats { grid-template-columns: 1.45fr .9fr .9fr 2.2fr; align-items: stretch; }
+.chest-stats .next-label { margin-top: .7rem; }
+.chest-stats .stat-next { font-size: 1.05rem; font-weight: 600; }
+.chest-graph .chest-chart { margin: .3rem 0 .1rem; }
+.chest-graph p { margin: .2rem 0; }
+@media (max-width: 1000px) { .stats.chest-stats { grid-template-columns: 1fr 1fr; } }
