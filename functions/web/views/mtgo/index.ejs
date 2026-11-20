@@ -1,0 +1,118 @@
+<%- include('../partials/head') %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">MTGO</p>
+    <h1>Highlights</h1>
+  </div>
+  <div class="stat-inline">
+    <span class="muted">Collection</span>
+    <strong><%= fmt.tix(summary.totalValue) %></strong>
+    <a href="/mtgo/collection" class="link">Browse →</a>
+  </div>
+</div>
+
+<div class="layout-2">
+  <section>
+    <div class="chips">
+      <a href="/mtgo" class="chip <%= !category ? 'active' : '' %>">All</a>
+      <% for (const [key, label] of Object.entries(categories)) { %>
+        <a href="/mtgo?category=<%= key %>" class="chip <%= category === key ? 'active' : '' %>"><%= label %></a>
+      <% } %>
+    </div>
+
+    <% if (highlights.length === 0) { %>
+      <div class="card empty-card">
+        <p><strong>Nothing yet.</strong></p>
+        <p class="muted">Highlights appear here once the Azure monitor function has run. They cover Treasure Chest changes, reprints of your cards, banlist announcements and Player Reward Pack contents.</p>
+      </div>
+    <% } else { %>
+      <ol class="feed">
+        <% for (const h of highlights) { %>
+          <li class="feed-item">
+            <span class="badge badge-<%= h.category %>"><%= categories[h.category] || h.category %></span>
+            <div class="feed-body">
+              <% if (/^https?:\/\//i.test(h.url || '')) { %>
+                <a href="<%= h.url %>" target="_blank" rel="noopener noreferrer" class="feed-title"><%= h.title %></a>
+              <% } else { %>
+                <span class="feed-title"><%= h.title %></span>
+              <% } %>
+              <% if (h.summary) { %><p class="feed-summary"><%= h.summary %></p><% } %>
+              <p class="feed-meta"><%= h.source %> · <%= fmt.ago(h.detectedAt) %><% if (h.notified) { %> · <span title="Sent to Telegram">📱 sent</span><% } %></p>
+            </div>
+          </li>
+        <% } %>
+      </ol>
+    <% } %>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h3>Your lists</h3>
+      <ul class="quick-links">
+        <li><a href="/mtgo/targets">Price targets</a><span class="pill <%= targetsHit ? 'pill-hit' : '' %>"><%= targetsHit %> hit</span></li>
+        <li><a href="/mtgo/swaps">Version swaps</a><span class="pill <%= swapsReady ? 'pill-hit' : '' %>"><%= swapsReady %> ready</span></li>
+        <li><a href="/mtgo/watch/short">Short-term watch</a></li>
+        <li><a href="/mtgo/watch/long">Long-term watch</a></li>
+      </ul>
+      <p class="small muted">Hit/ready counts update with the daily price sync.</p>
+    </div>
+    <div class="card">
+      <h3>Monitors</h3>
+      <% if (monitors.length === 0) { %>
+        <p class="muted small">No monitor has run yet.</p>
+      <% } else { %>
+        <ul class="monitor-list">
+          <% for (const m of monitors) { %>
+            <li>
+              <span class="dot <%= m.lastError ? 'dot-bad' : 'dot-ok' %>"></span>
+              <div>
+                <strong><%= m.label || m._id %></strong>
+                <span class="muted small">checked <%= fmt.ago(m.lastChecked) %></span>
+                <% if (m._id === 'treasure-chest') { %>
+                  <% if (m.nextUpdateText) { %><span class="muted small">Next update: <%= m.nextUpdateText %></span><% } %>
+                  <span class="muted small">
+                    <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
+                    <% } else if (m.windowStart) { %>daily until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else { %>hourly (update date unknown)<% } %>
+                  </span>
+                  <% if (m.lastStatus === 'stale') { %><span class="error small">Last update: CHANGELIST not updated</span><% } %>
+                  <% if (m.lastStatus === 'mismatch') { %><span class="error small">Last update: CHANGELIST doesn't match the slot tables</span><% } %>
+                <% } %>
+                <% if (m._id === 'reprints') { %>
+                  <span class="muted small"><% if (m.printings != null) { %><%= m.printings %> recent reprint printings · <% } %>hourly 8 am–8 pm</span>
+                <% } %>
+                <% if (m._id === 'banlist') { %>
+                  <% if (m.nextAnnouncementText) { %><span class="muted small">Next announcement: <%= m.nextAnnouncementText %></span><% } %>
+                  <span class="muted small">"Banned" titles only ·
+                    <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
+                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else { %>hourly (next date unknown)<% } %>
+                  </span>
+                <% } %>
+                <% if (m._id === 'reward-packs') { %>
+                  <span class="muted small"><% if (m.cards) { %><%= m.cards %> cards · <% } %><% if (m.lastUpdatedText) { %>updated <%= m.lastUpdatedText %> · <% } %>
+                    <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
+                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else { %>every 6 hours<% } %>
+                  </span>
+                <% } %>
+                <% if (m.lastError) { %><span class="error small"><%= m.lastError %></span><% } %>
+              </div>
+            </li>
+          <% } %>
+        </ul>
+      <% } %>
+    </div>
+    <div class="card">
+      <h3>Treasure Chest</h3>
+      <p class="small"><a href="/mtgo/tc">Update history →</a></p>
+      <p class="small muted">Every recorded update since Jan 2024, with full chest contents and when each card was in it.</p>
+    </div>
+    <div class="card">
+      <h3>Prices</h3>
+      <p class="small muted">Last price sync: <%= summary.pricesUpdatedAt ? fmt.dateTime(summary.pricesUpdatedAt) : 'never' %></p>
+      <p class="small muted">Last collection upload: <%= summary.lastUpload ? fmt.dateTime(summary.lastUpload.uploadedAt) : 'never' %></p>
+    </div>
+  </aside>
+</div>
+<%- include('../partials/foot') %>

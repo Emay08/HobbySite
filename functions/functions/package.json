@@ -1,0 +1,37 @@
+{
+  "name": "mtgo-manager-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azure Functions: Treasure Chest, reprint, banlist and Player Reward Pack watchers with Telegram alerts, daily MTGO price sync",
+  "main": "src/functions/*.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "func start",
+    "monitors:dry-run": "node scripts/run-monitors.js --dry-run",
+    "monitors:run": "node scripts/run-monitors.js",
+    "banlist:dry-run": "node scripts/run-monitors.js --dry-run",
+    "banlist:run": "node scripts/run-monitors.js",
+    "prices:run": "node scripts/run-price-sync.js",
+    "telegram:test": "node scripts/test-telegram.js",
+    "telegram:chat-id": "node scripts/get-chat-id.js",
+    "test": "node --test test/*.test.js",
+    "tc:dry-run": "node scripts/run-treasure-chest.js --dry-run",
+    "tc:run": "node scripts/run-treasure-chest.js",
+    "spoilers:dry-run": "node scripts/run-spoilers.js --dry-run",
+    "spoilers:run": "node scripts/run-spoilers.js",
+    "rewards:dry-run": "node scripts/run-reward-packs.js --dry-run",
+    "rewards:run": "node scripts/run-reward-packs.js"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.6.0",
+    "adm-zip": "^0.5.16",
+    "cheerio": "^1.0.0",
+    "linkedom": "^0.18.15",
+    "mongodb": "^6.10.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5"
+  }
+}
