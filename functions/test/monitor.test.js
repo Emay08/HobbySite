@@ -72,3 +72,16 @@ test('cadence: lazy outside the window, every tick inside it', () => {
   assert.strictEqual(plan({ state, now: new Date('2026-11-20T13:30:00Z'), targets: [null], unknownHours: 1 }).due, true);
   assert.strictEqual(plan({ state: null, now: new Date(), targets: [] }).due, true);
 });
+
+test('fetch errors name the real cause and network errors are retried once', async () => {
+  const { fetchHtml, describe } = require('../src/lib/http');
+  const netErr = () => Object.assign(new TypeError('fetch failed'), { cause: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }) });
+  assert.strictEqual(describe(netErr()), 'fetch failed (ECONNRESET: read ECONNRESET)');
+  let calls = 0;
+  const flaky = async () => (++calls === 1 ? Promise.reject(netErr()) : { ok: true, status: 200, text: async () => 'ok' });
+  assert.strictEqual(await fetchHtml('https://x.test/', { fetchImpl: flaky, retryDelayMs: 0 }), 'ok');
+  calls = 0;
+  const dead = async () => { calls++; throw netErr(); };
+  await assert.rejects(fetchHtml('https://x.test/', { fetchImpl: dead, retryDelayMs: 0 }), /fetch failed \(ECONNRESET: read ECONNRESET\) — https:\/\/x\.test\//);
+  assert.strictEqual(calls, 2);
+});

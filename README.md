@@ -142,8 +142,8 @@ Where the prices come from:
 | Vendor | Freshness | How |
 |--------|-----------|-----|
 | GoatBots | daily (published ~5:30 AM CET) | their public download, as before. Their live prices are deliberately drawn as obfuscated images to stop automated reading, so the page links to GoatBots' own card page for those. |
-| Cardhoarder | live | one request per card page view (their search, exact name). Their card ids are MTGO catalog ids, so prices match your versions exactly. |
-| Dojo | live | one request per card page view (their price table search). Matched to versions by set + foil; variants Dojo names in brackets ("Retro Frame") that can't be placed are listed separately. |
+| Cardhoarder | live, when allowed | one request per card page view (their search, exact name). Their card ids are MTGO catalog ids, so prices match your versions exactly. Since November 2026 Cardhoarder's Cloudflare protection refuses requests from Azure (HTTP 403); the site then stops asking for 6 hours and the card page links to Cardhoarder's own page instead. |
+| Dojo | live | one request per card page view (their price table search). Columns are read by their header names (Buy TIX, Sell TIX, Stock…), so a new column doesn't shift the prices. Matched to versions by set + collector number + foil (or set + foil when that's unambiguous). |
 
 Live results are cached for 2 minutes. If a vendor blocks or times out, its columns show "!" with the reason and the rest of the page still works. Set `VENDOR_LIVE_DISABLED=1` on the web app to turn live lookups off.
 
@@ -206,7 +206,7 @@ Window lengths and idle intervals can be changed with `TC_WINDOW_DAYS_*`, `BANLI
 
 ### If a watcher breaks
 
-Every watcher records errors on the website (Highlights → Monitors, in red), and the panel shows each watcher's schedule. If a page can't be read for 30 minutes during its fast-check window (Treasure Chest 6 hours, banlist 12 hours, Player Rewards a day otherwise), or Scryfall for 6 hours, you get one Telegram warning a day.
+Every watcher records errors on the website (Highlights → Monitors, in red, with the underlying network reason, e.g. `fetch failed (ECONNRESET…)`; a network error is retried once before it counts), and the panel shows each watcher's schedule. If a page can't be read for 30 minutes during its fast-check window (Treasure Chest 6 hours, banlist 12 hours, Player Rewards a day otherwise), or Scryfall for 6 hours, you get one Telegram warning a day.
 
 ### Running the price sync now
 

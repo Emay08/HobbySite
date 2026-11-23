@@ -1,4 +1,5 @@
 const telegram = require('./telegram');
+const { describe } = require('./http');
 
 /**
  * Records a monitor failure and, if it has been failing for longer than `afterMs`,
@@ -10,7 +11,7 @@ async function recordFailure(db, id, label, err, { afterMs = 60 * 60 * 1000, now
   const failingSince = state.failingSince || now;
   const set = {
     label,
-    lastError: String((err && err.message) || err).slice(0, 300),
+    lastError: describe(err).slice(0, 300),
     lastErrorAt: now,
     failingSince,
   };

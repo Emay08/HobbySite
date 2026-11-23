@@ -23,6 +23,7 @@ const telegram = require('./telegram');
 const names = require('./names');
 const { recordFailure, successFields } = require('./health');
 const { plan, DAY } = require('./cadence');
+const { fetchHtml } = require('./http');
 const { zonedToUtc, zonedParts, parseNextUpdate } = require('./time');
 
 const URL = 'https://www.mtgo.com/player-rewards';
@@ -51,12 +52,7 @@ function schedule(state, now = new Date(), c = cfg()) {
 const sha1 = (s) => crypto.createHash('sha1').update(s).digest('hex');
 
 async function fetchPage(url = URL) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (personal MTGO collection tracker)', Accept: 'text/html', 'Cache-Control': 'no-cache' },
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
-  return res.text();
+  return fetchHtml(url);
 }
 
 /** All card rows on the page, slots summed per version (name + set + treatment). */

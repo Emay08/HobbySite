@@ -12,20 +12,21 @@ const CH = {
   ], meta: { current_page: 1, last_page: 1, total: 4 } } },
 };
 
-// Trimmed from a real Dojo ajax.php response (Nov 2026): columns are image, rarity/set, product, Buy, Sell, Stock, cart
-const row = (set, product, buy, sell, stock, foil = false) => `<tr>
-  <td class=" text-center"><img class="image-product-table" src="/x.jpg"></td>
-  <td class=" text-center"><img src="/s.png" class="image-rarity" title="Rare - Some Set (${set})"></td>
-  <td class=" text-start"><a href="/mtgoProduct/force-of-will" class="text-light"> ${product} ${foil ? '<img src="/public/images/icons/foil-swoosh.png" title="Foil">' : ''}</a></td>
-  <td class=" text-center">${buy}</td><td class=" text-center">${sell}</td>
-  <td class=" text-center"><span data-bs-toggle="tooltip"> ${stock} </span></td><td class=" text-center">-</td></tr>`;
-const DOJO = [
-  '<thead><tr><th>Rarity</th></tr></thead>',
-  row('MED', 'Force of Will', '30.65', '65.54', '4'),
-  row('DMR', 'Force of Will (Retro Frame)', '10.96', '15.98', '4'),
-  row('MED', 'Force of Will', '48.00', '-', '-', true),
-  row('MH1', 'Force of Negation', '1.00', '2.00', '4'),
-].join('');
+// Trimmed from a real Dojo ajax.php response (Nov 22 2026): image, Rarity, Collector #, Product, Buy TIX, Sell TIX, Stock, cart
+const row = (set, num, product, buy, sell, stock, foil = false) => `<tr>
+  <td><img class="image-product-table" src="/x.jpg"></td>
+  <td><img src="/s.png" class="image-rarity" title="Rare - Some Set (${set})"></td>
+  <td>${num}</td>
+  <td><a href="/mtgoProduct/force-of-will" class="text-light"> ${product} ${foil ? '<img src="/public/images/icons/foil-swoosh.png" title="Foil">' : ''}</a></td>
+  <td>${buy}</td><td>${sell}</td>
+  <td><span data-bs-toggle="tooltip"> ${stock} </span></td><td><select><option>1</option></select></td></tr>`;
+const th = (t) => `<th><div><div class="flex-column text-center">${t}</div></div></th>`;
+const DOJO = `<table class="table"><thead><tr>${['', 'Rarity', 'Collector<br/>#', 'Product', 'Buy<br/>TIX', 'Sell<br/>TIX', 'Stock', ''].map(th).join('')}</tr></thead><tbody>${[
+  row('MED', '33', 'Force of Will', '27.35', '60.87', '4'),
+  row('DMR', '50', 'Force of Will', '19.40', '24.49', '4'),
+  row('MED', '33', 'Force of Will', '44.76', '-', '-', true),
+  row('MH1', '52', 'Force of Negation', '1.00', '2.00', '4'),
+].join('')}</tbody></table>`;
 
 test('Cardhoarder: exact name only, ids are MTGO ids, buy only when buylisted', () => {
   const rows = parseCardhoarder(CH, 'Force of Will');
@@ -35,13 +36,14 @@ test('Cardhoarder: exact name only, ids are MTGO ids, buy only when buylisted', 
   assert.strictEqual(rows[1].foil, true);
 });
 
-test('Dojo: set from rarity icon, variant from name, buy/sell columns, out of stock', () => {
+test('Dojo: columns found by header, set from rarity icon, collector number, out of stock', () => {
   const rows = parseDojo(DOJO, 'Force of Will');
   assert.strictEqual(rows.length, 3);
   assert.deepStrictEqual(
-    rows.map((r) => [r.set, r.foil, r.variant, r.buy, r.sell, r.stock]),
-    [['MED', false, null, 30.65, 65.54, 4], ['DMR', false, 'Retro Frame', 10.96, 15.98, 4], ['MED', true, null, 48, null, null]]
+    rows.map((r) => [r.set, r.collector, r.foil, r.buy, r.sell, r.stock]),
+    [['MED', '33', false, 27.35, 60.87, 4], ['DMR', '50', false, 19.4, 24.49, 4], ['MED', '33', true, 44.76, null, null]]
   );
+  assert.throws(() => parseDojo('<table><thead><tr><th>Product</th></tr></thead></table>', 'x'), /no Buy\/Sell columns/);
   assert.strictEqual(rows[0].url, 'https://www.dojotradebots.com/mtgoProduct/force-of-will');
 });
 
@@ -73,4 +75,17 @@ test('livePrices: queries both vendors, isolates failures, caches', async () => 
   const again = await livePrices('force of will', { fetchImpl: fakeFetch, now: 60000 });
   assert.strictEqual(again.cached, true);
   assert.strictEqual(calls, 2);
+});
+
+test('Cardhoarder block: reported as blocked, then not asked again for 6 hours', async () => {
+  const { cardhoarder, _blocked } = require('../lib/vendors');
+  _blocked.cardhoarder = 0;
+  let calls = 0;
+  const f = async () => (calls++, new Response('Just a moment...', { status: 403 }));
+  await assert.rejects(cardhoarder('Force of Will', f, 1000), (e) => e.blocked && /blocked by Cardhoarder/.test(e.message));
+  await assert.rejects(cardhoarder('Force of Will', f, 1000 + 3600e3), /blocked/);
+  assert.strictEqual(calls, 1);
+  await assert.rejects(cardhoarder('Force of Will', f, 1000 + 7 * 3600e3), /blocked/);
+  assert.strictEqual(calls, 2);
+  _blocked.cardhoarder = 0;
 });

@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { fetchHtml } = require('./http');
 const cheerio = require('cheerio');
 const telegram = require('./telegram');
 
@@ -10,13 +11,7 @@ const sha1 = (s) => crypto.createHash('sha1').update(s).digest('hex');
 const clean = (s) => String(s || '').replace(/\s+/g, ' ').trim();
 
 async function fetchText(url) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,application/xml,*/*' },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.text();
+  return fetchHtml(url, { headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml,application/xml,*/*' }, timeoutMs: FETCH_TIMEOUT_MS });
 }
 
 // ---------------------------------------------------------------- extractors

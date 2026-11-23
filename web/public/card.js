@@ -38,10 +38,17 @@
     const chById = {};
     if (ch.ok) ch.rows.forEach((r) => (chById[r.mtgoId] = r));
 
-    // Dojo: matched by set + foil, only when that's unambiguous on both sides
+    // Dojo: matched by set + collector number + foil; without a collector number, by set + foil
+    // when that's unambiguous on both sides
     const dj = data.vendors.dojo || { ok: false, error: 'no data' };
     const djByKey = {};
-    if (dj.ok) dj.rows.forEach((r) => (djByKey[key(r.set, r.foil)] = djByKey[key(r.set, r.foil)] || []).push(r));
+    const djByNum = {};
+    const numKey = (set, foil, n) => key(set, foil) + '|' + String(n || '').replace(/^0+/, '').toLowerCase();
+    if (dj.ok)
+      dj.rows.forEach((r) => {
+        (djByKey[key(r.set, r.foil)] = djByKey[key(r.set, r.foil)] || []).push(r);
+        if (r.collector) (djByNum[numKey(r.set, r.foil, r.collector)] = djByNum[numKey(r.set, r.foil, r.collector)] || []).push(r);
+      });
     const usedDojo = new Set();
 
     for (const tr of rows) {
@@ -49,7 +56,8 @@
       const k = key(tr.dataset.set, tr.dataset.foil === '1');
       const chRow = chById[id] || null;
       const djCandidates = djByKey[k] || [];
-      const djRow = djCandidates.length === 1 && versionsPerKey[k] === 1 ? djCandidates[0] : null;
+      const byNum = tr.dataset.collector ? djByNum[numKey(tr.dataset.set, tr.dataset.foil === '1', tr.dataset.collector)] || [] : [];
+      const djRow = byNum.length === 1 ? byNum[0] : djCandidates.length === 1 && versionsPerKey[k] === 1 ? djCandidates[0] : null;
       if (djRow) usedDojo.add(djRow);
 
       tr.querySelectorAll('td.live').forEach((td) => {
@@ -58,6 +66,12 @@
         const src = vendor === 'cardhoarder' ? ch : dj;
         const row = vendor === 'cardhoarder' ? chRow : djRow;
         td.classList.remove('best');
+        if (!src.ok && src.blocked) {
+          td.textContent = '—';
+          td.title = src.error;
+          td.classList.add('muted');
+          return;
+        }
         if (!src.ok) {
           td.textContent = '!';
           td.title = src.error;
@@ -108,9 +122,16 @@
 
     const time = new Date(data.fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     const problems = [];
-    if (!ch.ok) problems.push('Cardhoarder: ' + ch.error);
+    if (!ch.ok && !ch.blocked) problems.push('Cardhoarder: ' + ch.error);
     if (!dj.ok) problems.push('Dojo: ' + dj.error);
     status.textContent = `Live prices from ${time}${data.cached ? ' (cached)' : ''}.` + (problems.length ? ' ' + problems.join(' · ') : '') + ' Best offers are highlighted.';
+    if (ch.blocked && status.dataset.cardhoarder) {
+      const a = el('a', null, 'see their site ↗');
+      a.href = status.dataset.cardhoarder;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      status.append(' Cardhoarder blocks price lookups from this site’s server — ', a, '.');
+    }
   }
 })();
 

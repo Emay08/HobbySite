@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { fetchHtml } = require('./http');
 const { parseHTML } = require('linkedom');
 const { parseTreasureChest, slotTotals, slotDelta, verifyChangelist } = require('./tcParse');
 const { parseNextUpdate, parseNumericDate } = require('./time');
@@ -42,16 +43,7 @@ function schedule(state, now = new Date(), cfg = config()) {
 }
 
 async function fetchPage(url = TC_URL) {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (personal MTGO collection tracker)',
-      Accept: 'text/html',
-      'Cache-Control': 'no-cache',
-    },
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
-  return res.text();
+  return fetchHtml(url);
 }
 
 function parseHtml(html) {

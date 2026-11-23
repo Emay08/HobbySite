@@ -19,7 +19,7 @@
       <a href="<%= links.cardhoarder %>" target="_blank" rel="noopener noreferrer">Cardhoarder ↗</a> ·
       <a href="<%= links.dojo %>" target="_blank" rel="noopener noreferrer">Dojo ↗</a>
     </p>
-    <p class="small muted" id="live-status" data-name="<%= name %>" data-enabled="<%= livePricesEnabled ? '1' : '0' %>">
+    <p class="small muted" id="live-status" data-name="<%= name %>" data-cardhoarder="<%= links.cardhoarder %>" data-enabled="<%= livePricesEnabled ? '1' : '0' %>">
       <%= livePricesEnabled ? 'Loading live prices…' : 'Live prices are turned off.' %>
     </p>
   </div>
@@ -51,7 +51,7 @@
     </thead>
     <tbody>
     <% for (const v of versions) { const d = fmt.pct(v.d1); %>
-      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>" data-img="<%= v.img.normal %>" data-large="<%= v.img.large %>"
+      <tr data-version="<%= v.mtgoId %>" data-set="<%= v.set %>" data-foil="<%= v.foil ? 1 : 0 %>" data-collector="<%= v.collector || '' %>" data-img="<%= v.img.normal %>" data-large="<%= v.img.large %>"
           class="version-row <%= v.qty ? 'row-owned' : '' %> <%= v.mtgoId === links.imageVersion ? 'selected' : '' %>" title="Show this version's image">
         <td class="version-cell">
           <% if (v.img.small) { %><img class="ver-thumb" src="<%= v.img.small %>" data-preview="<%= v.img.large %>" alt="" loading="lazy" referrerpolicy="no-referrer"><% } else { %><span class="ver-thumb ver-thumb-none" data-preview="<%= v.img.large %>"></span><% } %>

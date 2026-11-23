@@ -17,6 +17,10 @@ const TTL_MS = 2 * 60 * 1000;
 const TIMEOUT_MS = 8000;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const cache = new Map();
+// Cardhoarder answers server requests from cloud hosts with a Cloudflare block (HTTP 403).
+// After a block, stop asking for a while instead of retrying on every card view.
+const BLOCK_BACKOFF_MS = 6 * 3600 * 1000;
+const blocked = { cardhoarder: 0 };
 
 const num = (v) => {
   const n = parseFloat(String(v ?? '').replace(/[^\d.]/g, ''));
@@ -49,7 +53,8 @@ function parseCardhoarder(json, name) {
     }));
 }
 
-async function cardhoarder(name, fetchImpl = fetch) {
+async function cardhoarder(name, fetchImpl = fetch, now = Date.now()) {
+  if (blocked.cardhoarder > now) throw Object.assign(new Error('blocked by Cardhoarder (HTTP 403)'), { blocked: true });
   const params = new URLSearchParams({
     cardname: `"${name}"`, set_code: '', format: '', price_gte: '', price_lte: '', sort: 'release-date:number-asc',
     is_rentable_only: '', is_buylisted_only: '', in_stock_for_purchase: '', in_stock_for_rent: '', exclude_promos: '',
@@ -62,7 +67,11 @@ async function cardhoarder(name, fetchImpl = fetch) {
       headers: { Accept: 'application/json', 'User-Agent': UA, 'X-Requested-With': 'XMLHttpRequest' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!res.ok) throw new Error(res.status === 403 ? 'blocked (HTTP 403)' : `HTTP ${res.status}`);
+    if (res.status === 403) {
+      blocked.cardhoarder = now + BLOCK_BACKOFF_MS;
+      throw Object.assign(new Error('blocked by Cardhoarder (HTTP 403)'), { blocked: true });
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     out.push(...parseCardhoarder(json, name));
     const meta = json.data && json.data.cards && json.data.cards.meta;
@@ -74,28 +83,44 @@ async function cardhoarder(name, fetchImpl = fetch) {
 // ------------------------------------------------------------------ Dojo
 
 /**
- * Parses the HTML table Dojo's ajax.php returns. Variants are written into the
- * product name, e.g. "Force of Will (Retro Frame)".
+ * Parses the HTML table Dojo's ajax.php returns. Columns are found by their header text
+ * (Rarity, Collector #, Product, Buy TIX, Sell TIX, Stock), so an added or moved column
+ * doesn't shift the prices. The set is in the rarity icon's title, "Rare - Masters Edition (MED)".
+ * Older pages wrote variants into the product name, e.g. "Force of Will (Retro Frame)".
  */
 function parseDojo(html, name) {
-  const { document } = parseHTML(`<table>${html}</table>`);
+  const { document } = parseHTML(`<html><body>${/<table/i.test(html) ? html : `<table>${html}</table>`}</body></html>`);
+  const col = {};
+  document.querySelectorAll('thead th').forEach((th, i) => {
+    const h = th.textContent.replace(/\s+/g, '').toLowerCase();
+    if (h.startsWith('rarity')) col.rarity = i;
+    else if (h.startsWith('collector')) col.collector = i;
+    else if (h.startsWith('product')) col.product = i;
+    else if (h.startsWith('buy')) col.buy = i;
+    else if (h.startsWith('sell')) col.sell = i;
+    else if (h.startsWith('stock')) col.stock = i;
+  });
+  if (col.buy == null || col.sell == null) throw new Error("Dojo's price table has changed (no Buy/Sell columns found)");
   const out = [];
   for (const tr of document.querySelectorAll('tr')) {
     const a = tr.querySelector('a[href*="mtgoProduct"]');
     if (!a) continue;
     const cells = Array.from(tr.children);
+    const text = (i) => (i != null && cells[i] ? cells[i].textContent.replace(/\s+/g, ' ').trim() : '');
     const product = a.textContent.replace(/\s+/g, ' ').trim();
     const m = product.match(/^(.*?)(?:\s+\(([^)]+)\))?$/);
     const base = m ? m[1] : product;
     if (norm(base) !== norm(name)) continue;
-    const rarityTitle = (cells[1] && cells[1].querySelector('img') && cells[1].querySelector('img').getAttribute('title')) || '';
-    const stockText = cells[5] ? cells[5].textContent.replace(/\s+/g, ' ').trim() : '';
+    const icon = (col.rarity != null && cells[col.rarity] && cells[col.rarity].querySelector('img')) || tr.querySelector('img.image-rarity');
+    const rarityTitle = (icon && icon.getAttribute('title')) || '';
+    const stockText = text(col.stock);
     out.push({
       set: ((rarityTitle.match(/\(([^)]+)\)\s*$/) || [])[1] || '').toUpperCase(),
+      collector: text(col.collector) || null,
       foil: !!tr.querySelector('img[title="Foil"]'),
       variant: m && m[2] ? m[2] : null,
-      buy: num(cells[3] && cells[3].textContent),
-      sell: num(cells[4] && cells[4].textContent),
+      buy: num(text(col.buy)),
+      sell: num(text(col.sell)),
       stock: /^\d+$/.test(stockText) ? parseInt(stockText, 10) : null,
       url: `https://www.dojotradebots.com${a.getAttribute('href')}`,
       label: product,
@@ -128,7 +153,7 @@ async function settle(fn) {
   try {
     return { ok: true, rows: await fn() };
   } catch (err) {
-    return { ok: false, error: err.name === 'TimeoutError' ? 'timed out' : err.message };
+    return { ok: false, error: err.name === 'TimeoutError' ? 'timed out' : err.message, ...(err.blocked ? { blocked: true } : {}) };
   }
 }
 
@@ -140,7 +165,7 @@ async function livePrices(name, { fetchImpl = fetch, now = Date.now() } = {}) {
   const key = norm(name);
   const hit = cache.get(key);
   if (hit && now - hit.at < TTL_MS) return { ...hit.data, cached: true };
-  const [ch, dj] = await Promise.all([settle(() => cardhoarder(name, fetchImpl)), settle(() => dojo(name, fetchImpl))]);
+  const [ch, dj] = await Promise.all([settle(() => cardhoarder(name, fetchImpl, now)), settle(() => dojo(name, fetchImpl))]);
   const data = { fetchedAt: new Date(now).toISOString(), vendors: { cardhoarder: ch, dojo: dj } };
   cache.set(key, { at: now, data });
   if (cache.size > 500) cache.delete(cache.keys().next().value);
@@ -153,4 +178,4 @@ function goatbotsUrl(name) {
   return `https://www.goatbots.com/card/${slug}`;
 }
 
-module.exports = { livePrices, parseCardhoarder, parseDojo, goatbotsUrl, cardhoarder, dojo, _cache: cache };
+module.exports = { livePrices, parseCardhoarder, parseDojo, goatbotsUrl, cardhoarder, dojo, _cache: cache, _blocked: blocked };
