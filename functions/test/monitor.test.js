@@ -68,6 +68,11 @@ test('cadence: lazy outside the window, every tick inside it', () => {
   assert.strictEqual(at('2026-11-20T13:00:00Z').windowStart.toISOString(), '2026-11-23T08:00:00.000Z');
   assert.deepStrictEqual([at('2026-11-23T08:00:30Z').due, at('2026-11-23T08:00:30Z').mode], [true, 'watching']);
   assert.strictEqual(at('2026-11-25T00:00:00Z', { done: () => true }).mode, 'idle');
+  // Saturday Nov 28, inside the window: weekend pace (every 6 h)
+  assert.deepStrictEqual([at('2026-11-28T19:00:00Z').mode, at('2026-11-28T19:00:00Z').due], ['weekend', true]);
+  const wk = { lastSuccess: new Date('2026-11-28T18:00:00Z'), lastAttempt: new Date('2026-11-28T18:00:00Z') };
+  assert.strictEqual(plan({ state: wk, now: new Date('2026-11-28T19:00:00Z'), targets: [t] }).due, false);
+  assert.strictEqual(plan({ state: wk, now: new Date('2026-11-29T00:30:00Z'), targets: [t] }).due, true);
   assert.strictEqual(at('2026-12-07T09:00:00Z').mode, 'idle'); // 7 days late → give up
   assert.strictEqual(plan({ state, now: new Date('2026-11-20T13:30:00Z'), targets: [null], unknownHours: 1 }).due, true);
   assert.strictEqual(plan({ state: null, now: new Date(), targets: [] }).due, true);

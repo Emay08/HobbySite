@@ -307,15 +307,22 @@ test('banlist watcher: schedule from the next announcement date', { skip: !URI &
     assert.strictEqual(r.kept, 0);
     let st = await db.collection('monitor_state').findOne({ _id: 'banlist' });
     assert.strictEqual(st.nextAnnouncement.toISOString(), '2026-11-30T08:00:00.000Z');
-    assert.deepStrictEqual([st.mode, st.windowStart.toISOString()], ['idle', '2026-11-23T08:00:00.000Z']);
+    assert.deepStrictEqual([st.mode, st.windowStart.toISOString()], ['idle', '2026-11-29T08:00:00.000Z']); // 1 day before
     assert.strictEqual(await db.collection('monitor_state').countDocuments({ _id: 'reddit-mtgo' }), 0);
     assert.strictEqual(await db.collection('highlights').countDocuments({ monitorId: 'mtgo-news' }), 0);
 
     // Lazy: not due an hour later; due inside the window, every tick
     assert.ok((await runBanlist(db, { now: new Date('2026-11-20T21:00:00Z'), fetcher })).skipped);
+    assert.ok((await runBanlist(db, { now: new Date('2026-11-27T20:00:00Z'), fetcher })).mode === 'idle'); // Friday: not yet
+    // Sunday Nov 29 is inside the window but a weekend: every 6 hours
     r = await runBanlist(db, { now: new Date('2026-11-29T18:00:00Z'), fetcher });
-    assert.strictEqual(r.mode, 'watching');
+    assert.ok(!r.skipped);
     r = await runBanlist(db, { now: new Date('2026-11-29T18:00:30Z'), fetcher });
+    assert.deepStrictEqual([r.skipped, r.mode], [true, 'weekend']);
+    // Monday: every tick
+    r = await runBanlist(db, { now: new Date('2026-11-30T09:00:00Z'), fetcher });
+    assert.strictEqual(r.mode, 'watching');
+    r = await runBanlist(db, { now: new Date('2026-11-30T09:00:30Z'), fetcher });
     assert.ok(!r.skipped);
     assert.strictEqual(tg.sent.length, 0);
 

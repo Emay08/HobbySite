@@ -189,7 +189,7 @@ Asks Scryfall's search API hourly between 8 am and 8 pm Pacific for every reprin
 
 Reads https://magic.wizards.com/en/news/announcements and keeps only announcements with "Banned" in the title (e.g. *Banned and Restricted Announcement — October 12, 2026*); everything else on that page is ignored (rules in `monitors.config.js`). New ones become highlights and a Telegram message (`NOTIFY_BANLIST=false` turns the message off). The first run records the page without sending anything.
 
-- **When:** each banned & restricted article ends with "Next announcement: November 30, 2026". The watcher reads that date from the newest one (the very first time, from the October 12 article) and checks **every 30 seconds** from 7 days before it until a new "Banned" announcement appears, or until 7 days after the date if it's late. Otherwise it checks **every 6 hours**, so an unscheduled emergency ban is still caught the same day. If an announcement doesn't state a next date: hourly.
+- **When:** each banned & restricted article ends with "Next announcement: November 30, 2026". The watcher reads that date from the newest one (the very first time, from the October 12 article). Wizards is punctual, so it checks **every 30 seconds** from 1 day before that date until a new "Banned" announcement appears, or until 2 days after the date if it's late. Otherwise it checks **every 6 hours**, so an unscheduled emergency ban is still caught the same day. If an announcement doesn't state a next date: hourly.
 - The page only shows the latest 8 announcements, which is plenty at these intervals.
 
 ### Player Reward Packs — `functions/src/lib/rewardPacks.js`
@@ -197,6 +197,10 @@ Reads https://magic.wizards.com/en/news/announcements and keeps only announcemen
 Reads https://www.mtgo.com/player-rewards with the Treasure Chest parser (same page layout). When the card table changes, the added, removed and re-slotted cards are saved as a highlight and sent by Telegram (`NOTIFY_REWARD_PACKS=false` turns the message off); added cards you own or watch are put on the short-term watch list. Every version is kept in `prp_snapshots`. The first check only records the page.
 
 - **When:** reward periods start on the 1st of each month at 8 am PT and the list changes around then (November's is dated November 2). The watcher checks **every 30 seconds** from 7 days before the 1st until the list changes (or 7 days after the 1st, if it's late), and **every 6 hours** otherwise.
+
+### Weekends
+
+None of these pages are updated on Saturdays or Sundays, so inside a fast-check window the watchers drop to **every 6 hours** on weekends (Pacific time) and go back to every 30 seconds at midnight Monday. `WATCH_WEEKEND_HOURS` changes the weekend interval; `WATCH_WEEKENDS=fast` turns the weekend slowdown off.
 
 ### One timer, and the free grant
 
@@ -324,8 +328,9 @@ Logs: App Service → *Log stream*; Function App → *Monitor* / *Log stream*.
 | `TC_WINDOW_DAYS_BEFORE` / `TC_WINDOW_DAYS_AFTER` | Treasure Chest fast-check window around "Next Update" (default 7 / 7) |
 | `TC_IDLE_HOURS` | Treasure Chest check interval outside the window (default 24) |
 | `SPOILER_HOURS` | reprint watch active hours, Pacific (default `8-20`) |
-| `BANLIST_WINDOW_DAYS_BEFORE` / `_AFTER`, `BANLIST_IDLE_HOURS` | banlist fast-check window around "Next announcement" (default 7 / 7) and interval outside it (default 6) |
+| `BANLIST_WINDOW_DAYS_BEFORE` / `_AFTER`, `BANLIST_IDLE_HOURS` | banlist fast-check window around "Next announcement" (default 1 / 2) and interval outside it (default 6) |
 | `PRP_WINDOW_DAYS_BEFORE` / `_AFTER`, `PRP_IDLE_HOURS` | reward pack fast-check window around the 1st (default 7 / 7) and interval outside it (default 6) |
+| `WATCH_WEEKEND_HOURS` / `WATCH_WEEKENDS` | check interval inside a window on Saturdays and Sundays (default 6); `fast` = no weekend slowdown |
 | `NOTIFY_BANLIST`, `NOTIFY_REWARD_PACKS` | set to `false` to keep banlist / reward pack changes off Telegram (on by default) |
 | `NOTIFY_PRICE_TARGETS`, `NOTIFY_SWAPS`, `NOTIFY_SHORT_WATCH`, `NOTIFY_COLLECTION_MOVERS` | set to `true` to also get Telegram messages for these (all off by default) |
 | `PRICE_ALERT_MIN_PCT` / `PRICE_ALERT_MIN_TIX` | thresholds for the collection-movers message, if turned on (default 25 % and 2 tix) |

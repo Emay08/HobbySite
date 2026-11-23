@@ -72,7 +72,8 @@
                   <% if (m.nextUpdateText) { %><span class="muted small">Next update: <%= m.nextUpdateText %></span><% } %>
                   <span class="muted small">
                     <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
-                    <% } else if (m.windowStart) { %>daily until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else if (m.mode === 'weekend') { %>weekend: every 6 hours, every 30 s again from Monday
+                    <% } else if (m.windowStart) { %>daily until <%= fmt.date(m.windowStart) %>, then every 30 s on weekdays
                     <% } else { %>hourly (update date unknown)<% } %>
                   </span>
                   <% if (m.lastStatus === 'stale') { %><span class="error small">Last update: CHANGELIST not updated</span><% } %>
@@ -85,14 +86,16 @@
                   <% if (m.nextAnnouncementText) { %><span class="muted small">Next announcement: <%= m.nextAnnouncementText %></span><% } %>
                   <span class="muted small">"Banned" titles only ·
                     <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
-                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else if (m.mode === 'weekend') { %>weekend: every 6 hours, every 30 s again from Monday
+                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s on weekdays
                     <% } else { %>hourly (next date unknown)<% } %>
                   </span>
                 <% } %>
                 <% if (m._id === 'reward-packs') { %>
                   <span class="muted small"><% if (m.cards) { %><%= m.cards %> cards · <% } %><% if (m.lastUpdatedText) { %>updated <%= m.lastUpdatedText %> · <% } %>
                     <% if (m.mode === 'watching') { %>⏱ checking every 30 seconds
-                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s
+                    <% } else if (m.mode === 'weekend') { %>weekend: every 6 hours, every 30 s again from Monday
+                    <% } else if (m.windowStart) { %>every 6 hours until <%= fmt.date(m.windowStart) %>, then every 30 s on weekdays
                     <% } else { %>every 6 hours<% } %>
                   </span>
                 <% } %>

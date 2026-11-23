@@ -1,8 +1,9 @@
 const crypto = require('crypto');
 const { fetchHtml } = require('./http');
+const { slowDue } = require('./cadence');
 const { parseHTML } = require('linkedom');
 const { parseTreasureChest, slotTotals, slotDelta, verifyChangelist } = require('./tcParse');
-const { parseNextUpdate, parseNumericDate } = require('./time');
+const { parseNextUpdate, parseNumericDate, isWeekend, weekendHours } = require('./time');
 const names = require('./names');
 const telegram = require('./telegram');
 const { recordFailure, successFields } = require('./health');
@@ -28,7 +29,10 @@ function schedule(state, now = new Date(), cfg = config()) {
   if (nu) {
     const start = new Date(nu.getTime() - cfg.daysBefore * DAY);
     const end = new Date(nu.getTime() + cfg.daysAfter * DAY);
-    if (now >= start && now <= end) return { due: true, mode: 'watching', windowStart: start, windowEnd: end };
+    if (now >= start && now <= end) {
+      if (!isWeekend(now)) return { due: true, mode: 'watching', windowStart: start, windowEnd: end };
+      return { due: slowDue(state, now, weekendHours()), mode: 'weekend', windowStart: start, windowEnd: end };
+    }
   }
   const intervalMs = (nu ? cfg.idleHours : cfg.unknownHours) * 3600000;
   const mode = nu ? 'daily' : 'hourly';

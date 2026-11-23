@@ -33,6 +33,19 @@ function zonedParts(date, tz = PT) {
   return { year: +parts.year, month: +parts.month, day: +parts.day, hour: +parts.hour, minute: +parts.minute };
 }
 
+/**
+ * Saturday or Sunday in Pacific time. MTGO and Wizards don't update the chest, reward pack
+ * or banlist pages on weekends, so the watchers slow down then. WATCH_WEEKENDS=fast turns
+ * this off.
+ */
+function isWeekend(date, tz = PT) {
+  if (process.env.WATCH_WEEKENDS === 'fast') return false;
+  const wd = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(date);
+  return wd === 'Sat' || wd === 'Sun';
+}
+
+const weekendHours = () => Number(process.env.WATCH_WEEKEND_HOURS || 6);
+
 function parseClock(text) {
   if (/\bnoon\b/i.test(text)) return { hour: 12, minute: 0 };
   if (/\bmidnight\b/i.test(text)) return { hour: 0, minute: 0 };
@@ -80,4 +93,4 @@ function parseNextUpdate(text, reference = new Date(), tz = PT) {
   return null;
 }
 
-module.exports = { PT, offsetMinutes, zonedToUtc, zonedParts, parseNextUpdate, parseNumericDate, parseClock };
+module.exports = { PT, offsetMinutes, zonedToUtc, zonedParts, parseNextUpdate, parseNumericDate, parseClock, isWeekend, weekendHours };

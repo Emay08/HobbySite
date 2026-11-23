@@ -3,9 +3,10 @@
  * monitors.config.js), on the 30-second tick.
  *
  * Each banned & restricted article ends with "Next announcement: November 30, 2026". That
- * date is read from the newest one and drives the schedule: every 30 seconds from
- * BANLIST_WINDOW_DAYS_BEFORE (7) days before it until a new "Banned" announcement appears
- * (or BANLIST_WINDOW_DAYS_AFTER (7) days after, if it's late); every BANLIST_IDLE_HOURS (6)
+ * date is read from the newest one and drives the schedule: Wizards is punctual, so every
+ * 30 seconds from BANLIST_WINDOW_DAYS_BEFORE (1) day before it until a new "Banned"
+ * announcement appears (or BANLIST_WINDOW_DAYS_AFTER (2) days after, if it's late), except
+ * on weekends; every BANLIST_IDLE_HOURS (6)
  * otherwise, so unscheduled emergency bans are still caught the same day. Without a known
  * date: hourly.
  */
@@ -20,8 +21,8 @@ const STATE_ID = 'banlist';
 const SEED_ARTICLE = 'https://magic.wizards.com/en/news/announcements/banned-and-restricted-october-12-2026';
 
 const cfg = () => ({
-  daysBefore: Number(process.env.BANLIST_WINDOW_DAYS_BEFORE || 7),
-  daysAfter: Number(process.env.BANLIST_WINDOW_DAYS_AFTER || 7),
+  daysBefore: Number(process.env.BANLIST_WINDOW_DAYS_BEFORE || 1),
+  daysAfter: Number(process.env.BANLIST_WINDOW_DAYS_AFTER || 2),
   idleHours: Number(process.env.BANLIST_IDLE_HOURS || 6),
   unknownHours: 1,
 });
