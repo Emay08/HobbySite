@@ -374,6 +374,10 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.deepStrictEqual(gotRe.components[0].typical, { mass: 5000 });
     const badTier = await req('/swg/api/components/x', { method: 'PUT', headers: json, body: JSON.stringify({ ...comp, tier: 11 }) });
     assert.strictEqual(badTier.status, 400);
-    for (const n of ['Cap%20one', 'My%20RE']) assert.strictEqual((await req('/swg/api/components/' + n, { method: 'DELETE', headers: json })).status, 200);
+    const cm = { kind: 'crafted', type: 'weapon', tier: 1, launcher: 'countermeasure', ship: { mass: 100 } };
+    assert.strictEqual((await req('/swg/api/components/Chaff', { method: 'PUT', headers: json, body: JSON.stringify(cm) })).status, 200);
+    const weapons = (await (await req('/swg/api/components?type=weapon', { headers: json })).json()).components;
+    assert.deepStrictEqual(weapons.map((c) => [c.name, c.launcher]), [['Chaff', 'countermeasure']]);
+    for (const n of ['Cap%20one', 'My%20RE', 'Chaff']) assert.strictEqual((await req('/swg/api/components/' + n, { method: 'DELETE', headers: json })).status, 200);
   });
 });

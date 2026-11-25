@@ -249,6 +249,7 @@
   }
 
   // ---------- slot menu: swap a component ----------
+  const LAUNCHER_LABEL = { missile: 'missile launcher', countermeasure: 'countermeasure launcher' };
   const SOURCE_LABEL = { loot: 'Looted', re: 'RE project', crafted: 'Crafted', default: 'Default' };
   let menuSlot = null;
   let menuEl = null;
@@ -263,13 +264,16 @@
     menuSlot = slot;
     const type = LT ? LT.typeForSlot(slot) : null;
     const c = build.components[slot];
+    const launcher = launcherKind(slot);
     const list = el('ul', { class: 'swg-build-list' }, el('li', { class: 'muted small' }, 'Loading saved components…'));
+    const craftHref = '/swg/crafting?slot=' + encodeURIComponent(slot) + (launcher ? '&launcher=' + launcher : '');
     menuEl = el('div', { class: 'swg-menu card', role: 'dialog', 'aria-label': 'Change ' + slotLabel(slot) },
       el('div', { class: 'swg-panel-head' }, el('h3', null, slotLabel(slot)), el('button', { type: 'button', class: 'link', 'aria-label': 'Close', onclick: closeMenu }, '✕')),
       el('div', { class: 'swg-menu-actions' },
-        type ? el('a', { class: 'btn', href: '/swg/loot?slot=' + encodeURIComponent(slot) }, 'New looted component…') : null,
-        el('a', { class: 'btn', href: '/swg/crafting?slot=' + encodeURIComponent(slot) }, 'New crafted component…'),
+        type && !launcher ? el('a', { class: 'btn', href: '/swg/loot?slot=' + encodeURIComponent(slot) }, 'New looted component…') : null,
+        el('a', { class: 'btn', href: craftHref }, launcher ? 'New crafted ' + LAUNCHER_LABEL[launcher] + '…' : 'New crafted component…'),
         c.source !== 'default' && ship().slots[slot] ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null),
+      launcher ? el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'This slot holds a ' + LAUNCHER_LABEL[launcher] + ': only the default part or a crafted ' + LAUNCHER_LABEL[launcher] + ' fits.') : null,
       el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'Load a saved component'),
       list);
     document.body.append(menuEl);
@@ -278,15 +282,17 @@
     menuEl.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left)) + 'px';
     menuEl.style.top = (r.bottom + 8 + h < window.innerHeight ? r.bottom + 8 : Math.max(12, r.top - h - 8)) + 'px';
     renderSlots();
-    fillSavedList(slot, type, list);
+    fillSavedList(slot, type, list, launcher);
   }
-  async function fillSavedList(slot, type, list) {
+  async function fillSavedList(slot, type, list, launcher) {
     if (!type) { list.replaceChildren(el('li', { class: 'muted small' }, 'No saved components fit this slot.')); return; }
     try {
-      const { components } = await api('/components?type=' + type);
+      // launcher slots take only crafted launchers of the same kind; gun slots never take launchers
+      const all = (await api('/components?type=' + type + (launcher ? '&kind=crafted' : ''))).components;
+      const components = all.filter((sc) => (sc.launcher || null) === launcher);
       if (menuSlot !== slot) return;
       list.replaceChildren();
-      if (!components.length) list.append(el('li', { class: 'muted small' }, 'No saved ' + LT.TYPES[type].label.toLowerCase() + 's yet.'));
+      if (!components.length) list.append(el('li', { class: 'muted small' }, launcher ? 'No saved crafted ' + LAUNCHER_LABEL[launcher] + 's yet.' : 'No saved ' + LT.TYPES[type].label.toLowerCase() + 's yet.'));
       const m = C.massUsage(ship(), build);
       const cur = build.components[slot];
       const base = m.used - (typeof cur.mass === 'number' ? cur.mass : 0);
@@ -314,17 +320,24 @@
     return { ...doc.ship, name: doc.name, code, source: doc.kind };
   }
   /** Slot for a component type: the given one if it fits, else a slot still holding a default part, else the first. */
-  function slotFor(type, wanted) {
-    const slots = Object.keys(build.components).filter((s) => LT.typeForSlot(s) === type);
+  /** 'missile' / 'countermeasure' when the ship's stock part in a weapon slot is a launcher, else null */
+  function launcherKind(slot) {
+    const stock = ship().slots[slot];
+    if (C.slotKind(slot) !== 'weapon' || !stock) return null;
+    const k = C.weaponKind(stock);
+    return k === 'gun' ? null : k;
+  }
+  function slotFor(type, wanted, launcher = null) {
+    const slots = Object.keys(build.components).filter((s) => LT.typeForSlot(s) === type && launcherKind(s) === launcher);
     if (wanted && slots.includes(wanted)) return wanted;
     return slots.find((s) => build.components[s].source === 'default') || slots[0] || null;
   }
   async function useSaved(name, wantedSlot) {
     try {
       const { component: doc } = await api('/components/' + encodeURIComponent(name));
-      const slot = slotFor(doc.type, wantedSlot);
+      const slot = slotFor(doc.type, wantedSlot, doc.launcher || null);
       if (!slot) {
-        $('#swg-build-name').textContent = ship().name + ' has no slot for a ' + LT.TYPES[doc.type].label.toLowerCase() + '.';
+        $('#swg-build-name').textContent = ship().name + ' has no slot for ' + (doc.launcher ? 'a ' + LAUNCHER_LABEL[doc.launcher] : 'a ' + LT.TYPES[doc.type].label.toLowerCase()) + '.';
         return;
       }
       build.components[slot] = partFromSaved(doc);

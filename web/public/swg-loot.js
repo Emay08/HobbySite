@@ -44,6 +44,8 @@
   // ---------- formatting ----------
   const fmtNum = (v, d) => (v == null || !Number.isFinite(v) ? '—' : v.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: d }));
   const prettyNpc = (id) => String(id).replace(/_/g, ' ').replace(/\btier(\d)/g, 'tier $1').replace(/\b\w/g, (c) => c.toUpperCase());
+  /** red (0) → yellow (0.5) → green (1) */
+  const pctColor = (p) => 'hsl(' + Math.round(120 * p) + ', 75%, 58%)';
   const typeLabel = (t) => (L.TYPES[t] ? L.TYPES[t].label : t);
   function statDecimals(key, items) {
     for (const it of items) if (it.stats[key]) return L.decimals(key, it.stats[key][2]);
@@ -203,7 +205,7 @@
       if (document.activeElement !== r.input) r.input.value = s.value == null ? '' : String(L.round(s.value, d));
       r.input.classList.toggle('auto', s.auto);
       r.input.placeholder = s.range ? (s.range.lower ? '≤ ' : '≥ ') + '…' : '';
-      r.clear.hidden = state.values[s.key] == null;
+      r.clear.style.visibility = state.values[s.key] == null ? 'hidden' : 'visible'; // keeps its space: no column shifts
       const fixed = !s.range || Math.abs(s.range.best - s.range.worst) < 1e-12;
       r.slider.disabled = fixed;
       const pct = s.value == null || fixed ? (fixed && s.value != null ? 1 : null) : (s.value - s.range.worst) / (s.range.best - s.range.worst);
@@ -273,7 +275,7 @@
   }
 
   function renderButtons() {
-    const hasUserValue = Object.keys(state.values).length > 0;
+    const hasUserValue = view.stats.some((st) => st.value != null); // typed, slid or pre-filled
     $('#re-add').disabled = !hasUserValue;
     const hasProject = project.components.length > 0;
     for (const id of ['#re-clear', '#re-saveload', '#re-use']) $(id).disabled = !hasProject;
@@ -310,7 +312,13 @@
         if (hide.includes(k)) continue;
         const d = statDecimals(k, data.items.filter((it) => it.type === type && it.stats[k]));
         const v = c.values[k];
-        dl.append(el('dt', null, L.STATS[k].label), el('dd', { class: v == null ? 'muted' : summary[k] != null && isBest(k, v) ? 'lt-best' : '', title: v == null && c.typical && c.typical[k] != null ? 'Not entered · typical roll ' + fmtNum(c.typical[k], d) : '' }, v == null ? '—' : fmtNum(v, d)));
+        const pct = v == null ? null : levelPercentile(k, v);
+        const dd = el('dd', {
+          class: v == null ? 'muted' : isBest(k, v) ? 'lt-best' : '',
+          title: v == null ? (c.typical && c.typical[k] != null ? 'Not entered · typical roll ' + fmtNum(c.typical[k], d) : '') : Math.round(pct * 100) + 'th percentile among all RE ' + level + ' ' + typeLabel(type).toLowerCase() + 's' + (isBest(k, v) ? ' · best in the project' : ''),
+        }, v == null ? '—' : fmtNum(v, d));
+        if (pct != null) dd.style.color = pctColor(pct);
+        dl.append(el('dt', null, L.STATS[k].label), dd);
       }
       box.append(el('article', { class: 'swg-slot swg-k-' + (L.TYPES[type] ? L.TYPES[type].slot : type) },
         el('header', { class: 'swg-slot-head' }, el('span', { class: 'swg-slot-name' }, 'Component ' + (i + 1)),
@@ -320,6 +328,12 @@
     });
     $('#re-cap').textContent = level ? comps.length + ' of ' + level + ' components (an RE level ' + level + ' project holds up to ' + level + ', all level ' + level + ' ' + typeLabel(type).toLowerCase() + 's).' : 'Add looted components with at least one stat value entered.';
 
+    /** Where v sits between the worst and best roll of every component of this type and RE level (0–1). */
+    function levelPercentile(k, v) {
+      const r = L.statRange(data.items.filter((it) => it.type === type && it.tier === level), k);
+      if (!r || Math.abs(r.best - r.worst) < 1e-12) return 1;
+      return Math.max(0, Math.min(1, (v - r.worst) / (r.best - r.worst)));
+    }
     function isBest(k, v) {
       const lower = L.STATS[k].lower;
       return comps.every((o) => o.values[k] == null || (lower ? v <= o.values[k] : v >= o.values[k]));
@@ -327,6 +341,8 @@
   }
 
   function saveProject() { session.set('reProject', project); }
+  /** Default RE project name: "R8 Weapon"; RE level 10 is "R0". */
+  const reName = (type, tier) => 'R' + (tier % 10) + ' ' + typeLabel(type);
 
   function addToProject() {
     const msg = $('#re-msg');
@@ -338,7 +354,7 @@
     } else {
       project.type = state.type;
       project.tier = state.tier;
-      if (!project.name) project.name = 'RE ' + typeLabel(state.type) + ' L' + state.tier;
+      if (!project.name) project.name = reName(state.type, state.tier);
     }
     project.components.push({ name: cur.name, itemIds: cur.itemIds, values: cur.values, typical: cur.typical });
     msg.textContent = 'Added ' + cur.name + '.';
@@ -476,7 +492,7 @@
     try {
       let name;
       if (kind === 're') {
-        name = await save('re', project.name || 'RE ' + typeLabel(project.type) + ' L' + project.tier);
+        name = await save('re', project.name || reName(project.type, project.tier));
       } else {
         const c = currentComponent();
         name = state.compName || (await save('loot', c.name + ' · ' + new Date().toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' })));

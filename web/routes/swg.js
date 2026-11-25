@@ -115,11 +115,11 @@ router.get('/api/components', async (req, res, next) => {
     if (COMPONENT_TYPES.includes(req.query.type)) q.type = req.query.type;
     const list = await getDb()
       .collection(COMPONENTS)
-      .find(q, { projection: { name: 1, kind: 1, type: 1, tier: 1, 'ship.mass': 1, updatedAt: 1 } })
+      .find(q, { projection: { name: 1, kind: 1, type: 1, tier: 1, launcher: 1, 'ship.mass': 1, updatedAt: 1 } })
       .sort({ updatedAt: -1 })
       .toArray();
     res.json({
-      components: list.map((c) => ({ name: c.name, kind: c.kind, type: c.type, tier: c.tier, mass: c.ship && c.ship.mass, updatedAt: c.updatedAt })),
+      components: list.map((c) => ({ name: c.name, kind: c.kind, type: c.type, tier: c.tier, launcher: c.launcher, mass: c.ship && c.ship.mass, updatedAt: c.updatedAt })),
     });
   } catch (err) {
     next(err);
@@ -156,6 +156,8 @@ router.put('/api/components/:name', async (req, res, next) => {
       itemIds: Array.isArray(b.itemIds) ? b.itemIds.filter((x) => typeof x === 'string').slice(0, 200) : [],
       updatedAt: new Date(),
     };
+    // weapon launchers (crafted only) fit only launcher slots of the same kind
+    if (b.type === 'weapon' && ['missile', 'countermeasure'].includes(b.launcher)) doc.launcher = b.launcher;
     if (b.kind === 're') {
       const comps = Array.isArray(b.components) ? b.components.slice(0, 10) : [];
       doc.components = comps.map((c) => ({
