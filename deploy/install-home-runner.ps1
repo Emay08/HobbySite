@@ -25,6 +25,8 @@ if (-not $isAdmin) { throw 'Open PowerShell with "Run as administrator" and run 
 
 $node = (Get-Command node -ErrorAction SilentlyContinue).Source
 if (-not $node) { throw 'Node.js was not found. Install Node 22 from https://nodejs.org and open a new PowerShell window.' }
+$nodeVersion = [version]((& $node --version).TrimStart('v'))
+if ($nodeVersion -lt [version]'22.12.0') { throw "Node $nodeVersion is too old (the HTML parser needs 22.12 or later). Run 'winget upgrade OpenJS.NodeJS.LTS' or install the latest 22.x from https://nodejs.org, then open a new PowerShell window." }
 
 # 1. Packages
 Push-Location $functions
@@ -40,7 +42,9 @@ if (-not (Test-Path $settings)) {
     $values = [ordered]@{}
     foreach ($s in $all) { if ($s.name -notmatch $skip) { $values[$s.name] = $s.value } }
     if (-not $values.Contains('MONGODB_URI')) { throw 'MONGODB_URI is not among the Function App settings.' }
-    @{ IsEncrypted = $false; Values = $values } | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 $settings
+    # Plain UTF-8 without a BOM (Windows PowerShell's "-Encoding utf8" adds one)
+    $json = @{ IsEncrypted = $false; Values = $values } | ConvertTo-Json -Depth 4
+    [IO.File]::WriteAllText($settings, $json, (New-Object Text.UTF8Encoding $false))
     Write-Host "  copied $($values.Count) settings"
 }
 

@@ -5,7 +5,7 @@
   "description": "Azure Functions: Treasure Chest, reprint, banlist and Player Reward Pack watchers with Telegram alerts, daily MTGO price sync",
   "main": "src/functions/*.js",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "scripts": {
     "start": "func start",

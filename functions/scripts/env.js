@@ -4,7 +4,7 @@ const path = require('path');
 
 const settingsPath = path.join(__dirname, '..', 'local.settings.json');
 if (fs.existsSync(settingsPath)) {
-  const { Values = {} } = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  const { Values = {} } = JSON.parse(fs.readFileSync(settingsPath, 'utf8').replace(/^\uFEFF/, '')); // Windows editors may add a BOM
   for (const [k, v] of Object.entries(Values)) if (process.env[k] === undefined) process.env[k] = String(v);
 }
 try {
