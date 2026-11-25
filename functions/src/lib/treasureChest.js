@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { fetchHtml } = require('./http');
-const { slowDue } = require('./cadence');
+const { slowDue, backingOff } = require('./cadence');
 const { parseHTML } = require('linkedom');
 const { parseTreasureChest, slotTotals, slotDelta, verifyChangelist } = require('./tcParse');
 const { parseNextUpdate, parseNumericDate, isWeekend, weekendHours } = require('./time');
@@ -30,7 +30,7 @@ function schedule(state, now = new Date(), cfg = config()) {
     const start = new Date(nu.getTime() - cfg.daysBefore * DAY);
     const end = new Date(nu.getTime() + cfg.daysAfter * DAY);
     if (now >= start && now <= end) {
-      if (!isWeekend(now)) return { due: true, mode: 'watching', windowStart: start, windowEnd: end };
+      if (!isWeekend(now)) return { due: !backingOff(state, now), mode: 'watching', windowStart: start, windowEnd: end };
       return { due: slowDue(state, now, weekendHours()), mode: 'weekend', windowStart: start, windowEnd: end };
     }
   }

@@ -89,3 +89,43 @@ test('Cardhoarder block: reported as blocked, then not asked again for 6 hours',
   assert.strictEqual(calls, 2);
   _blocked.cardhoarder = 0;
 });
+
+test('Cardhoarder via the home runner when it is checking in', { skip: !process.env.TEST_MONGODB_URI && 'TEST_MONGODB_URI not set' }, async () => {
+  const { MongoClient } = require('mongodb');
+  const client = await new MongoClient(process.env.TEST_MONGODB_URI).connect();
+  const db = client.db('mtgo_vendor_home_test');
+  await db.dropDatabase();
+  try {
+    _cache.clear();
+    const now = Date.now();
+    await db.collection('monitor_state').insertOne({ _id: 'home-runner', lastBeat: new Date(now - 30000) });
+    let direct = 0;
+    const fakeFetch = async (url) => {
+      if (url.includes('cardhoarder')) direct++;
+      return new Response(JSON.stringify({ callbackData: { html: '<table><thead><tr><th>Buy TIX</th><th>Sell TIX</th></tr></thead></table>' } }), { status: 200 });
+    };
+    // Stand-in for the runner on hobbymini: answers the queued request
+    const answer = setInterval(async () => {
+      await db.collection('vendor_requests').updateOne(
+        { status: 'pending' },
+        { $set: { status: 'done', result: { ok: true, rows: [{ mtgoId: '1', set: 'MED', foil: false, sell: 60, buy: 30, stock: 4 }] } } }
+      );
+    }, 100);
+    const r = await livePrices('Force of Will', { fetchImpl: fakeFetch, now, db });
+    clearInterval(answer);
+    assert.strictEqual(direct, 0);
+    assert.deepStrictEqual([r.vendors.cardhoarder.ok, r.vendors.cardhoarder.via, r.vendors.cardhoarder.rows[0].sell], [true, 'home', 60]);
+    const q = await db.collection('vendor_requests').findOne({});
+    assert.deepStrictEqual([q._id, q.vendor, q.name], ['cardhoarder|force of will', 'cardhoarder', 'Force of Will']);
+
+    // Runner gone quiet → straight to Cardhoarder again
+    _cache.clear();
+    await db.collection('monitor_state').updateOne({ _id: 'home-runner' }, { $set: { lastBeat: new Date(now - 10 * 60000) } });
+    await livePrices('Force of Will', { fetchImpl: fakeFetch, now, db });
+    assert.strictEqual(direct, 1);
+  } finally {
+    _cache.clear();
+    await db.dropDatabase();
+    await client.close();
+  }
+});

@@ -22,7 +22,9 @@
     "spoilers:dry-run": "node scripts/run-spoilers.js --dry-run",
     "spoilers:run": "node scripts/run-spoilers.js",
     "rewards:dry-run": "node scripts/run-reward-packs.js --dry-run",
-    "rewards:run": "node scripts/run-reward-packs.js"
+    "rewards:run": "node scripts/run-reward-packs.js",
+    "home:once": "node scripts/home-runner.js --once",
+    "home:run": "node scripts/home-runner.js"
   },
   "dependencies": {
     "@azure/functions": "^4.6.0",

@@ -158,7 +158,7 @@ router.get('/api/live', async (req, res, next) => {
   try {
     const name = text(req.query.name, 150);
     if (!name) return res.status(400).json({ error: 'name required' });
-    res.json(await vendors.livePrices(name));
+    res.json(await vendors.livePrices(name, { db: getDb() }));
   } catch (err) {
     next(err);
   }

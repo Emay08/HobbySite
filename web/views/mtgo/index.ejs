@@ -64,10 +64,13 @@
         <ul class="monitor-list">
           <% for (const m of monitors) { %>
             <li>
-              <span class="dot <%= m.lastError ? 'dot-bad' : 'dot-ok' %>"></span>
+              <span class="dot <%= m.lastError || m.away ? 'dot-bad' : 'dot-ok' %>"></span>
               <div>
                 <strong><%= m.label || m._id %></strong>
                 <span class="muted small">checked <%= fmt.ago(m.lastChecked) %></span>
+                <% if (m._id === 'home-runner') { %>
+                  <span class="muted small"><%= m.away ? 'not checking in — Azure is doing the mtgo.com checks and Cardhoarder is asked directly' : 'doing the Treasure Chest and reward pack checks and Cardhoarder lookups' %></span>
+                <% } %>
                 <% if (m._id === 'treasure-chest') { %>
                   <% if (m.nextUpdateText) { %><span class="muted small">Next update: <%= m.nextUpdateText %></span><% } %>
                   <span class="muted small">

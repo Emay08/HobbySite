@@ -16,6 +16,16 @@
 const DAY = 86400000;
 const { isWeekend, weekendHours } = require('./time');
 
+/**
+ * While a watcher keeps failing, a fast-check window retries every FAILING_RETRY_MIN (5)
+ * minutes instead of every tick, so an unreachable page doesn't burn a 30-second tick
+ * waiting for a timeout.
+ */
+function backingOff(state, now) {
+  const mins = Number(process.env.FAILING_RETRY_MIN || 5);
+  return !!(state && state.failingSince && state.lastAttempt && now - new Date(state.lastAttempt) < mins * 60000);
+}
+
 /** Due when the last success is `hours` old (and the last attempt at least 15 min ago). */
 function slowDue(state, now, hours) {
   if (!state || !state.lastSuccess) return !(state && state.lastAttempt) || now - new Date(state.lastAttempt) >= 5 * 60000;
@@ -28,7 +38,7 @@ function plan({ state, now = new Date(), targets = [], done = () => false, daysB
     const start = new Date(t.getTime() - daysBefore * DAY);
     const end = new Date(t.getTime() + daysAfter * DAY);
     if (now >= start && now <= end && !done(t, start)) {
-      if (!isWeekend(now)) return { due: true, mode: 'watching', target: t, windowStart: start, windowEnd: end };
+      if (!isWeekend(now)) return { due: !backingOff(state, now), mode: 'watching', target: t, windowStart: start, windowEnd: end };
       return { due: slowDue(state, now, weekendHours()), mode: 'weekend', target: t, windowStart: start, windowEnd: end };
     }
   }
@@ -46,4 +56,4 @@ function plan({ state, now = new Date(), targets = [], done = () => false, daysB
   return { due: sinceSuccess >= interval && sinceAttempt >= 15 * 60000, mode, windowStart: next || null };
 }
 
-module.exports = { plan, slowDue, DAY };
+module.exports = { plan, slowDue, backingOff, DAY };

@@ -14,6 +14,10 @@ mtgo-manager/
                                    Banlist (window around "Next announcement", every 6 h otherwise)
                                    Player Reward Packs (window around the 1st, every 6 h otherwise)
                  spoilerWatch  – Scryfall, hourly 8 am–8 pm PT: reprints of your cards           → Telegram
+
+hobbymini (home PC) – "Vault home runner" scheduled task (functions/scripts/home-runner.js):
+                 the two mtgo.com watchers + Cardhoarder lookups for card pages, from a home
+                 connection; Azure takes them back whenever hobbymini stops checking in
                  priceSync     – daily: GoatBots cards + prices → value history, tracked-card history,
                                  target / swap status for the website
 ```
@@ -37,6 +41,7 @@ mtgo-manager/
 | `monitor_state` | functions            | Each watcher's state: last run, last error, schedule |
 | `tc_snapshots`  | functions/treasureChest | Parsed copies of the Treasure Chest page (last 30 changes) |
 | `reprint_seen`  | functions/spoilerWatch  | Scryfall printing IDs the reprint watch has already looked at |
+| `vendor_requests` | web + home runner | Cardhoarder lookups waiting for / answered by the home runner (kept a day) |
 | `prp_snapshots` | functions/watchers      | Every version of the Player Reward Pack contents |
 | `meta`          | functions/priceSync  | Last price sync time |
 | `trades`        | web                  | Per-card trade entries: logged by hand on card pages, or imported from GoatBots |
@@ -142,7 +147,7 @@ Where the prices come from:
 | Vendor | Freshness | How |
 |--------|-----------|-----|
 | GoatBots | daily (published ~5:30 AM CET) | their public download, as before. Their live prices are deliberately drawn as obfuscated images to stop automated reading, so the page links to GoatBots' own card page for those. |
-| Cardhoarder | live, when allowed | one request per card page view (their search, exact name). Their card ids are MTGO catalog ids, so prices match your versions exactly. Since November 2026 Cardhoarder's Cloudflare protection refuses requests from Azure (HTTP 403); the site then stops asking for 6 hours and the card page links to Cardhoarder's own page instead. |
+| Cardhoarder | live, via hobbymini | one request per card page view (their search, exact name). Their card ids are MTGO catalog ids, so prices match your versions exactly. Cardhoarder's Cloudflare protection refuses requests from Azure (HTTP 403), so the lookup is done by the home runner on hobbymini (see *Home runner*). When it isn't running, the site asks directly; after a 403 it stops asking for 6 hours and the card page links to Cardhoarder's own page instead. |
 | Dojo | live | one request per card page view (their price table search). Columns are read by their header names (Buy TIX, Sell TIX, Stock…), so a new column doesn't shift the prices. Matched to versions by set + collector number + foil (or set + foil when that's unambiguous). |
 
 Live results are cached for 2 minutes. If a vendor blocks or times out, its columns show "!" with the reason and the rest of the page still works. Set `VENDOR_LIVE_DISABLED=1` on the web app to turn live lookups off.
@@ -197,6 +202,32 @@ Reads https://magic.wizards.com/en/news/announcements and keeps only announcemen
 Reads https://www.mtgo.com/player-rewards with the Treasure Chest parser (same page layout). When the card table changes, the added, removed and re-slotted cards are saved as a highlight and sent by Telegram (`NOTIFY_REWARD_PACKS=false` turns the message off); added cards you own or watch are put on the short-term watch list. Every version is kept in `prp_snapshots`. The first check only records the page.
 
 - **When:** reward periods start on the 1st of each month at 8 am PT and the list changes around then (November's is dated November 2). The watcher checks **every 30 seconds** from 7 days before the 1st until the list changes (or 7 days after the 1st, if it's late), and **every 6 hours** otherwise.
+
+### Home runner on hobbymini
+
+mtgo.com often doesn't answer Azure's addresses (connect timeouts for days at a time), and Cardhoarder's Cloudflare protection refuses them outright. Both answer a home connection normally, so a small always-on process on hobbymini does those jobs:
+
+- the **Treasure Chest** and **Player Reward Pack** watchers, on the same 30-second tick and schedule as in Azure (same code, same database, same Telegram messages);
+- **Cardhoarder lookups** for card pages: the website queues the card name in `vendor_requests`, the runner fetches it (one search per card page you open, like searching their site yourself) and writes the result back; the page usually has it within a couple of seconds.
+
+It writes a heartbeat every 30 seconds. While the heartbeat is under 3 minutes old, Azure skips those two watchers and the website sends Cardhoarder lookups to hobbymini. If hobbymini is off or asleep, Azure and the website go back to doing them directly, so nothing is lost, only less reliable. Highlights → Monitors shows *Home runner (hobbymini)* in red when it isn't checking in.
+
+**Install** (once, in PowerShell opened with *Run as administrator*):
+
+```powershell
+cd C:\git\hobbysite
+.\deploy\install-home-runner.ps1
+```
+
+It installs the npm packages if needed, creates `functions\local.settings.json` from the Function App's settings if it's missing (needs `az login`), runs one test tick, and registers the **Vault home runner** task: starts at boot, runs whether or not you're signed in, restarts if it stops. Set Windows to never sleep when plugged in.
+
+- **Updates:** after `git pull`, the runner notices its code changed within a minute and restarts itself on the new version. (Run `npm install` in `functions` first if a pull changes `package.json`.)
+- **Log:** `functions\logs\home-runner.log` (git ignores it).
+- **By hand:** `npm run home:once` (one tick) · `Stop-ScheduledTask 'Vault home runner'` / `Start-ScheduledTask 'Vault home runner'` · remove with `Unregister-ScheduledTask 'Vault home runner' -Confirm:$false`.
+
+### When a page can't be reached
+
+Inside a fast-check window, a watcher that keeps failing retries every 5 minutes (`FAILING_RETRY_MIN`) instead of every 30 seconds, so an unreachable site doesn't use up run time waiting for timeouts. It goes back to every tick as soon as a check succeeds.
 
 ### Weekends
 

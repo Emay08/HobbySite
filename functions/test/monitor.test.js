@@ -90,3 +90,12 @@ test('fetch errors name the real cause and network errors are retried once', asy
   await assert.rejects(fetchHtml('https://x.test/', { fetchImpl: dead, retryDelayMs: 0 }), /fetch failed \(ECONNRESET: read ECONNRESET\) — https:\/\/x\.test\//);
   assert.strictEqual(calls, 2);
 });
+
+test('cadence: a failing watcher retries every 5 minutes inside a window', () => {
+  const { plan } = require('../src/lib/cadence');
+  const t = new Date('2026-11-30T08:00:00Z');
+  const failing = { lastSuccess: new Date('2026-11-23T16:00:00Z'), lastAttempt: new Date('2026-11-25T17:00:00Z'), failingSince: new Date('2026-11-24T16:00:00Z') };
+  assert.strictEqual(plan({ state: failing, now: new Date('2026-11-25T17:00:30Z'), targets: [t] }).due, false);
+  assert.strictEqual(plan({ state: failing, now: new Date('2026-11-25T17:05:00Z'), targets: [t] }).due, true);
+  assert.strictEqual(plan({ state: { ...failing, failingSince: null }, now: new Date('2026-11-25T17:00:30Z'), targets: [t] }).due, true);
+});

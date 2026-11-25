@@ -294,12 +294,14 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
       { _id: 'reddit-mtgo', label: 'r/mtgo', lastError: 'HTTP 404' },
       { _id: 'banlist', label: 'Banlist (Wizards announcements)', lastChecked: new Date(), nextAnnouncementText: 'November 30, 2026', mode: 'watching' },
       { _id: 'reward-packs', label: 'Player Reward Packs', lastChecked: new Date(), cards: 12, lastUpdatedText: 'November 2, 2026' },
+      { _id: 'home-runner', label: 'Home runner (hobbymini)', lastBeat: new Date(Date.now() - 20 * 60000) },
     ]);
     await db.collection('highlights').insertOne({ _id: 'b1', source: 'Banlist', monitorId: 'banlist', title: 'Banned and Restricted Announcement', url: 'https://magic.wizards.com/x', category: 'banlist', detectedAt: new Date() });
     const hl = await html('/mtgo');
     assert.doesNotMatch(hl, /r\/mtgo/);
     assert.match(hl, /Banlist \(Wizards announcements\)[\s\S]*Player Reward Packs[\s\S]*12 cards · updated November 2, 2026/);
     assert.match(hl, /badge-banlist/);
+    assert.match(hl, /Home runner \(hobbymini\)[\s\S]*not checking in/);
     assert.match(hl, /Next announcement: November 30, 2026[\s\S]*checking every 30 seconds/);
     assert.match(await html('/mtgo?category=reward-pack'), /class="chip active">Reward packs/);
     assert.match(await html('/mtgo/collection'), /Most valuable cards/);

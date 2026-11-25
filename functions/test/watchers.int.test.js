@@ -348,3 +348,46 @@ test('banlist watcher: schedule from the next announcement date', { skip: !URI &
   }
 });
 
+
+test('home runner: answers Cardhoarder requests, heartbeat hands mtgo.com watchers over', { skip: !URI && 'TEST_MONGODB_URI not set' }, async () => {
+  const client = await new MongoClient(URI).connect();
+  const db = client.db('mtgo_home_test');
+  await db.dropDatabase();
+  const { heartbeat, homeRunnerActive, serveVendorRequests, _blocked } = require('../src/lib/homeRunner');
+  try {
+    assert.strictEqual(await homeRunnerActive(db), false);
+    await heartbeat(db, { now: new Date(), host: 'hobbymini' });
+    assert.strictEqual(await homeRunnerActive(db), true);
+    assert.strictEqual(await homeRunnerActive(db, new Date(Date.now() + 4 * 60000)), false);
+    assert.strictEqual((await db.collection('monitor_state').findOne({ _id: 'home-runner' })).label, 'Home runner (hobbymini)');
+
+    await db.collection('vendor_requests').insertMany([
+      { _id: 'cardhoarder|force of will', vendor: 'cardhoarder', name: 'Force of Will', status: 'pending', requestedAt: new Date() },
+      { _id: 'cardhoarder|old', vendor: 'cardhoarder', name: 'Old', status: 'done', requestedAt: new Date() },
+    ]);
+    const urls = [];
+    const ok = async (url) => {
+      urls.push(url);
+      return new Response(JSON.stringify({ data: { cards: { data: [{ id: 28111, name: 'Force of Will', set_code: 'MED', set_number: 33, is_foil: false, amount: '61.00', amount_buy: '40.0', is_buylisted: true, quantity_for_purchase: 2 }], meta: { current_page: 1, last_page: 1 } } } }), { status: 200 });
+    };
+    assert.strictEqual(await serveVendorRequests(db, { fetchImpl: ok }), 1);
+    assert.match(urls[0], /cardname=%22Force\+of\+Will%22/);
+    const d = await db.collection('vendor_requests').findOne({ _id: 'cardhoarder|force of will' });
+    assert.deepStrictEqual([d.status, d.result.ok, d.result.rows[0]], ['done', true, { mtgoId: '28111', set: 'MED', foil: false, sell: 61, buy: 40, stock: 2, label: 'MED #33' }]);
+
+    // Blocked from home too: reported as blocked, and not retried for 6 hours
+    _blocked.until = 0;
+    let calls = 0;
+    const no = async () => (calls++, new Response('Just a moment', { status: 403 }));
+    await db.collection('vendor_requests').updateOne({ _id: 'cardhoarder|force of will' }, { $set: { status: 'pending' } });
+    await serveVendorRequests(db, { fetchImpl: no });
+    await db.collection('vendor_requests').updateOne({ _id: 'cardhoarder|force of will' }, { $set: { status: 'pending' } });
+    await serveVendorRequests(db, { fetchImpl: no });
+    assert.strictEqual(calls, 1);
+    assert.deepStrictEqual((await db.collection('vendor_requests').findOne({ _id: 'cardhoarder|force of will' })).result.blocked, true);
+    _blocked.until = 0;
+  } finally {
+    await db.dropDatabase();
+    await client.close();
+  }
+});

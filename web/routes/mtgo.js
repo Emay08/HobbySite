@@ -24,7 +24,7 @@ const CATEGORY_LABELS = {
 };
 
 // The watchers shown in the Monitors panel, in this order.
-const MONITORS = ['treasure-chest', 'reprints', 'banlist', 'reward-packs'];
+const MONITORS = ['treasure-chest', 'reprints', 'banlist', 'reward-packs', 'home-runner'];
 
 // ---- Highlights front page -------------------------------------------------
 router.get('/', async (req, res, next) => {
@@ -40,6 +40,12 @@ router.get('/', async (req, res, next) => {
       db.collection('swaps').countDocuments({ good: true }),
     ]);
     monitors.sort((a, b) => MONITORS.indexOf(a._id) - MONITORS.indexOf(b._id));
+    // The home runner on hobbymini counts as down when it hasn't checked in for 3 minutes.
+    const home = monitors.find((m) => m._id === 'home-runner');
+    if (home) {
+      home.lastChecked = home.lastBeat;
+      home.away = !home.lastBeat || Date.now() - new Date(home.lastBeat) > 3 * 60000;
+    }
     res.render('mtgo/index', {
       targetsHit,
       swapsReady,

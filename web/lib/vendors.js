@@ -147,6 +147,41 @@ async function dojo(name, fetchImpl = fetch) {
   return parseDojo((json.callbackData && json.callbackData.html) || '', name);
 }
 
+// ------------------------------------------------------------------ via the home runner
+
+const HOME_STALE_MS = 3 * 60000;
+const HOME_WAIT_MS = 9000;
+
+/**
+ * Cardhoarder refuses Azure's addresses, so while the home runner on hobbymini is checking in
+ * (functions/src/lib/homeRunner.js), the lookup is queued in `vendor_requests` and the runner
+ * answers it from the home connection, usually within a couple of seconds.
+ */
+async function homeActive(db, now) {
+  const s = await db.collection('monitor_state').findOne({ _id: 'home-runner' }, { projection: { lastBeat: 1 } });
+  return !!(s && s.lastBeat && now - new Date(s.lastBeat) < HOME_STALE_MS);
+}
+
+async function cardhoarderViaHome(db, name, { now = Date.now(), waitMs = HOME_WAIT_MS, pollMs = 300 } = {}) {
+  const coll = db.collection('vendor_requests');
+  const _id = `cardhoarder|${norm(name)}`;
+  await coll.updateOne(
+    { _id },
+    { $set: { vendor: 'cardhoarder', name, status: 'pending', requestedAt: new Date(now) }, $unset: { result: '', doneAt: '' } },
+    { upsert: true }
+  );
+  const until = Date.now() + waitMs;
+  while (Date.now() < until) {
+    await new Promise((r) => setTimeout(r, pollMs));
+    const d = await coll.findOne({ _id }, { projection: { status: 1, result: 1 } });
+    if (d && d.status === 'done' && d.result) {
+      if (!d.result.ok) throw Object.assign(new Error(d.result.error), { blocked: !!d.result.blocked });
+      return d.result.rows;
+    }
+  }
+  throw new Error('no answer from the home runner yet — reload in a moment');
+}
+
 // ------------------------------------------------------------------ combined
 
 async function settle(fn) {
@@ -158,16 +193,21 @@ async function settle(fn) {
 }
 
 /** Live prices for one card name from all vendors, cached for TTL_MS. */
-async function livePrices(name, { fetchImpl = fetch, now = Date.now() } = {}) {
+async function livePrices(name, { fetchImpl = fetch, now = Date.now(), db = null } = {}) {
   if (process.env.VENDOR_LIVE_DISABLED === '1') {
     return { fetchedAt: new Date(now).toISOString(), vendors: {}, disabled: true };
   }
   const key = norm(name);
   const hit = cache.get(key);
   if (hit && now - hit.at < TTL_MS) return { ...hit.data, cached: true };
-  const [ch, dj] = await Promise.all([settle(() => cardhoarder(name, fetchImpl, now)), settle(() => dojo(name, fetchImpl))]);
+  const viaHome = db ? await homeActive(db, now).catch(() => false) : false;
+  const [ch, dj] = await Promise.all([
+    settle(() => (viaHome ? cardhoarderViaHome(db, name, { now }) : cardhoarder(name, fetchImpl, now))),
+    settle(() => dojo(name, fetchImpl)),
+  ]);
+  if (viaHome) ch.via = 'home';
   const data = { fetchedAt: new Date(now).toISOString(), vendors: { cardhoarder: ch, dojo: dj } };
-  cache.set(key, { at: now, data });
+  if (ch.ok || ch.blocked) cache.set(key, { at: now, data }); // don't cache "no answer yet"
   if (cache.size > 500) cache.delete(cache.keys().next().value);
   return data;
 }
@@ -178,4 +218,4 @@ function goatbotsUrl(name) {
   return `https://www.goatbots.com/card/${slug}`;
 }
 
-module.exports = { livePrices, parseCardhoarder, parseDojo, goatbotsUrl, cardhoarder, dojo, _cache: cache, _blocked: blocked };
+module.exports = { cardhoarderViaHome, livePrices, parseCardhoarder, parseDojo, goatbotsUrl, cardhoarder, dojo, _cache: cache, _blocked: blocked };
