@@ -56,6 +56,7 @@ hobbymini (home PC) – "Vault home runner" scheduled task (functions/scripts/ho
 | `sessions`      | web                  | Login sessions |
 | `showorder`     | web                  | One doc (`_id: 'project'`): Show Order lists, rules, saved schedules and their locks |
 | `swg_builds`    | web                  | SWG Ship Builder saved builds: ship, overloads, components |
+| `swg_components`| web                  | SWG saved components: looted parts and RE projects (`kind`), their stat values and ship-builder fields |
 
 Prices come from GoatBots' public daily price file, keyed by MTGO catalog ID — the same number as the `ID #` column in the MTGO CSV export — so cards match exactly, including foils and different printings.
 
@@ -414,7 +415,7 @@ Tests: `web/test/showorder.test.js` (rules, solver, locks, sample data).
 
 ## SWG Ship Builder (`/swg/ships`)
 
-Star Wars Galaxies starship loadouts. Tabs: **Ship Builder** · **Loot** · **Crafting** (the last two are placeholders for now).
+Star Wars Galaxies starship loadouts. Tabs: **Ship Builder** · **Loot** · **Crafting** (placeholder for now).
 
 - **Ships** come from `web/data/swg-ships.json`, built from the NFS server scripts (`MMOCoreORB/bin/scripts/object/ship/player/player_*.lua`) and named / sorted into factions by `web/data/swg-ship-names.txt` ("Neutral" = Freelancer). Ships not in the name list are left out. Rebuild after changing either:
   ```bash
@@ -427,8 +428,26 @@ Star Wars Galaxies starship loadouts. Tabs: **Ship Builder** · **Loot** · **Cr
 - **Overloads** (reactor / engine / capacitor / weapon, levels 1–4, from `overload.txt`): engine and weapon energy values are divisors (0.1 = 10× the energy use). Capacitor overload is applied to the capacitor recharge rate.
 - **Summary formulas** (first pass, all in `web/public/swg-calc.js` → `shipStats`): speed = engine speed × chassis `maxSpeed` × engine overload; boost speed adds the booster's speed; DPS = guns only (no missiles or countermeasures), average of min/max damage ÷ refire time × weapon overload; gun drain = drain per shot ÷ refire × weapon energy use; sustained fire = capacitor energy ÷ (gun drain − recharge). Values changed by overloads are shown in gold; hover for the value without overloads.
 - **Save / Load** keeps named builds in MongoDB `swg_builds` (`_id` = lower-case name).
+- **Swapping components**: click a component tile for a menu: *New looted component* (opens Loot for that slot), *New crafted component* (Crafting, later), *Put the default part back*, or load a saved component that fits the slot (newest first; names in red would put the ship over its mass limit). The build in progress is kept in the browser tab (sessionStorage) while you visit the Loot page. **Reactor load** = the energy the components require (the engine's × the engine overload's energy use) / reactor generation.
 
-Tests: `web/test/swg.test.js` (LUA parsing, name list, stat math, mass).
+### Loot (`/swg/loot`)
+
+Looted ship components, which NPC ships drop them and how likely a good roll is.
+
+- **Data**: `web/data/swg-loot.json`, built from the server scripts (`loot/items/ship/components/<type>/*.lua`, every group under `loot/groups`, `ship_mobile/ships/*.lua`). Rebuild:
+  ```bash
+  cd web
+  node scripts/swg-import-loot.js "C:\Users\ericd\OneDrive\Documents\SWG\NFS source\swgnfs-nfs_unstable\swgnfs-nfs_unstable\MMOCoreORB\bin\scripts"
+  ```
+  The copy in the repo was built from your NFS ship files plus SWGEmu Core3's loot items and groups, which match yours (same file sizes, contents spot-checked). The NFS ship folder holds 2,000+ files, too many to copy here one by one, so NFS-only ships listed after `vortex_…` may be missing: run the script once to pick up everything.
+- **Pick** a component type (pre-set when you come from a ship slot) and an RE level (1–10, the item's `reverseengineeringlevel`). The left list holds every looted component of that type and level; tick some to narrow down (none ticked = all). The right list holds the NPC ships that can drop any of them, best odds first; click one to use it for the odds (otherwise the top one is used).
+- **Drop odds per kill** = `lootChance` × the chance the ship's loot table picks a group holding the component × the component's chance in that group (weights are out of 10,000,000, as the server rolls them — the faction tables' weights add up to 10,000,000, not 1,000,000) × the chance the stat rolls that well. Ships with `lootRolls = 0` drop nothing and are left out; with more rolls the chance is per kill (1 − (1 − p)^rolls).
+- **Stat rolls**: every ship component stat except RE level is rolled `NORMAL` (`LootAttributeType`), using `LootValues::getNormalValue`: the position in the range is normal with mean 50 % and σ = 1 / (4 × 2.82333) ≈ 8.9 %, so most rolls land between 35 % and 65 %: 70 % or better is about 1 in 84, 80 % about 1 in 2,800, 90 % about 1 in 320,000. Weapon min and max damage are then set to the average of their two positions (`setDamageValues`), so they move together with σ/√2. Whole-number stats (mass, energy required) are rounded. Refire rate and weapon effectiveness are shown ÷1000, as in game.
+- **Stat table**: min / max over the ticked components; type a value (clamped to what they can roll) or drag the percentile slider (0 % = worst, 100 % = best: for mass, energy required, refire, energy per shot, booster consumption and droid command speed lower is better). The gold curves are the bell curve of the drops (weighted by the chosen ship's odds) and its S-shaped cumulative. Components that can't roll an entered value are greyed out and dropped from the selection (and come back when the value changes). One picked component with a fixed stat (min = max) fills that value in. *All entered values together* is the chance of one drop with every entered value at once.
+- **Save / Load Component** and **Use Component in Ship** save it in `swg_components` (`kind: 'loot'`); *Use* then returns to the Ship Builder and puts it in the slot you came from, or a matching slot still holding a default part. Stats you didn't enter use the typical (middle) roll.
+- **RE project**: *Add to RE Project* (needs at least one entered value) adds the component as a tile; a project holds components of one type and RE level, at most as many as its level. The summary shows, per stat, the best value among them (lowest for the lower-is-better stats) plus the RE bonus (level 1: 1 %, 2–3: 2 %, 4–5: 3 %, 6–7: 4 %, 8–9: 5 %, 10: 6 %; subtracted for lower-is-better stats). A stat with no value entered on any component uses the best typical roll, shown in grey with ~. RE projects are saved as components (`kind: 're'`) and can be used in the ship the same way.
+
+Tests: `web/test/swg.test.js` (LUA parsing, name list, stat math, mass), `web/test/swg-loot.test.js` (loot files, drop odds, roll distribution, RE projects).
 
 ## Adding more tools later
 

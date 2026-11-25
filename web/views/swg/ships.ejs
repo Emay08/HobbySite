@@ -44,7 +44,7 @@
 <section>
   <h2 class="swg-slots-title">Components</h2>
   <div id="swg-slots" class="swg-slots"></div>
-  <p class="muted small swg-legend"><img src="/static/swg-frog.png?v=<%= assetV %>" alt="" class="swg-frog"> Character builder terminal default — the ship's stock part from the server script, not a real looted or crafted component.</p>
+  <p class="muted small swg-legend"><img src="/static/swg-frog.png?v=<%= assetV %>" alt="" class="swg-frog"> Character builder terminal default — the ship's stock part from the server script, not a real looted or crafted component. Click a component to swap it.</p>
 </section>
 
 <div id="swg-panel" class="swg-panel card" role="dialog" aria-label="Save or load a build" hidden>
@@ -61,5 +61,6 @@
 </div>
 
 <script src="/static/swg-calc.js?v=<%= assetV %>" defer></script>
+<script src="/static/swg-loot-calc.js?v=<%= assetV %>" defer></script>
 <script src="/static/swg-ships.js?v=<%= assetV %>" defer></script>
 <%- include('../partials/foot') %>

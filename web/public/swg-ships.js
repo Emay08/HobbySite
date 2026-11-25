@@ -20,6 +20,13 @@
     set(k, v) { try { localStorage.setItem('swg.' + k, JSON.stringify(v)); } catch { /* private mode */ } },
   };
 
+  // the build being worked on survives trips to the Loot / Crafting pages (this tab only)
+  const session = {
+    get(k) { try { return JSON.parse(sessionStorage.getItem('swg.' + k)); } catch { return null; } },
+    set(k, v) { try { if (v == null) sessionStorage.removeItem('swg.' + k); else sessionStorage.setItem('swg.' + k, JSON.stringify(v)); } catch { /* ignore */ } },
+  };
+  const LT = window.SwgLoot; // slot ↔ component type
+
   const FACTION_LABEL = { rebel: 'Rebel', imperial: 'Imperial', freelancer: 'Freelancer' };
   let ships = [];
   let faction = store.get('faction') || null;
@@ -56,10 +63,10 @@
     hitpoints: 'Hitpoints', armor: 'Armor', mass: 'Mass', speed: 'Speed', acceleration: 'Acceleration', deceleration: 'Deceleration',
     pitch: 'Pitch', yaw: 'Yaw', roll: 'Roll', pitchRate: 'Pitch rate', yawRate: 'Yaw rate', rollRate: 'Roll rate',
     regen: 'Regen', front: 'Front', back: 'Back', rechargeRate: 'Recharge', energy: 'Energy', energyUsage: 'Energy use',
-    energyGeneration: 'Generation', energyMaintenance: 'Drain', rate: 'Refire (s)', drain: 'Drain / shot',
+    energyGeneration: 'Generation', energyMaintenance: 'Energy req.', rate: 'Refire (s)', drain: 'Drain / shot', droidSpeed: 'Command speed', reLevel: 'RE level',
     minDamage: 'Min damage', maxDamage: 'Max damage', shieldEfficiency: 'Vs shields', armorEfficiency: 'Vs armor', ammo: 'Ammo', ammo_type: 'Ammo type',
   };
-  const STAT_ORDER = ['mass', 'hitpoints', 'armor', 'energyMaintenance', 'energyGeneration', 'speed', 'acceleration', 'deceleration', 'pitchRate', 'yawRate', 'rollRate', 'pitch', 'yaw', 'roll',
+  const STAT_ORDER = ['reLevel', 'mass', 'hitpoints', 'armor', 'energyMaintenance', 'droidSpeed', 'energyGeneration', 'speed', 'acceleration', 'deceleration', 'pitchRate', 'yawRate', 'rollRate', 'pitch', 'yaw', 'roll',
     'front', 'back', 'regen', 'energy', 'rechargeRate', 'energyUsage', 'minDamage', 'maxDamage', 'rate', 'drain', 'shieldEfficiency', 'armorEfficiency', 'ammo', 'ammo_type'];
 
   // ---------- ship selection ----------
@@ -127,7 +134,11 @@
       [th('Chassis HP'), cell('chassisHitpoints', 0), th('Mass', 'Component mass / chassis maximum'),
         el('td', { class: 'swg-v' + (mass.over ? ' bad' : '') }, (mass.known ? fmt(mass.used, 0) : '—') + ' / ' + fmt(mass.max, 0))],
       [th('Armor F / B'), pair('armorFront', 'armorBack', 0), th('Shield F / B'), pair('shieldFront', 'shieldBack', 0)],
-      [th('Shield regen'), cell('shieldRegen', 2), th('Reactor output', 'Reactor energy generation × reactor overload'), cell('reactorOutput', 0)],
+      [th('Shield regen'), cell('shieldRegen', 2), th('Reactor load', 'Energy the components require (engine × engine overload energy use) / reactor generation × reactor overload'), (() => {
+        const td = pair('energyUse', 'reactorOutput', 0);
+        if (st.energyUse != null && st.reactorOutput != null && st.energyUse > st.reactorOutput) td.classList.add('bad');
+        return td;
+      })()],
       [th('Capacitor'), cell('capEnergy', 0), th('Cap recharge', 'Capacitor recharge × capacitor overload efficiency'), cell('capRecharge', 1, '/s')],
       [th('DPS', 'Guns only: average damage ÷ refire time × weapon overload (missiles and countermeasures left out)'), cell('dps', 1),
         th('Gun drain', 'Capacitor energy the guns use per second of fire'), cell('gunDrain', 1, '/s')],
@@ -189,11 +200,18 @@
     box.replaceChildren();
     for (const [slot, c] of Object.entries(build.components)) {
       const kind = C.slotKind(slot);
-      const tile = el('article', { class: 'swg-slot swg-k-' + kind });
+      const tile = el('article', {
+        class: 'swg-slot swg-k-' + kind + (menuSlot === slot ? ' picked' : ''), tabindex: '0', role: 'button', 'aria-haspopup': 'dialog',
+        'aria-label': slotLabel(slot) + ': ' + (c.source === 'default' ? pretty(c.name) : c.name) + '. Change component',
+        onclick: (e) => openMenu(slot, e.currentTarget),
+        onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(slot, e.currentTarget); } },
+      });
       const head = el('header', { class: 'swg-slot-head' },
         el('span', { class: 'swg-slot-name' }, slotLabel(slot)),
         c.source === 'default' ? el('img', { src: '/static/swg-frog.png', class: 'swg-frog', alt: 'Default part', title: 'Character builder terminal default — not a real part' }) : null);
-      const title = el('div', { class: 'swg-part' }, el('strong', null, pretty(c.name)), el('code', { class: 'small muted' }, c.name));
+      const title = c.source === 'default'
+        ? el('div', { class: 'swg-part' }, el('strong', null, pretty(c.name)), el('code', { class: 'small muted' }, c.name))
+        : el('div', { class: 'swg-part' }, el('strong', null, c.name), el('span', { class: 'swg-src' }, SOURCE_LABEL[c.source] || c.source), ' ', el('code', { class: 'small muted' }, c.code || ''));
       if (kind === 'weapon') {
         const wk = C.weaponKind(c);
         if (wk !== 'gun') title.append(el('span', { class: 'swg-tag small' }, wk));
@@ -201,7 +219,7 @@
       const dl = el('dl', { class: 'swg-attrs small' });
       // hitpoints / armor only matter on the armor plating slots
       const hidden = kind === 'armor' ? [] : ['hitpoints', 'armor'];
-      const keys = Object.keys(c).filter((k) => k !== 'name' && k !== 'source' && typeof c[k] === 'number' && !hidden.includes(k));
+      const keys = Object.keys(c).filter((k) => !['name', 'source', 'code'].includes(k) && typeof c[k] === 'number' && !hidden.includes(k));
       keys.sort((a, b) => (STAT_ORDER.indexOf(a) + 1 || 99) - (STAT_ORDER.indexOf(b) + 1 || 99));
       if (!keys.includes('mass')) dl.append(el('dt', null, 'Mass'), el('dd', { class: 'muted' }, '—'));
       for (const k of keys) {
@@ -218,6 +236,7 @@
   }
   function renderAll() {
     if (!ship()) return;
+    session.set('work', { build, buildName, dirty });
     renderStats();
     renderOverloads();
     renderMass();
@@ -227,6 +246,93 @@
   function touch() {
     dirty = true;
     renderAll();
+  }
+
+  // ---------- slot menu: swap a component ----------
+  const SOURCE_LABEL = { loot: 'Looted', re: 'RE project', crafted: 'Crafted', default: 'Default' };
+  let menuSlot = null;
+  let menuEl = null;
+  function closeMenu() {
+    if (menuEl) menuEl.remove();
+    menuEl = null;
+    if (menuSlot) { menuSlot = null; renderSlots(); }
+  }
+  function openMenu(slot, anchor) {
+    if (menuSlot === slot) return closeMenu();
+    closeMenu();
+    menuSlot = slot;
+    const type = LT ? LT.typeForSlot(slot) : null;
+    const c = build.components[slot];
+    const list = el('ul', { class: 'swg-build-list' }, el('li', { class: 'muted small' }, 'Loading saved components…'));
+    menuEl = el('div', { class: 'swg-menu card', role: 'dialog', 'aria-label': 'Change ' + slotLabel(slot) },
+      el('div', { class: 'swg-panel-head' }, el('h3', null, slotLabel(slot)), el('button', { type: 'button', class: 'link', 'aria-label': 'Close', onclick: closeMenu }, '✕')),
+      el('div', { class: 'swg-menu-actions' },
+        type ? el('a', { class: 'btn', href: '/swg/loot?slot=' + encodeURIComponent(slot) }, 'New looted component…') : null,
+        el('a', { class: 'btn', href: '/swg/crafting?slot=' + encodeURIComponent(slot) }, 'New crafted component…'),
+        c.source !== 'default' && ship().slots[slot] ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null),
+      el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'Load a saved component'),
+      list);
+    document.body.append(menuEl);
+    const r = anchor.getBoundingClientRect();
+    const w = menuEl.offsetWidth, h = menuEl.offsetHeight;
+    menuEl.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left)) + 'px';
+    menuEl.style.top = (r.bottom + 8 + h < window.innerHeight ? r.bottom + 8 : Math.max(12, r.top - h - 8)) + 'px';
+    renderSlots();
+    fillSavedList(slot, type, list);
+  }
+  async function fillSavedList(slot, type, list) {
+    if (!type) { list.replaceChildren(el('li', { class: 'muted small' }, 'No saved components fit this slot.')); return; }
+    try {
+      const { components } = await api('/components?type=' + type);
+      if (menuSlot !== slot) return;
+      list.replaceChildren();
+      if (!components.length) list.append(el('li', { class: 'muted small' }, 'No saved ' + LT.TYPES[type].label.toLowerCase() + 's yet.'));
+      const m = C.massUsage(ship(), build);
+      const cur = build.components[slot];
+      const base = m.used - (typeof cur.mass === 'number' ? cur.mass : 0);
+      for (const sc of components) {
+        const over = typeof sc.mass === 'number' && base + sc.mass > m.max;
+        list.append(el('li', { class: 'swg-build' + (over ? ' over' : ''), title: over ? 'Would put the ship over its mass limit' : '' },
+          el('button', { type: 'button', class: 'swg-build-load', onclick: () => useSaved(sc.name, slot) },
+            el('span', { class: 'strong' }, sc.name),
+            el('span', { class: 'muted small' }, (SOURCE_LABEL[sc.kind] || sc.kind) + ' · RE ' + sc.tier + (typeof sc.mass === 'number' ? ' · mass ' + fmt(sc.mass, 0) : '') + ' · ' + new Date(sc.updatedAt).toLocaleDateString()))));
+      }
+    } catch (err) {
+      list.replaceChildren(el('li', { class: 'bad small' }, err.message));
+    }
+  }
+  function restoreDefault(slot) {
+    build.components[slot] = { ...ship().slots[slot], source: 'default' };
+    closeMenu();
+    touch();
+  }
+  /** Saved component → the part the builder shows */
+  function partFromSaved(doc) {
+    const code = doc.kind === 're'
+      ? (doc.components || []).length + '-part RE project'
+      : (doc.itemIds || []).length === 1 ? doc.itemIds[0] : (doc.itemIds || []).length + ' possible components';
+    return { ...doc.ship, name: doc.name, code, source: doc.kind };
+  }
+  /** Slot for a component type: the given one if it fits, else a slot still holding a default part, else the first. */
+  function slotFor(type, wanted) {
+    const slots = Object.keys(build.components).filter((s) => LT.typeForSlot(s) === type);
+    if (wanted && slots.includes(wanted)) return wanted;
+    return slots.find((s) => build.components[s].source === 'default') || slots[0] || null;
+  }
+  async function useSaved(name, wantedSlot) {
+    try {
+      const { component: doc } = await api('/components/' + encodeURIComponent(name));
+      const slot = slotFor(doc.type, wantedSlot);
+      if (!slot) {
+        $('#swg-build-name').textContent = ship().name + ' has no slot for a ' + LT.TYPES[doc.type].label.toLowerCase() + '.';
+        return;
+      }
+      build.components[slot] = partFromSaved(doc);
+      closeMenu();
+      touch();
+    } catch (err) {
+      $('#swg-build-name').textContent = err.message;
+    }
   }
 
   // ---------- save / load panel ----------
@@ -336,12 +442,30 @@
       return;
     }
     renderFactions();
+    const work = session.get('work');
     const last = shipById(store.get('ship'));
-    if (last && (!faction || last.faction === faction)) {
+    if (work && work.build && shipById(work.build.ship)) {
+      build = work.build;
+      buildName = work.buildName || null;
+      dirty = !!work.dirty;
+      if (faction && shipById(build.ship).faction !== faction) { faction = null; store.set('faction', null); renderFactions(); }
+    } else if (last && (!faction || last.faction === faction)) {
       build = C.defaultBuild(last);
     }
     renderShipSelect();
     renderAll();
+
+    // back from the Loot page: /swg/ships?use=<saved component>&slot=<slot>
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('use')) {
+      history.replaceState(null, '', location.pathname);
+      await useSaved(qs.get('use'), qs.get('slot'));
+    }
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuEl) closeMenu(); });
+    document.addEventListener('mousedown', (e) => {
+      if (menuEl && !menuEl.contains(e.target) && !e.target.closest('.swg-slot')) closeMenu();
+    });
   }
   init();
 })();

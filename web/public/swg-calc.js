@@ -141,6 +141,12 @@
     const armorFront = armors[0] && has(armors[0].armor) ? armors[0].armor : null;
     const armorBack = armors[1] && has(armors[1].armor) ? armors[1].armor : null;
     const reactorOut = reactor && has(reactor.energyGeneration) ? reactor.energyGeneration * f.reactorOutput : null;
+    // energy the components need to run; the engine overload multiplies the engine's
+    let energyUse = null;
+    for (const [slot, c] of Object.entries(comps)) {
+      if (!has(c.energyMaintenance)) continue;
+      energyUse = (energyUse || 0) + c.energyMaintenance * (slot === 'engine' ? f.engineEnergyUse : 1);
+    }
 
     return {
       speed,
@@ -157,6 +163,7 @@
       shieldBack: sum(shields, 'back'),
       shieldRegen: sum(shields, 'regen'),
       reactorOutput: reactorOut,
+      energyUse,
       capEnergy,
       capRecharge,
       dps: guns ? dps : null,

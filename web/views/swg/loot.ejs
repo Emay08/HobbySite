@@ -1,0 +1,91 @@
+<%- include('../partials/head') %>
+<div class="page-head swg-head">
+  <div>
+    <p class="eyebrow">Star Wars Galaxies</p>
+    <h1>Loot</h1>
+  </div>
+  <div class="swg-head-actions">
+    <span id="lt-comp-name" class="muted small" aria-live="polite"></span>
+    <button id="lt-comp-saveload" class="btn" type="button" aria-haspopup="dialog">Save / Load Component</button>
+    <button id="lt-comp-use" class="btn primary" type="button" title="Saves the component and puts it in the ship. Stats you haven’t entered use the typical (middle) roll.">Use Component in Ship</button>
+  </div>
+</div>
+
+<p id="lt-target" class="swg-target small" hidden></p>
+
+<div class="swg-pick lt-pick">
+  <label class="lt-type">
+    <span class="sr-only">Component type</span>
+    <select id="lt-type" aria-label="Component type"></select>
+  </label>
+  <div class="lt-tiers" role="group" aria-label="Reverse engineering level">
+    <span class="muted small">RE level</span>
+    <% for (let i = 1; i <= 10; i++) { %><button type="button" class="lt-tier" data-tier="<%= i %>" aria-pressed="false"><%= i %></button><% } %>
+  </div>
+</div>
+
+<div class="lt-lists">
+  <section class="card lt-list-card">
+    <div class="lt-list-head">
+      <h2>Components</h2>
+      <span id="lt-items-note" class="muted small"></span>
+    </div>
+    <ul id="lt-items" class="lt-list" role="listbox" aria-multiselectable="true" aria-label="Looted components"></ul>
+  </section>
+  <section class="card lt-list-card">
+    <div class="lt-list-head">
+      <h2>NPC ships that drop them</h2>
+      <span id="lt-npcs-note" class="muted small"></span>
+    </div>
+    <ul id="lt-npcs" class="lt-list" role="listbox" aria-label="NPC ships"></ul>
+  </section>
+</div>
+
+<section class="card lt-stats-card">
+  <table class="lt-stats">
+    <thead>
+      <tr><th>Stat</th><th class="num">Min</th><th class="num">Max</th><th>Value</th><th class="lt-slider-col">Percentile</th><th class="num">Odds per kill</th></tr>
+    </thead>
+    <tbody id="lt-stats"></tbody>
+    <tfoot><tr><td colspan="5" class="muted small" id="lt-joint-label">All entered values together</td><td class="num" id="lt-joint"></td></tr></tfoot>
+  </table>
+  <p class="muted small lt-foot">Odds are for one kill of <strong id="lt-odds-npc">—</strong>: its loot chance × the chance its loot table picks a group holding the component × the component's chance in that group × the chance the roll is this good or better. Stats are rolled on a narrow bell curve around the middle of each component's range (the gold curve).</p>
+</section>
+
+<section class="lt-re">
+  <div class="lt-re-actions">
+    <button id="re-add" class="btn primary" type="button" disabled>Add to RE Project</button>
+    <button id="re-clear" class="btn" type="button" disabled>Clear RE Project</button>
+    <button id="re-saveload" class="btn" type="button" disabled aria-haspopup="dialog">Save / Load RE Project</button>
+    <button id="re-use" class="btn" type="button" disabled>Use RE Project in Ship</button>
+    <span id="re-msg" class="muted small" aria-live="polite"></span>
+  </div>
+
+  <section class="card lt-re-card">
+    <div class="lt-re-head">
+      <label class="lt-re-name"><span class="muted small">RE project</span><input id="re-name" type="text" maxlength="80" placeholder="Project name"></label>
+      <div class="lt-re-level"><span class="muted small">Reverse Engineering Level</span><strong id="re-level">—</strong><span id="re-bonus" class="muted small"></span></div>
+    </div>
+    <table class="swg-stats lt-re-stats"><tbody id="re-summary"></tbody></table>
+  </section>
+
+  <div id="re-tiles" class="swg-slots lt-re-tiles"></div>
+  <p id="re-cap" class="muted small"></p>
+</section>
+
+<div id="lt-panel" class="swg-panel card" role="dialog" aria-label="Save or load" hidden>
+  <div class="swg-panel-head">
+    <h2 id="lt-panel-title">Components</h2>
+    <button type="button" class="link" data-close aria-label="Close">✕</button>
+  </div>
+  <form id="lt-save-form" class="swg-save-form" autocomplete="off">
+    <input id="lt-save-name" type="text" maxlength="80" placeholder="Name" aria-label="Name">
+    <button class="btn primary" type="submit">Save</button>
+  </form>
+  <p id="lt-panel-msg" class="small muted" aria-live="polite"></p>
+  <ul id="lt-saved-list" class="swg-build-list"></ul>
+</div>
+
+<script src="/static/swg-loot-calc.js?v=<%= assetV %>" defer></script>
+<script src="/static/swg-loot.js?v=<%= assetV %>" defer></script>
+<%- include('../partials/foot') %>

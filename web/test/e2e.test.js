@@ -340,7 +340,8 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     const page = await html('/swg/ships');
     assert.match(page, /<h1>Ship Builder<\/h1>/);
     assert.match(page, /Ship Builder[\s\S]*Loot[\s\S]*Crafting/);
-    assert.match(await html('/swg/loot'), /Coming later/);
+    assert.match(await html('/swg/loot'), /Add to RE Project/);
+    assert.match(await html('/swg/crafting'), /Coming later/);
     const json = { 'content-type': 'application/json', accept: 'application/json' };
     const { ships } = await (await req('/swg/api/ships', { headers: json })).json();
     assert.ok(ships.length >= 30);
@@ -356,5 +357,23 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.strictEqual(bad.status, 400);
     assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { method: 'DELETE', headers: json })).status, 200);
     assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { headers: json })).status, 404);
+
+    // loot data and saved components (looted parts, RE projects)
+    const loot = await (await req('/swg/api/loot', { headers: json })).json();
+    assert.ok(loot.items.length > 500 && loot.npcs.length > 100);
+    const comp = { kind: 'loot', type: 'weapon_capacitor', tier: 5, itemIds: ['cap_kse_mk3'], values: { capacitor_energy: 700, mass: 4000 }, ship: { energy: 700, mass: 4000, nope: 'x' } };
+    assert.strictEqual((await req('/swg/api/components/Cap%20one', { method: 'PUT', headers: json, body: JSON.stringify(comp) })).status, 200);
+    const re = { kind: 're', type: 'weapon_capacitor', tier: 5, values: { capacitor_energy: 735 }, ship: { energy: 735 }, components: [{ name: 'Kse Mk 3', itemIds: ['cap_kse_mk3'], values: { capacitor_energy: 700 }, typical: { mass: 5000 } }] };
+    assert.strictEqual((await req('/swg/api/components/My%20RE', { method: 'PUT', headers: json, body: JSON.stringify(re) })).status, 200);
+    const caps = (await (await req('/swg/api/components?type=weapon_capacitor', { headers: json })).json()).components;
+    assert.deepStrictEqual(caps.map((c) => [c.name, c.kind, c.mass]).sort(), [['Cap one', 'loot', 4000], ['My RE', 're', undefined]]);
+    assert.deepStrictEqual((await (await req('/swg/api/components?kind=re', { headers: json })).json()).components.map((c) => c.name), ['My RE']);
+    const one = (await (await req('/swg/api/components/cap%20ONE', { headers: json })).json()).component;
+    assert.deepStrictEqual(one.ship, { energy: 700, mass: 4000 }); // non-numbers dropped
+    const gotRe = (await (await req('/swg/api/components/My%20RE', { headers: json })).json()).component;
+    assert.deepStrictEqual(gotRe.components[0].typical, { mass: 5000 });
+    const badTier = await req('/swg/api/components/x', { method: 'PUT', headers: json, body: JSON.stringify({ ...comp, tier: 11 }) });
+    assert.strictEqual(badTier.status, 400);
+    for (const n of ['Cap%20one', 'My%20RE']) assert.strictEqual((await req('/swg/api/components/' + n, { method: 'DELETE', headers: json })).status, 200);
   });
 });
