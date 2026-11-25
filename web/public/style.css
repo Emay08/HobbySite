@@ -572,8 +572,9 @@ form.inline { display: inline; }
 .swg-ol.on .swg-ol-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px rgba(232,176,75,.6); }
 .swg-ol-levels { display: inline-flex; gap: .25rem; }
 .swg-ol-lv { width: 2rem; padding: .2rem 0; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-raised); color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
-.swg-ol-lv:disabled { opacity: .35; cursor: default; }
-.swg-ol-lv.sel:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.swg-ol:not(.on) .swg-ol-lv { color: var(--muted); }
+.swg-ol-lv:hover { border-color: var(--accent); }
+.swg-ol-lv.sel { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .swg-ol-fx { grid-column: 1 / -1; margin-top: .25rem; }
 
 .swg-mass { margin: .25rem 0 1.4rem; }

@@ -153,9 +153,9 @@
       const levels = el('div', { class: 'swg-ol-levels', role: 'group', 'aria-label': C.OVERLOADS[key].label + ' level' });
       for (let lv = 1; lv <= 4; lv++) {
         levels.append(el('button', {
-          type: 'button', class: 'swg-ol-lv' + (o.level === lv ? ' sel' : ''), disabled: !o.on, 'aria-pressed': String(o.on && o.level === lv),
+          type: 'button', class: 'swg-ol-lv' + (o.on && o.level === lv ? ' sel' : ''), 'aria-pressed': String(o.on && o.level === lv),
           title: C.overloadEffect(key, lv),
-          onclick: () => { o.level = lv; touch(); },
+          onclick: () => { o.level = lv; o.on = true; touch(); },
         }, String(lv)));
       }
       row.append(levels, el('div', { class: 'swg-ol-fx small' + (o.on ? '' : ' muted') }, o.on ? C.overloadEffect(key, o.level) : 'Off'));
@@ -199,7 +199,9 @@
         if (wk !== 'gun') title.append(el('span', { class: 'swg-tag small' }, wk));
       }
       const dl = el('dl', { class: 'swg-attrs small' });
-      const keys = Object.keys(c).filter((k) => k !== 'name' && k !== 'source' && typeof c[k] === 'number');
+      // hitpoints / armor only matter on the armor plating slots
+      const hidden = kind === 'armor' ? [] : ['hitpoints', 'armor'];
+      const keys = Object.keys(c).filter((k) => k !== 'name' && k !== 'source' && typeof c[k] === 'number' && !hidden.includes(k));
       keys.sort((a, b) => (STAT_ORDER.indexOf(a) + 1 || 99) - (STAT_ORDER.indexOf(b) + 1 || 99));
       if (!keys.includes('mass')) dl.append(el('dt', null, 'Mass'), el('dd', { class: 'muted' }, '—'));
       for (const k of keys) {

@@ -338,7 +338,7 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
   await t.test('swg ship builder: pages, ship list, save / load / delete a build', async () => {
     assert.match(await html('/home'), /SWG Ship Builder/);
     const page = await html('/swg/ships');
-    assert.match(page, /Ship loadout/);
+    assert.match(page, /<h1>Ship Builder<\/h1>/);
     assert.match(page, /Ship Builder[\s\S]*Loot[\s\S]*Crafting/);
     assert.match(await html('/swg/loot'), /Coming later/);
     const json = { 'content-type': 'application/json', accept: 'application/json' };
