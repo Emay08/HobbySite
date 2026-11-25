@@ -428,6 +428,28 @@
     state.compName = null;
     update();
   }
+  /** Clear Component: no values, no component or ship picked (keeps type, level and the RE project). */
+  function clearComponent() {
+    state.sel.clear();
+    state.values = {};
+    state.npc = null;
+    state.compName = null;
+    $('#lt-all-pct').textContent = '—';
+    $('#lt-all').value = '500';
+    update();
+  }
+  /** Every stat at the same percentile of its range (0 = worst, 1 = best). */
+  function setAllPercentile(p) {
+    state.values = {};
+    const v0 = compute(); // ranges with no values entered
+    for (const s of v0.stats) {
+      if (!s.range || Math.abs(s.range.best - s.range.worst) < 1e-12) continue;
+      state.values[s.key] = L.round(s.range.worst + p * (s.range.best - s.range.worst), s.decimals);
+    }
+    state.compName = null;
+    $('#lt-all-pct').textContent = Math.round(p * 1000) / 10 + '%';
+    update();
+  }
   function setType(t, keepValues) {
     if (t === state.type) return;
     state.type = t;
@@ -591,6 +613,8 @@
     sel.addEventListener('change', () => setType(sel.value));
     for (const b of document.querySelectorAll('.lt-tier')) b.addEventListener('click', () => setTier(Number(b.dataset.tier)));
     $('#re-add').addEventListener('click', addToProject);
+    $('#lt-comp-clear').addEventListener('click', clearComponent);
+    $('#lt-all').addEventListener('input', (e) => setAllPercentile(Number(e.target.value) / 1000));
     $('#re-clear').addEventListener('click', clearProject);
     $('#re-use').addEventListener('click', () => useInShip('re'));
     $('#lt-comp-use').addEventListener('click', () => useInShip('loot'));

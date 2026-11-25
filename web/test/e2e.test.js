@@ -347,12 +347,13 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.ok(ships.length >= 30);
     const krayt = ships.find((s) => s.id === 'hutt_turret_ship');
     assert.strictEqual(krayt.name, 'M22-T Krayt Heavy Fighter');
-    const build = { ship: krayt.id, overloads: { weapon: { on: true, level: 3 } }, components: { reactor: { name: 'rct_generic', source: 'default' } } };
+    const build = { ship: krayt.id, shipName: 'Krayt One', overloads: { weapon: { on: true, level: 3 } }, components: { reactor: { name: 'rct_generic', source: 'default' } } };
     assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { method: 'PUT', headers: json, body: JSON.stringify(build) })).status, 200);
     const list = (await (await req('/swg/api/builds', { headers: json })).json()).builds;
     assert.deepStrictEqual(list.map((b) => b.name), ['My Krayt']);
     const got = (await (await req('/swg/api/builds/my%20krayt', { headers: json })).json()).build;
     assert.deepStrictEqual(got.overloads.weapon, { on: true, level: 3 });
+    assert.strictEqual(got.shipName, 'Krayt One');
     const bad = await req('/swg/api/builds/x', { method: 'PUT', headers: json, body: JSON.stringify({ ...build, ship: 'nope' }) });
     assert.strictEqual(bad.status, 400);
     assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { method: 'DELETE', headers: json })).status, 200);

@@ -81,7 +81,7 @@ router.put('/api/builds/:name', async (req, res, next) => {
     if (!ships().some((s) => s.id === b.ship)) return res.status(400).json({ error: 'Unknown ship' });
     if (!isObj(b.overloads) || !isObj(b.components)) return res.status(400).json({ error: 'overloads and components must be objects' });
     if (Object.keys(b.components).length > 40) return res.status(400).json({ error: 'Too many components' });
-    const doc = { name, ship: b.ship, overloads: b.overloads, components: b.components, updatedAt: new Date() };
+    const doc = { name, ship: b.ship, shipName: cleanName(b.shipName), overloads: b.overloads, components: b.components, updatedAt: new Date() };
     await getDb().collection(COLLECTION).replaceOne({ _id: nameKey(name) }, doc, { upsert: true });
     res.json({ ok: true, name, updatedAt: doc.updatedAt });
   } catch (err) {

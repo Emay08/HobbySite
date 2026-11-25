@@ -200,15 +200,21 @@
     box.replaceChildren();
     for (const [slot, c] of Object.entries(build.components)) {
       const kind = C.slotKind(slot);
+      const empty = C.isEmpty(c);
       const tile = el('article', {
-        class: 'swg-slot swg-k-' + kind + (menuSlot === slot ? ' picked' : ''), tabindex: '0', role: 'button', 'aria-haspopup': 'dialog',
-        'aria-label': slotLabel(slot) + ': ' + (c.source === 'default' ? pretty(c.name) : c.name) + '. Change component',
+        class: 'swg-slot swg-k-' + kind + (menuSlot === slot ? ' picked' : '') + (empty ? ' empty' : ''), tabindex: '0', role: 'button', 'aria-haspopup': 'dialog',
+        'aria-label': slotLabel(slot) + ': ' + (empty ? 'empty' : c.source === 'default' ? pretty(c.name) : c.name) + '. Change component',
         onclick: (e) => openMenu(slot, e.currentTarget),
         onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(slot, e.currentTarget); } },
       });
       const head = el('header', { class: 'swg-slot-head' },
         el('span', { class: 'swg-slot-name' }, slotLabel(slot)),
         c.source === 'default' ? el('img', { src: '/static/swg-frog.png', class: 'swg-frog', alt: 'Default part', title: 'Character builder terminal default — not a real part' }) : null);
+      if (empty) {
+        tile.append(head, el('div', { class: 'swg-part' }, el('strong', { class: 'muted' }, 'Empty')), el('p', { class: 'small muted', style: 'margin:0' }, 'Click to add a component.'));
+        box.append(tile);
+        continue;
+      }
       const title = c.source === 'default'
         ? el('div', { class: 'swg-part' }, el('strong', null, pretty(c.name)), el('code', { class: 'small muted' }, c.name))
         : el('div', { class: 'swg-part' }, el('strong', null, c.name), el('span', { class: 'swg-src' }, SOURCE_LABEL[c.source] || c.source), ' ', el('code', { class: 'small muted' }, c.code || ''));
@@ -219,16 +225,56 @@
       const dl = el('dl', { class: 'swg-attrs small' });
       // hitpoints / armor only matter on the armor plating slots
       const hidden = kind === 'armor' ? [] : ['hitpoints', 'armor'];
-      const keys = Object.keys(c).filter((k) => !['name', 'source', 'code'].includes(k) && typeof c[k] === 'number' && !hidden.includes(k));
+      const keys = Object.keys(c).filter((k) => !['name', 'source', 'code', 'lootType'].includes(k) && typeof c[k] === 'number' && !hidden.includes(k));
+      const pcts = partPercentiles(slot, c);
       keys.sort((a, b) => (STAT_ORDER.indexOf(a) + 1 || 99) - (STAT_ORDER.indexOf(b) + 1 || 99));
       if (!keys.includes('mass')) dl.append(el('dt', null, 'Mass'), el('dd', { class: 'muted' }, '—'));
       for (const k of keys) {
         if ((k === 'ammo' || k === 'ammo_type' || /Efficiency$/.test(k)) && !c[k]) continue;
-        dl.append(el('dt', null, STAT_LABEL[k] || k), el('dd', null, fmt(c[k], c[k] >= 100 ? 0 : 2)));
+        const dd = el('dd', null, fmt(c[k], c[k] >= 100 ? 0 : 2));
+        if (pcts[k] != null) {
+          dd.style.color = pctColor(pcts[k]);
+          dd.title = Math.round(pcts[k] * 100) + 'th percentile of the looted RE ' + c.reLevel + ' ' + LT.TYPES[c.lootType || LT.typeForSlot(slot)].label.toLowerCase() + ' range, with the +' + Math.round(LT.reBonus(c.reLevel) * 100) + '% RE bonus applied';
+        }
+        dl.append(el('dt', null, STAT_LABEL[k] || k), dd);
       }
       tile.append(head, title, dl);
       box.append(tile);
     }
+  }
+
+  // ---------- how good a looted / RE part's stats are ----------
+  /** red (0) → yellow (0.5) → green (1) */
+  const pctColor = (p) => 'hsl(' + Math.round(120 * p) + ', 75%, 58%)';
+  let lootItems = null; // loaded on first need
+  let lootLoading = null;
+  function needLoot() {
+    if (lootItems || lootLoading) return;
+    lootLoading = api('/loot').then((d) => { lootItems = d.items; renderSlots(); }).catch(() => { lootItems = []; });
+  }
+  /**
+   * field → 0–1: where each stat of a looted or RE part sits between the worst and best roll of
+   * every looted component of its type and RE level, with that level's RE bonus applied to both
+   * ends. Default, crafted and empty parts: none.
+   */
+  function partPercentiles(slot, c) {
+    const out = {};
+    if (!LT || !(c.source === 'loot' || c.source === 're') || !(c.reLevel >= 1)) return out;
+    if (!lootItems) { needLoot(); return out; }
+    const type = c.lootType || LT.typeForSlot(slot);
+    const items = lootItems.filter((it) => it.type === type && it.tier === c.reLevel);
+    if (!items.length) return out;
+    const bonus = LT.reBonus(c.reLevel);
+    for (const [k, meta] of Object.entries(LT.STATS)) {
+      if (typeof c[meta.ship] !== 'number' || out[meta.ship] != null) continue;
+      const r = LT.statRange(items, k);
+      if (!r) continue;
+      // the range as it would be after reverse engineering: + bonus, or − bonus where lower is better
+      const f = r.lower ? 1 - bonus : 1 + bonus;
+      const worst = r.worst * f, best = r.best * f;
+      out[meta.ship] = Math.abs(best - worst) < 1e-12 ? 1 : Math.max(0, Math.min(1, (c[meta.ship] - worst) / (best - worst)));
+    }
+    return out;
   }
 
   function renderName() {
@@ -236,6 +282,8 @@
   }
   function renderAll() {
     if (!ship()) return;
+    const sn = $('#swg-shipname');
+    if (sn && document.activeElement !== sn) sn.value = build.shipName || '';
     session.set('work', { build, buildName, dirty });
     renderStats();
     renderOverloads();
@@ -272,7 +320,8 @@
       el('div', { class: 'swg-menu-actions' },
         type && !launcher ? el('a', { class: 'btn', href: '/swg/loot?slot=' + encodeURIComponent(slot) }, 'New looted component…') : null,
         el('a', { class: 'btn', href: craftHref }, launcher ? 'New crafted ' + LAUNCHER_LABEL[launcher] + '…' : 'New crafted component…'),
-        c.source !== 'default' && ship().slots[slot] ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null),
+        c.source !== 'default' && ship().slots[slot] ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null,
+        !C.isEmpty(c) ? el('button', { type: 'button', class: 'btn', onclick: () => removePart(slot) }, 'Remove component') : null),
       launcher ? el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'This slot holds a ' + LAUNCHER_LABEL[launcher] + ': only the default part or a crafted ' + LAUNCHER_LABEL[launcher] + ' fits.') : null,
       el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'Load a saved component'),
       list);
@@ -307,6 +356,11 @@
       list.replaceChildren(el('li', { class: 'bad small' }, err.message));
     }
   }
+  function removePart(slot) {
+    build.components[slot] = { source: 'empty' };
+    closeMenu();
+    touch();
+  }
   function restoreDefault(slot) {
     build.components[slot] = { ...ship().slots[slot], source: 'default' };
     closeMenu();
@@ -317,7 +371,7 @@
     const code = doc.kind === 're'
       ? (doc.components || []).length + '-part RE project'
       : (doc.itemIds || []).length === 1 ? doc.itemIds[0] : (doc.itemIds || []).length + ' possible components';
-    return { ...doc.ship, name: doc.name, code, source: doc.kind };
+    return { ...doc.ship, name: doc.name, code, source: doc.kind, lootType: doc.type };
   }
   /** Slot for a component type: the given one if it fits, else a slot still holding a default part, else the first. */
   /** 'missile' / 'countermeasure' when the ship's stock part in a weapon slot is a launcher, else null */
@@ -330,7 +384,7 @@
   function slotFor(type, wanted, launcher = null) {
     const slots = Object.keys(build.components).filter((s) => LT.typeForSlot(s) === type && launcherKind(s) === launcher);
     if (wanted && slots.includes(wanted)) return wanted;
-    return slots.find((s) => build.components[s].source === 'default') || slots[0] || null;
+    return slots.find((s) => C.isEmpty(build.components[s])) || slots.find((s) => build.components[s].source === 'default') || slots[0] || null;
   }
   async function useSaved(name, wantedSlot) {
     try {
@@ -405,7 +459,7 @@
       const s = shipById(b.ship);
       if (!s) return msg('That build uses a ship that is no longer in the list.', true);
       const fresh = C.defaultBuild(s);
-      build = { ship: s.id, overloads: { ...fresh.overloads, ...b.overloads }, components: b.components || fresh.components };
+      build = C.ensureSlots(s, { ship: s.id, shipName: b.shipName || '', overloads: { ...fresh.overloads, ...b.overloads }, components: b.components || fresh.components });
       buildName = b.name;
       dirty = false;
       if (faction && s.faction !== faction) { faction = null; store.set('faction', null); renderFactions(); }
@@ -440,6 +494,12 @@
       if (dirty && !confirm('Switching ships starts a new build. Discard unsaved changes?')) { e.target.value = build.ship; return; }
       selectShip(e.target.value);
     });
+    $('#swg-shipname').addEventListener('input', (e) => {
+      build.shipName = e.target.value;
+      dirty = true;
+      session.set('work', { build, buildName, dirty });
+      renderName();
+    });
     $('#swg-saveload').addEventListener('click', () => (panel.hidden ? openPanel() : closePanel()));
     $('[data-close]', panel).addEventListener('click', closePanel);
     $('#swg-save-form').addEventListener('submit', saveBuild);
@@ -458,7 +518,7 @@
     const work = session.get('work');
     const last = shipById(store.get('ship'));
     if (work && work.build && shipById(work.build.ship)) {
-      build = work.build;
+      build = C.ensureSlots(shipById(work.build.ship), work.build);
       buildName = work.buildName || null;
       dirty = !!work.dirty;
       if (faction && shipById(build.ship).faction !== faction) { faction = null; store.set('faction', null); renderFactions(); }

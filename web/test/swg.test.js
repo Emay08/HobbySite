@@ -84,7 +84,7 @@ test('shipStats: base numbers, then overloads', () => {
 test('massUsage: only parts with a mass count; over-filling is reported', () => {
   const ship = { id: 'test', ...L.parseShipLua(LUA) };
   const b = C.defaultBuild(ship);
-  assert.deepStrictEqual(C.massUsage(ship, b), { used: 0, max: 1000, known: 0, total: 9, over: 0, pct: 0 });
+  assert.deepStrictEqual(C.massUsage(ship, b), { used: 0, max: 1000, known: 0, total: 9, over: 0, pct: 0 }); // the empty droid slot doesn't count
   b.components.reactor.mass = 700;
   b.components.engine.mass = 500;
   const m = C.massUsage(ship, b);
@@ -99,4 +99,20 @@ test('data/swg-ships.json: every named ship has the core slots', () => {
     for (const k of ['reactor', 'engine', 'shield_0', 'capacitor', 'weapon_0']) assert.ok(s.slots[k], s.id + ' has ' + k);
     assert.ok(['rebel', 'imperial', 'freelancer'].includes(s.faction));
   }
+});
+
+test('every ship gets a droid interface slot, empty, before the weapons', () => {
+  const ship = { id: 'test', ...L.parseShipLua(LUA) };
+  const b = C.defaultBuild(ship);
+  assert.deepStrictEqual(b.components.droid_interface, { source: 'empty' });
+  assert.deepStrictEqual(Object.keys(b.components).slice(5, 8), ['capacitor', 'droid_interface', 'weapon_0']);
+  // an old build without the slot gets it; one with a part keeps it
+  const old = { ship: 'test', components: { reactor: {}, weapon_0: {} } };
+  assert.deepStrictEqual(Object.keys(C.ensureSlots(ship, old).components), ['reactor', 'droid_interface', 'weapon_0']);
+  const has = { ship: 'test', components: { droid_interface: { name: 'ddi_x', source: 'loot' } } };
+  assert.strictEqual(C.ensureSlots(ship, has).components.droid_interface.name, 'ddi_x');
+  // removed parts are empty: no stats, not counted for mass
+  b.components.engine = { source: 'empty' };
+  assert.strictEqual(C.shipStats(ship, b).speed, null);
+  assert.strictEqual(C.massUsage(ship, b).total, 8);
 });

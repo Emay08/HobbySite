@@ -692,3 +692,12 @@ form.inline { display: inline; }
 .swg-menu .swg-build-list { margin-top: .2rem; }
 .swg-build.over .strong { color: var(--bad); }
 .swg-src { display: inline-block; padding: 0 .35rem; border-radius: 4px; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; border: 1px solid var(--line); color: var(--muted); }
+
+.swg-summary-head { display: flex; align-items: center; gap: 1rem; margin-bottom: .6rem; }
+.swg-summary-head h2 { margin: 0; white-space: nowrap; }
+.swg-summary-head input { flex: 1; max-width: 320px; }
+.swg-slot.empty { border-style: dashed; border-top-style: solid; opacity: .75; }
+.lt-all { display: grid; grid-template-columns: auto minmax(160px, 1fr) 4rem; gap: .8rem; align-items: center; margin-top: .8rem; padding: .6rem .8rem; border: 1px solid rgba(232,176,75,.35); border-radius: 8px; background: rgba(232,176,75,.06); }
+.lt-all label { font-weight: 600; white-space: nowrap; }
+.lt-all input[type=range] { width: 100%; accent-color: var(--accent); }
+.lt-all output { color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }

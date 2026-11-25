@@ -74,8 +74,29 @@
   function defaultBuild(ship) {
     const components = {};
     for (const [slot, c] of Object.entries(ship.slots)) components[slot] = { ...c, source: 'default' };
-    return { ship: ship.id, overloads: emptyOverloads(), components };
+    return ensureSlots(ship, { ship: ship.id, overloads: emptyOverloads(), components });
   }
+
+  /**
+   * Every ship gets a droid interface slot (empty unless its chassis lists a part), placed
+   * before the weapons. Also fixes up builds saved before the slot existed.
+   */
+  function ensureSlots(ship, build) {
+    if (build.components.droid_interface) return build;
+    const out = {};
+    let added = false;
+    for (const [slot, c] of Object.entries(build.components)) {
+      if (!added && slotKind(slot) === 'weapon') {
+        out.droid_interface = { source: 'empty' };
+        added = true;
+      }
+      out[slot] = c;
+    }
+    if (!added) out.droid_interface = { source: 'empty' };
+    build.components = out;
+    return build;
+  }
+  const isEmpty = (c) => !c || c.source === 'empty';
 
   const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
   const has = (v) => typeof v === 'number' && Number.isFinite(v);
@@ -91,6 +112,7 @@
     let known = 0;
     let total = 0;
     for (const c of Object.values(build.components || {})) {
+      if (isEmpty(c)) continue;
       total++;
       if (has(c.mass)) {
         used += c.mass;
@@ -175,5 +197,5 @@
     };
   }
 
-  return { OVERLOADS, OVERLOAD_KEYS, overloadEffect, overloadFactors, emptyOverloads, defaultBuild, shipStats, massUsage, slotKind, weaponKind, round };
+  return { OVERLOADS, OVERLOAD_KEYS, overloadEffect, overloadFactors, emptyOverloads, defaultBuild, ensureSlots, isEmpty, shipStats, massUsage, slotKind, weaponKind, round };
 });
