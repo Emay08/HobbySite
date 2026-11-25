@@ -225,6 +225,7 @@
       const dl = el('dl', { class: 'swg-attrs small' });
       // hitpoints / armor only matter on the armor plating slots
       const hidden = kind === 'armor' ? [] : ['hitpoints', 'armor'];
+      if (kind === 'engine') hidden.push('acceleration', 'deceleration');
       const keys = Object.keys(c).filter((k) => !['name', 'source', 'code', 'lootType'].includes(k) && typeof c[k] === 'number' && !hidden.includes(k));
       const pcts = partPercentiles(slot, c);
       keys.sort((a, b) => (STAT_ORDER.indexOf(a) + 1 || 99) - (STAT_ORDER.indexOf(b) + 1 || 99));

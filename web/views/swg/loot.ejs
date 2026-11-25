@@ -52,9 +52,11 @@
   </table>
   <p class="muted small lt-foot">Odds are for one kill of <strong id="lt-odds-npc">—</strong>: its loot chance × the chance its loot table picks a group holding the component × the component's chance in that group × the chance the roll is this good or better. Stats are rolled on a narrow bell curve around the middle of each component's range (the gold curve).</p>
   <div class="lt-all">
+    <button id="lt-comp-clear2" class="btn" type="button" title="Clear every entered value and the component and ship picks">Clear Component</button>
     <label for="lt-all">Set every stat to</label>
     <input id="lt-all" type="range" min="0" max="1000" step="1" value="500">
     <output id="lt-all-pct" for="lt-all">—</output>
+    <span id="lt-all-note" class="small muted lt-all-note"></span>
   </div>
 </section>
 

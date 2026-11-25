@@ -298,8 +298,15 @@
     const cells = keys.map((k) => {
       const d = statDecimals(k, data.items.filter((it) => it.type === type && it.stats[k]));
       const est = sum.estimated.includes(k);
-      return [el('th', { title: L.STATS[k].lower ? 'Lowest of the components, minus the bonus' : 'Highest of the components, plus the bonus' }, L.STATS[k].label),
-        el('td', { class: 'swg-v' + (est ? ' lt-est' : summary[k] != null ? ' up' : ''), title: est ? 'No value entered for any component: typical roll (middle of the range), plus the bonus' : '' }, comps.length ? fmtNum(summary[k], d) + (est ? ' ~' : '') : '—')];
+      // colour: where the value sits in the level's looted range with the RE bonus applied
+      const pct = comps.length && !est && summary[k] != null ? levelPercentile(k, summary[k], true) : null;
+      const td = el('td', {
+        class: 'swg-v' + (est ? ' lt-est' : ''),
+        title: est ? 'No value entered for any component: typical roll (middle of the range), plus the bonus'
+          : pct != null ? Math.round(pct * 100) + 'th percentile of the RE ' + level + ' looted range with the +' + Math.round(L.reBonus(level) * 100) + '% bonus applied' : '',
+      }, comps.length ? fmtNum(summary[k], d) + (est ? ' ~' : '') : '—');
+      if (pct != null) td.style.color = pctColor(pct);
+      return [el('th', { title: L.STATS[k].lower ? 'Lowest of the components, minus the bonus' : 'Highest of the components, plus the bonus' }, L.STATS[k].label), td];
     });
     for (let i = 0; i < cells.length; i += 2) tb.append(el('tr', null, cells[i], cells[i + 1] || [el('th'), el('td')]));
 
@@ -326,13 +333,19 @@
         el('div', { class: 'swg-part' }, el('strong', null, c.name), el('code', { class: 'small muted' }, c.itemIds.length === 1 ? c.itemIds[0] : c.itemIds.length + ' possible components')),
         dl));
     });
-    $('#re-cap').textContent = level ? comps.length + ' of ' + level + ' components (an RE level ' + level + ' project holds up to ' + level + ', all level ' + level + ' ' + typeLabel(type).toLowerCase() + 's).' : 'Add looted components with at least one stat value entered.';
+    const fillers = level ? level - comps.length : 0;
+    $('#re-cap').textContent = level
+      ? comps.length + ' of ' + level + ' components (an RE level ' + level + ' project requires ' + level + 'x level ' + level + ' ' + typeLabel(type).toLowerCase() + 's' +
+        (fillers > 0 ? ', currently assuming ' + fillers + 'x filler component' + (fillers === 1 ? '' : 's') : '') + ').'
+      : 'Add looted components with at least one stat value entered.';
 
     /** Where v sits between the worst and best roll of every component of this type and RE level (0–1). */
-    function levelPercentile(k, v) {
+    function levelPercentile(k, v, withBonus) {
       const r = L.statRange(data.items.filter((it) => it.type === type && it.tier === level), k);
       if (!r || Math.abs(r.best - r.worst) < 1e-12) return 1;
-      return Math.max(0, Math.min(1, (v - r.worst) / (r.best - r.worst)));
+      const f = withBonus ? (r.lower ? 1 - L.reBonus(level) : 1 + L.reBonus(level)) : 1;
+      const worst = r.worst * f, best = r.best * f;
+      return Math.max(0, Math.min(1, (v - worst) / (best - worst)));
     }
     function isBest(k, v) {
       const lower = L.STATS[k].lower;
@@ -435,20 +448,33 @@
     state.npc = null;
     state.compName = null;
     $('#lt-all-pct').textContent = '—';
+    $('#lt-all-note').textContent = '';
     $('#lt-all').value = '500';
     update();
   }
   /** Every stat at the same percentile of its range (0 = worst, 1 = best). */
   function setAllPercentile(p) {
+    // Each stat's range is taken over the components that can roll the *other* entered values,
+    // so setting one value can narrow another stat's range. Repeat until the values sit at p of
+    // the ranges they produce (usually 2–4 rounds).
     state.values = {};
-    const v0 = compute(); // ranges with no values entered
-    for (const s of v0.stats) {
-      if (!s.range || Math.abs(s.range.best - s.range.worst) < 1e-12) continue;
-      state.values[s.key] = L.round(s.range.worst + p * (s.range.best - s.range.worst), s.decimals);
+    for (let round = 0; round < 25; round++) {
+      const v = compute();
+      const next = {};
+      for (const s of v.stats) {
+        if (!s.range || Math.abs(s.range.best - s.range.worst) < 1e-12) continue;
+        next[s.key] = L.round(s.range.worst + p * (s.range.best - s.range.worst), s.decimals);
+      }
+      const same = Object.keys(next).length === Object.keys(state.values).length && Object.entries(next).every(([k, x]) => state.values[k] === x);
+      state.values = next;
+      if (same) break;
     }
     state.compName = null;
     $('#lt-all-pct').textContent = Math.round(p * 1000) / 10 + '%';
     update();
+    $('#lt-all-note').textContent = view.effective.length
+      ? ''
+      : 'No single component can roll every stat at ' + Math.round(p * 1000) / 10 + '% of these ranges. Press Clear Component, tick one component, then set the percentile again to use that component’s own ranges.';
   }
   function setType(t, keepValues) {
     if (t === state.type) return;
@@ -614,6 +640,7 @@
     for (const b of document.querySelectorAll('.lt-tier')) b.addEventListener('click', () => setTier(Number(b.dataset.tier)));
     $('#re-add').addEventListener('click', addToProject);
     $('#lt-comp-clear').addEventListener('click', clearComponent);
+    $('#lt-comp-clear2').addEventListener('click', clearComponent);
     $('#lt-all').addEventListener('input', (e) => setAllPercentile(Number(e.target.value) / 1000));
     $('#re-clear').addEventListener('click', clearProject);
     $('#re-use').addEventListener('click', () => useInShip('re'));
