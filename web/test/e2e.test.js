@@ -334,4 +334,27 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     const big = await req('/mtgo/watch/short', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pad: 'x'.repeat(30000) }) });
     assert.strictEqual(big.status, 413);
   });
+
+  await t.test('swg ship builder: pages, ship list, save / load / delete a build', async () => {
+    assert.match(await html('/home'), /SWG Ship Builder/);
+    const page = await html('/swg/ships');
+    assert.match(page, /Ship loadout/);
+    assert.match(page, /Ship Builder[\s\S]*Loot[\s\S]*Crafting/);
+    assert.match(await html('/swg/loot'), /Coming later/);
+    const json = { 'content-type': 'application/json', accept: 'application/json' };
+    const { ships } = await (await req('/swg/api/ships', { headers: json })).json();
+    assert.ok(ships.length >= 30);
+    const krayt = ships.find((s) => s.id === 'hutt_turret_ship');
+    assert.strictEqual(krayt.name, 'M22-T Krayt Heavy Fighter');
+    const build = { ship: krayt.id, overloads: { weapon: { on: true, level: 3 } }, components: { reactor: { name: 'rct_generic', source: 'default' } } };
+    assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { method: 'PUT', headers: json, body: JSON.stringify(build) })).status, 200);
+    const list = (await (await req('/swg/api/builds', { headers: json })).json()).builds;
+    assert.deepStrictEqual(list.map((b) => b.name), ['My Krayt']);
+    const got = (await (await req('/swg/api/builds/my%20krayt', { headers: json })).json()).build;
+    assert.deepStrictEqual(got.overloads.weapon, { on: true, level: 3 });
+    const bad = await req('/swg/api/builds/x', { method: 'PUT', headers: json, body: JSON.stringify({ ...build, ship: 'nope' }) });
+    assert.strictEqual(bad.status, 400);
+    assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { method: 'DELETE', headers: json })).status, 200);
+    assert.strictEqual((await req('/swg/api/builds/My%20Krayt', { headers: json })).status, 404);
+  });
 });

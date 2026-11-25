@@ -22,6 +22,12 @@
       <a href="<%= href %>" class="<%= active ? 'active' : '' %>"><%= label %></a>
     <% } %>
   </nav>
+  <% } else if (path && path.startsWith('/swg')) { %>
+  <nav class="subnav">
+    <% for (const [href, label] of [['/swg/ships', 'Ship Builder'], ['/swg/loot', 'Loot'], ['/swg/crafting', 'Crafting']]) { %>
+      <a href="<%= href %>" class="<%= path.startsWith(href) ? 'active' : '' %>"><%= label %></a>
+    <% } %>
+  </nav>
   <% } %>
   <form id="nav-search" class="nav-search" method="get" action="/mtgo/go" role="search" autocomplete="off">
     <input type="search" name="q" placeholder="Search cards…  /" aria-label="Search cards" role="combobox" aria-expanded="false" aria-controls="nav-suggest" spellcheck="false">

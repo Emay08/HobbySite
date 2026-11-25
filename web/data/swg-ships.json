@@ -1,0 +1,4465 @@
+{
+ "generatedAt": "2026-11-25T19:02:22.241Z",
+ "ships": [
+  {
+   "id": "awing",
+   "name": "A-Wing",
+   "faction": "rebel",
+   "template": "player_awing",
+   "certifications": [
+    "cert_starships_awing"
+   ],
+   "category": "interceptor",
+   "level": 4,
+   "slideFactor": 1.68,
+   "chassisHitpoints": 1125,
+   "chassisMass": 65000,
+   "attributes": {
+    "speedRotationFactorMin": 0.05,
+    "speedRotationFactorOptimal": 0.8,
+    "speedRotationFactorMax": 0.8,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 60,
+    "engineYawAccel": 250,
+    "enginePitchAccel": 250,
+    "engineRollAccel": 125,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 292.4938,
+     "armor": 293.254
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 96.62638,
+     "armor": 99.53873,
+     "speed": 58.49604,
+     "pitch": 54.38784,
+     "roll": 51.79129,
+     "yaw": 51.6744,
+     "acceleration": 15.62266,
+     "rollRate": 71.09726,
+     "pitchRate": 66.57938,
+     "deceleration": 10.89445,
+     "yawRate": 65.4823
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 389.9558,
+     "armor": 483.2215,
+     "regen": 3.978801,
+     "front": 583.4476,
+     "back": 588.3502
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 368.3198,
+     "armor": 374.6463
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 372.1447,
+     "armor": 363.5598
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 37.40336,
+     "energy": 590.8511
+    },
+    "weapon_0": {
+     "name": "wpn_awing_blaster",
+     "hitpoints": 192.7826,
+     "armor": 196.4264,
+     "rate": 0.3420266,
+     "drain": 24.23798,
+     "maxDamage": 488.6028,
+     "shieldEfficiency": 0,
+     "minDamage": 343.2561,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_slayn_imagerec_missile_s01",
+     "hitpoints": 195.1021,
+     "armor": 190.1535,
+     "rate": 9.298404,
+     "drain": 22.53142,
+     "maxDamage": 721.2959,
+     "shieldEfficiency": 0.7642616,
+     "minDamage": 319.8891,
+     "ammo": 16,
+     "ammo_type": 5,
+     "armorEfficiency": 0.3130159
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245.7827,
+     "armor": 245.6506,
+     "rate": 0.09964385,
+     "drain": 23.41895,
+     "maxDamage": 95.01245,
+     "shieldEfficiency": 0,
+     "minDamage": 23.99893,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "bwing",
+   "name": "B-Wing",
+   "faction": "rebel",
+   "template": "player_bwing",
+   "certifications": [
+    "cert_starships_bwing"
+   ],
+   "category": "bomber",
+   "level": 5,
+   "slideFactor": 1.72,
+   "chassisHitpoints": 1765,
+   "chassisMass": 240000,
+   "attributes": {
+    "speedRotationFactorMin": 0.1,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.3,
+    "slideDamp": 1.3,
+    "engineAccel": 10,
+    "engineDecel": 15,
+    "engineYawAccel": 35,
+    "enginePitchAccel": 35,
+    "engineRollAccel": 25,
+    "maxSpeed": 0.85
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 291.346,
+     "armor": 292.5736
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 99.66038,
+     "armor": 96.96965,
+     "speed": 47.48062,
+     "pitch": 31.3734,
+     "roll": 41.80257,
+     "yaw": 21.08492,
+     "acceleration": 16.05369,
+     "rollRate": 51.62985,
+     "pitchRate": 47.80521,
+     "deceleration": 11.80832,
+     "yawRate": 37.00739
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 385.5213,
+     "armor": 495.9176,
+     "regen": 3.945815,
+     "front": 1470.033,
+     "back": 1503.827
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 634.9315,
+     "armor": 632.8993
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 635.6597,
+     "armor": 619.1967
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 41.09896,
+     "energy": 907.3763
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.73722,
+     "armor": 19.49477,
+     "energy": 97.99065,
+     "acceleration": 19.81398,
+     "speed": 14.62997,
+     "energyUsage": 9.972981,
+     "rechargeRate": 4.941675
+    },
+    "weapon_0": {
+     "name": "wpn_bwing_blaster",
+     "hitpoints": 197.8928,
+     "armor": 193.6946,
+     "rate": 0.3379803,
+     "drain": 21.6995,
+     "maxDamage": 778.6093,
+     "shieldEfficiency": 0,
+     "minDamage": 603.0428,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_bwing_blaster",
+     "hitpoints": 193.2332,
+     "armor": 191.1927,
+     "rate": 0.3366114,
+     "drain": 55.80855,
+     "maxDamage": 1526.396,
+     "shieldEfficiency": 0.6006526,
+     "minDamage": 859.6385,
+     "ammo": 32,
+     "ammo_type": 6,
+     "armorEfficiency": 0.5283666
+    },
+    "weapon_2": {
+     "name": "wpn_bwing_blaster",
+     "hitpoints": 19.43774,
+     "armor": 19.04127,
+     "rate": 0.3371382,
+     "drain": 22.59248,
+     "maxDamage": 23.3445,
+     "shieldEfficiency": 0,
+     "minDamage": 23.21187,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_bwing_blaster",
+     "hitpoints": 19.9879,
+     "armor": 19.6372,
+     "rate": 0.333549,
+     "drain": 22.50311,
+     "maxDamage": 23.53538,
+     "shieldEfficiency": 0,
+     "minDamage": 23.35286,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 246.8604,
+     "armor": 245.1107,
+     "rate": 9.518538,
+     "drain": 22.57677,
+     "maxDamage": 99.23679,
+     "shieldEfficiency": 0,
+     "minDamage": 24.96139,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "firespray",
+   "name": "KSE Firespray",
+   "faction": "rebel",
+   "template": "player_firespray",
+   "certifications": [
+    "cert_starships_firespray"
+   ],
+   "category": "heavyfighter",
+   "level": 5,
+   "slideFactor": 1.68,
+   "chassisHitpoints": 1650,
+   "chassisMass": 210000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.6,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.9
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 98.64068,
+     "armor": 98.83962
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 97.52977,
+     "armor": 97.78248,
+     "speed": 54.21301,
+     "pitch": 68.48127,
+     "roll": 78.06176,
+     "yaw": 49.14983,
+     "acceleration": 27.58748,
+     "rollRate": 91.24681,
+     "pitchRate": 87.73351,
+     "deceleration": 14.02503,
+     "yawRate": 84.78439
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 398.4799,
+     "armor": 488.6996,
+     "regen": 4.917778,
+     "front": 1397.665,
+     "back": 1356.204
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 194.2605,
+     "armor": 196.2654
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 192.349,
+     "armor": 199.9833
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 26.24701,
+     "energy": 667.1345
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.89734,
+     "armor": 19.65063,
+     "energy": 95.81511,
+     "acceleration": 19.54564,
+     "speed": 14.66021,
+     "energyUsage": 9.593817,
+     "rechargeRate": 4.977661
+    },
+    "droid_interface": {
+     "name": "ddi_generic",
+     "hitpoints": 19.47379,
+     "armor": 19.89639
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 196.1458,
+     "armor": 192.6049,
+     "rate": 0.3447307,
+     "drain": 23.1472,
+     "maxDamage": 240.1277,
+     "shieldEfficiency": 0,
+     "minDamage": 118.379,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 199.0284,
+     "armor": 190.1464,
+     "rate": 0.3285807,
+     "drain": 22.91145,
+     "maxDamage": 23.30607,
+     "shieldEfficiency": 0,
+     "minDamage": 23.42046,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 240.6413,
+     "armor": 245.1019,
+     "rate": 0.09599161,
+     "drain": 22.66683,
+     "maxDamage": 96.29526,
+     "shieldEfficiency": 0,
+     "minDamage": 24.61045,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "xwing",
+   "name": "X-Wing",
+   "faction": "rebel",
+   "template": "player_xwing",
+   "certifications": [
+    "cert_starships_xwing"
+   ],
+   "category": "mediumfighter",
+   "level": 3,
+   "slideFactor": 1.95,
+   "chassisHitpoints": 6000,
+   "chassisMass": 100000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.5,
+    "engineAccel": 25,
+    "engineDecel": 30,
+    "engineYawAccel": 200,
+    "enginePitchAccel": 300,
+    "engineRollAccel": 150,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 3162.779,
+     "armor": 1577.898
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 3100.646,
+     "armor": 1547.045,
+     "speed": 88.89402,
+     "pitch": 77.74859,
+     "roll": 76.08578,
+     "yaw": 74.17932,
+     "acceleration": 16.41803,
+     "rollRate": 70.87788,
+     "pitchRate": 70.40349,
+     "deceleration": 14.86729,
+     "yawRate": 71.43987
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 3063.218,
+     "armor": 1535.663,
+     "regen": 29.77072,
+     "front": 9863.458,
+     "back": 9636.04
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 7992.892,
+     "armor": 7736.91
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 7840.671,
+     "armor": 7766.51
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 3077.529,
+     "armor": 1565.867,
+     "rechargeRate": 58.67234,
+     "energy": 1923.184
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 899.4767,
+     "armor": 879.5552,
+     "energy": 2385.906,
+     "acceleration": 19.44374,
+     "speed": 39.82451,
+     "energyUsage": 9.810509,
+     "rechargeRate": 58.34419
+    },
+    "droid_interface": {
+     "name": "ddi_generic",
+     "hitpoints": 867.1381,
+     "armor": 874.595
+    },
+    "weapon_0": {
+     "name": "wpn_incom_blaster",
+     "hitpoints": 3107.491,
+     "armor": 1575.777,
+     "rate": 0.3906129,
+     "drain": 19.53834,
+     "maxDamage": 5229.694,
+     "shieldEfficiency": 0,
+     "minDamage": 3970.184,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_blaster",
+     "hitpoints": 3146.795,
+     "armor": 1583.318,
+     "rate": 0.3987256,
+     "drain": 19.05866,
+     "maxDamage": 5288.59,
+     "shieldEfficiency": 0,
+     "minDamage": 3967.771,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 3062.799,
+     "armor": 1518.981,
+     "rate": 0.3114218,
+     "drain": 28.79232,
+     "maxDamage": 5132.656,
+     "shieldEfficiency": 0.870634,
+     "minDamage": 3871.577,
+     "ammo": 50,
+     "ammo_type": 5,
+     "armorEfficiency": 0.2198195
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 243.0028,
+     "armor": 247.8218,
+     "rate": 0.09622593,
+     "drain": 23.41949,
+     "maxDamage": 97.17074,
+     "shieldEfficiency": 0,
+     "minDamage": 24.89145,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "ykl37r",
+   "name": "YKL-37R",
+   "faction": "rebel",
+   "template": "player_ykl37r",
+   "certifications": [
+    "cert_starships_ykl37r"
+   ],
+   "category": "pob",
+   "level": 5,
+   "slideFactor": 1.85,
+   "chassisHitpoints": 5000,
+   "chassisMass": 5000000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.3,
+    "slideDamp": 1.2,
+    "engineAccel": 5,
+    "engineDecel": 5,
+    "engineYawAccel": 50,
+    "enginePitchAccel": 50,
+    "engineRollAccel": 37.5,
+    "maxSpeed": 0.8
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 393.4749,
+     "armor": 392.1788
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 97.38634,
+     "armor": 97.26779,
+     "speed": 64.8352,
+     "pitch": 53.1233,
+     "roll": 51.811,
+     "yaw": 20.72012,
+     "acceleration": 14.20368,
+     "rollRate": 81.44453,
+     "pitchRate": 74.89443,
+     "deceleration": 13.23707,
+     "yawRate": 36.14846
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 399.6198,
+     "armor": 488.0886,
+     "regen": 2.93632,
+     "front": 1559.694,
+     "back": 1589.634
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 1092.445,
+     "armor": 1065.585
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 1064.248,
+     "armor": 1095.966
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 35.55407,
+     "energy": 1101.659
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.30068,
+     "armor": 19.50534,
+     "energy": 96.55447,
+     "acceleration": 19.0435,
+     "speed": 14.3576,
+     "energyUsage": 9.907719,
+     "rechargeRate": 4.798415
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 191.7337,
+     "armor": 198.4741,
+     "rate": 0.3354505,
+     "drain": 23.31645,
+     "maxDamage": 1452.662,
+     "shieldEfficiency": 0,
+     "minDamage": 727.0751,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 195.7502,
+     "armor": 193.4968,
+     "rate": 0.3280407,
+     "drain": 22.70662,
+     "maxDamage": 965.8762,
+     "shieldEfficiency": 0,
+     "minDamage": 601.3749,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 19.53581,
+     "armor": 19.31941,
+     "rate": 5.815926,
+     "drain": 23.09743,
+     "maxDamage": 22.9824,
+     "shieldEfficiency": 0,
+     "minDamage": 23.42325,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 247.8035,
+     "armor": 245.5052,
+     "rate": 0.09767031,
+     "drain": 23.58665,
+     "maxDamage": 98.10107,
+     "shieldEfficiency": 0,
+     "minDamage": 24.81069,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "ywing",
+   "name": "Y-Wing",
+   "faction": "rebel",
+   "template": "player_ywing",
+   "certifications": [
+    "cert_starships_ywing"
+   ],
+   "category": "mediumfighter",
+   "level": 1,
+   "slideFactor": 1.85,
+   "chassisHitpoints": 1942,
+   "chassisMass": 150000,
+   "attributes": {
+    "speedRotationFactorMin": 0.1,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.2,
+    "engineAccel": 15,
+    "engineDecel": 25,
+    "engineYawAccel": 80,
+    "enginePitchAccel": 80,
+    "engineRollAccel": 40,
+    "maxSpeed": 0.85
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 391.301,
+     "armor": 395.5459
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.1216,
+     "armor": 98.82816,
+     "speed": 33.94477,
+     "pitch": 29.14914,
+     "roll": 46.04024,
+     "yaw": 36.51349,
+     "acceleration": 12.86286,
+     "rollRate": 71.91398,
+     "pitchRate": 40.69682,
+     "deceleration": 10.73087,
+     "yawRate": 60.91904
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 387.716,
+     "armor": 478.333,
+     "regen": 2.9559,
+     "front": 1226.369,
+     "back": 1208.254
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 1084.257,
+     "armor": 1050.654
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 1084.771,
+     "armor": 1065.881
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 42.08575,
+     "energy": 1302.091
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.20536,
+     "armor": 19.4511,
+     "energy": 98.32303,
+     "acceleration": 19.88879,
+     "speed": 14.91796,
+     "energyUsage": 9.789608,
+     "rechargeRate": 4.757387
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 195.4548,
+     "armor": 198.3018,
+     "rate": 0.3431529,
+     "drain": 22.86427,
+     "maxDamage": 801.0384,
+     "shieldEfficiency": 0,
+     "minDamage": 605.5146,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 190.9953,
+     "armor": 197.2816,
+     "rate": 15.52149,
+     "drain": 82.60093,
+     "maxDamage": 1862.454,
+     "shieldEfficiency": 0.4766501,
+     "minDamage": 312.614,
+     "ammo": 24,
+     "ammo_type": 5,
+     "armorEfficiency": 0.7733029
+    },
+    "weapon_2": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 19.54943,
+     "armor": 19.33636,
+     "rate": 0.3314228,
+     "drain": 23.01111,
+     "maxDamage": 22.5608,
+     "shieldEfficiency": 0,
+     "minDamage": 22.85924,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 239.9798,
+     "armor": 239.9064,
+     "rate": 0.09811106,
+     "drain": 23.0503,
+     "maxDamage": 96.10748,
+     "shieldEfficiency": 0,
+     "minDamage": 24.39878,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "ywing_longprobe",
+   "name": "Y-Wing Longprobe",
+   "faction": "rebel",
+   "template": "player_ywing_longprobe",
+   "certifications": [
+    "cert_starships_ywinglongprobe"
+   ],
+   "category": "bomber",
+   "level": 2,
+   "slideFactor": 1.85,
+   "chassisHitpoints": 1942,
+   "chassisMass": 170000,
+   "attributes": {
+    "speedRotationFactorMin": 0.1,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.35,
+    "slideDamp": 1.4,
+    "engineAccel": 10,
+    "engineDecel": 20,
+    "engineYawAccel": 70,
+    "enginePitchAccel": 70,
+    "engineRollAccel": 35,
+    "maxSpeed": 0.85
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 398.2837,
+     "armor": 394.4893
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.6149,
+     "armor": 99.55,
+     "speed": 32.88455,
+     "pitch": 28.54158,
+     "roll": 45.71789,
+     "yaw": 37.11726,
+     "acceleration": 12.35336,
+     "rollRate": 70.40501,
+     "pitchRate": 41.73699,
+     "deceleration": 10.71079,
+     "yawRate": 60.28631
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 391.9203,
+     "armor": 480.1941,
+     "regen": 2.95838,
+     "front": 1236.746,
+     "back": 1221.614
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 1076.184,
+     "armor": 1051.792
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 1067.785,
+     "armor": 1081.967
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 40.92189,
+     "energy": 1282.863
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.5545,
+     "armor": 19.49567,
+     "energy": 98.75519,
+     "acceleration": 19.38715,
+     "speed": 14.85137,
+     "energyUsage": 9.928226,
+     "rechargeRate": 4.920537
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 193.335,
+     "armor": 190.9748,
+     "rate": 0.3334711,
+     "drain": 22.5674,
+     "maxDamage": 789.3185,
+     "shieldEfficiency": 0,
+     "minDamage": 591.7603,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 195.9654,
+     "armor": 190.6203,
+     "rate": 15.90339,
+     "drain": 85.45589,
+     "maxDamage": 1819.546,
+     "shieldEfficiency": 0.4992857,
+     "minDamage": 306.6322,
+     "ammo": 24,
+     "ammo_type": 5,
+     "armorEfficiency": 0.7910516
+    },
+    "weapon_2": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 19.12318,
+     "armor": 19.33368,
+     "rate": 0.3313202,
+     "drain": 22.9849,
+     "maxDamage": 22.68814,
+     "shieldEfficiency": 0,
+     "minDamage": 23.50545,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245.4934,
+     "armor": 245.7292,
+     "rate": 0.0981887,
+     "drain": 23.00684,
+     "maxDamage": 99.22425,
+     "shieldEfficiency": 0,
+     "minDamage": 24.37101,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "z95",
+   "name": "Z-95",
+   "faction": "rebel",
+   "template": "player_z95",
+   "certifications": [
+    "cert_starships_z95headhunter"
+   ],
+   "category": "lightfighter",
+   "level": 0,
+   "slideFactor": 1.91,
+   "chassisHitpoints": 1442,
+   "chassisMass": 11500,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.9,
+    "slideDamp": 1.7,
+    "engineAccel": 50,
+    "engineDecel": 50,
+    "engineYawAccel": 600,
+    "enginePitchAccel": 600,
+    "engineRollAccel": 300,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 291.9245,
+     "armor": 294.534
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 97.8401,
+     "armor": 98.43731,
+     "speed": 43.14625,
+     "pitch": 48.00814,
+     "roll": 63.63562,
+     "yaw": 31.22159,
+     "acceleration": 13.34253,
+     "rollRate": 80.73061,
+     "pitchRate": 65.09782,
+     "deceleration": 9.902062,
+     "yawRate": 53.09187
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 399.2392,
+     "armor": 491.8932,
+     "regen": 3.840435,
+     "front": 874.7614,
+     "back": 863.0849
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 398.3972,
+     "armor": 382.703
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 388.658,
+     "armor": 394.4496
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 31.97693,
+     "energy": 490.1118
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.29568,
+     "armor": 19.56404,
+     "energy": 99.33602,
+     "acceleration": 19.80807,
+     "speed": 14.41072,
+     "energyUsage": 9.796299,
+     "rechargeRate": 4.778286
+    },
+    "weapon_0": {
+     "name": "wpn_z95_blaster",
+     "hitpoints": 196.8257,
+     "armor": 199.8533,
+     "rate": 0.3368513,
+     "drain": 27.06423,
+     "maxDamage": 477.9673,
+     "shieldEfficiency": 0,
+     "minDamage": 459.7931,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 196.9528,
+     "armor": 195.2987,
+     "rate": 8.773458,
+     "drain": 43.39822,
+     "maxDamage": 1525.757,
+     "shieldEfficiency": 0.8838704,
+     "minDamage": 461.1451,
+     "ammo": 10,
+     "ammo_type": 4,
+     "armorEfficiency": 0.2277464
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 241.9698,
+     "armor": 249.2348,
+     "rate": 0.09547641,
+     "drain": 22.92062,
+     "maxDamage": 99.79048,
+     "shieldEfficiency": 0,
+     "minDamage": 24.22562,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "decimator",
+   "name": "VT-49 Decimator",
+   "faction": "imperial",
+   "template": "player_decimator",
+   "certifications": [
+    "cert_starships_decimator"
+   ],
+   "category": "pob",
+   "level": 5,
+   "slideFactor": 1.85,
+   "chassisHitpoints": 5000,
+   "chassisMass": 5000000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.3,
+    "slideDamp": 1.2,
+    "engineAccel": 5,
+    "engineDecel": 5,
+    "engineYawAccel": 50,
+    "enginePitchAccel": 50,
+    "engineRollAccel": 37.5,
+    "maxSpeed": 0.8
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 395.0898,
+     "armor": 393.2448
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 96.26176,
+     "armor": 96.47783,
+     "speed": 63.61601,
+     "pitch": 53.90641,
+     "roll": 53.77215,
+     "yaw": 20.96006,
+     "acceleration": 14.29806,
+     "rollRate": 80.7669,
+     "pitchRate": 73.72273,
+     "deceleration": 13.31472,
+     "yawRate": 37.25309
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 383.4029,
+     "armor": 490.7114,
+     "regen": 2.854131,
+     "front": 1576.617,
+     "back": 1591.529
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 1092.34,
+     "armor": 1052.53
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 1051.848,
+     "armor": 1070.727
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 35.51637,
+     "energy": 1101.85
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.69023,
+     "armor": 19.73825,
+     "energy": 98.89352,
+     "acceleration": 19.44626,
+     "speed": 14.42604,
+     "energyUsage": 9.96958,
+     "rechargeRate": 4.918709
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 190.0977,
+     "armor": 192.0175,
+     "rate": 0.3419655,
+     "drain": 22.89144,
+     "maxDamage": 1468.528,
+     "shieldEfficiency": 0,
+     "minDamage": 745.0324,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 191.437,
+     "armor": 192.2777,
+     "rate": 0.331361,
+     "drain": 22.71493,
+     "maxDamage": 949.7935,
+     "shieldEfficiency": 0,
+     "minDamage": 609.7089,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 19.22288,
+     "armor": 19.00229,
+     "rate": 5.818878,
+     "drain": 23.56116,
+     "maxDamage": 22.4802,
+     "shieldEfficiency": 0,
+     "minDamage": 23.33798,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 243.146,
+     "armor": 243.0917,
+     "rate": 0.09659296,
+     "drain": 23.08529,
+     "maxDamage": 99.77181,
+     "shieldEfficiency": 0,
+     "minDamage": 24.74274,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tie_in",
+   "name": "TIE/In",
+   "faction": "imperial",
+   "template": "player_tie_in",
+   "certifications": [
+    "cert_starships_tiefighterin"
+   ],
+   "category": "lightfighter",
+   "level": 2,
+   "slideFactor": 1.78,
+   "chassisHitpoints": 1350,
+   "chassisMass": 40000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.75,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 60,
+    "engineYawAccel": 300,
+    "enginePitchAccel": 300,
+    "engineRollAccel": 200,
+    "maxSpeed": 0.97
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 298.64,
+     "armor": 287.6893
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 289.3276,
+     "armor": 299.3239,
+     "speed": 46.66897,
+     "pitch": 58.4896,
+     "roll": 63.43312,
+     "yaw": 38.4486,
+     "acceleration": 16.74496,
+     "rollRate": 81.27548,
+     "pitchRate": 79.0061,
+     "deceleration": 15.20113,
+     "yawRate": 72.29495
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 299.9817,
+     "armor": 292.5083,
+     "regen": 0,
+     "front": 0,
+     "back": 0
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 399.2632,
+     "armor": 396.0279
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 380.4937,
+     "armor": 398.0653
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 46.36437,
+     "energy": 772.0099
+    },
+    "weapon_0": {
+     "name": "wpn_generic",
+     "hitpoints": 199.192,
+     "armor": 199.9691,
+     "rate": 0.27354,
+     "drain": 26.82865,
+     "maxDamage": 559.7731,
+     "shieldEfficiency": 0,
+     "minDamage": 497.5668,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 197.5431,
+     "armor": 196.5674,
+     "rate": 9.159794,
+     "drain": 30.68873,
+     "maxDamage": 803.181,
+     "shieldEfficiency": 0.7717161,
+     "minDamage": 507.7298,
+     "ammo": 8,
+     "ammo_type": 2,
+     "armorEfficiency": 0.5542418
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245.2573,
+     "armor": 240.0122,
+     "rate": 0.09882718,
+     "drain": 23.22336,
+     "maxDamage": 95.98,
+     "shieldEfficiency": 0,
+     "minDamage": 24.23151,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tie_light_duty",
+   "name": "TIE Light Duty Fighter",
+   "faction": "imperial",
+   "template": "player_tie_light_duty",
+   "certifications": [
+    "cert_starships_tiefighterlight"
+   ],
+   "category": "lightfighter",
+   "level": 0,
+   "slideFactor": 1.78,
+   "chassisHitpoints": 1350,
+   "chassisMass": 11500,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.9,
+    "slideDamp": 1.7,
+    "engineAccel": 50,
+    "engineDecel": 50,
+    "engineYawAccel": 600,
+    "enginePitchAccel": 600,
+    "engineRollAccel": 300,
+    "maxSpeed": 0.96
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 291.425,
+     "armor": 299.7746
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 292.1978,
+     "armor": 299.0364,
+     "speed": 46.44812,
+     "pitch": 59.78908,
+     "roll": 63.48967,
+     "yaw": 38.76865,
+     "acceleration": 16.25996,
+     "rollRate": 81.19094,
+     "pitchRate": 79.35983,
+     "deceleration": 15.23637,
+     "yawRate": 70.77897
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 291.746,
+     "armor": 294.7357,
+     "regen": 0,
+     "front": 0,
+     "back": 0
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 388.9816,
+     "armor": 394.4028
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 387.7423,
+     "armor": 384.4127
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 45.63763,
+     "energy": 790.3254
+    },
+    "weapon_0": {
+     "name": "wpn_generic",
+     "hitpoints": 192.7384,
+     "armor": 194.3948,
+     "rate": 0.2769867,
+     "drain": 26.48631,
+     "maxDamage": 574.6135,
+     "shieldEfficiency": 0,
+     "minDamage": 493.8686,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 196.8598,
+     "armor": 192.7333,
+     "rate": 9.186328,
+     "drain": 31.2048,
+     "maxDamage": 802.5913,
+     "shieldEfficiency": 0.7774226,
+     "minDamage": 497.8733,
+     "ammo": 8,
+     "ammo_type": 2,
+     "armorEfficiency": 0.5474777
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 243.6434,
+     "armor": 240.4096,
+     "rate": 0.09546758,
+     "drain": 23.2824,
+     "maxDamage": 96.26791,
+     "shieldEfficiency": 0,
+     "minDamage": 24.2269,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tieadvanced",
+   "name": "TIE Advanced",
+   "faction": "imperial",
+   "template": "player_tieadvanced",
+   "certifications": [
+    "cert_starships_tieadvanced"
+   ],
+   "category": "interceptor",
+   "level": 4,
+   "slideFactor": 1.82,
+   "chassisHitpoints": 1462.5,
+   "chassisMass": 65000,
+   "attributes": {
+    "speedRotationFactorMin": 0.05,
+    "speedRotationFactorOptimal": 0.8,
+    "speedRotationFactorMax": 0.8,
+    "slideDamp": 1.7,
+    "engineAccel": 40,
+    "engineDecel": 60,
+    "engineYawAccel": 300,
+    "enginePitchAccel": 300,
+    "engineRollAccel": 150,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 294.2302,
+     "armor": 287.5432
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 294.3204,
+     "armor": 288.2111,
+     "speed": 51.82899,
+     "pitch": 55.80734,
+     "roll": 58.94701,
+     "yaw": 41.16174,
+     "acceleration": 20.90797,
+     "rollRate": 82.30802,
+     "pitchRate": 68.94418,
+     "deceleration": 14.18084,
+     "yawRate": 56.31701
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 293.7551,
+     "armor": 297.3301,
+     "regen": 5.963708,
+     "front": 972.2947,
+     "back": 981.0896
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 396.66,
+     "armor": 385.0567
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 388.2775,
+     "armor": 399.6975
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 41.92297,
+     "energy": 1071.557
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.43983,
+     "armor": 19.12926,
+     "energy": 97.1799,
+     "acceleration": 19.27003,
+     "speed": 14.58291,
+     "energyUsage": 9.821065,
+     "rechargeRate": 4.877397
+    },
+    "weapon_0": {
+     "name": "wpn_tieadvanced_blaster",
+     "hitpoints": 193.3158,
+     "armor": 198.8849,
+     "rate": 0.3547659,
+     "drain": 21.87364,
+     "maxDamage": 588.3181,
+     "shieldEfficiency": 0,
+     "minDamage": 457.5086,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_sienar_heatseeker_missile_s01",
+     "hitpoints": 198.7069,
+     "armor": 197.4441,
+     "rate": 12.01178,
+     "drain": 69.76207,
+     "maxDamage": 1363.26,
+     "shieldEfficiency": 0.5815977,
+     "minDamage": 718.3189,
+     "ammo": 16,
+     "ammo_type": 4,
+     "armorEfficiency": 0.417339
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245.509,
+     "armor": 245.3485,
+     "rate": 9.876356,
+     "drain": 23.4104,
+     "maxDamage": 95.39288,
+     "shieldEfficiency": 0,
+     "minDamage": 24.29316,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tieaggressor",
+   "name": "TIE Aggressor",
+   "faction": "imperial",
+   "template": "player_tieaggressor",
+   "certifications": [
+    "cert_starships_tieaggressor"
+   ],
+   "category": "mediumfighter",
+   "level": 4,
+   "slideFactor": 1.75,
+   "chassisHitpoints": 1643.2,
+   "chassisMass": 120000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.3,
+    "engineAccel": 20,
+    "engineDecel": 30,
+    "engineYawAccel": 150,
+    "enginePitchAccel": 150,
+    "engineRollAccel": 75,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 298.3295,
+     "armor": 288.2449
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 297.3029,
+     "armor": 299.7057,
+     "speed": 44.21876,
+     "pitch": 30.60036,
+     "roll": 30.88204,
+     "yaw": 30.50029,
+     "acceleration": 18.06754,
+     "rollRate": 51.71142,
+     "pitchRate": 52.11913,
+     "deceleration": 16.10659,
+     "yawRate": 51.59421
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 292.3809,
+     "armor": 285.8656,
+     "regen": 8.660581,
+     "front": 1115.249,
+     "back": 1090.203
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 381.2762,
+     "armor": 388.8333
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 381.7335,
+     "armor": 394.17
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 60.38781,
+     "energy": 1206.665
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.58122,
+     "armor": 19.60542,
+     "energy": 96.02479,
+     "acceleration": 19.77308,
+     "speed": 14.30095,
+     "energyUsage": 9.64526,
+     "rechargeRate": 4.93048
+    },
+    "weapon_0": {
+     "name": "wpn_tieadvanced_blaster",
+     "hitpoints": 198.2316,
+     "armor": 198.1158,
+     "rate": 0.3410668,
+     "drain": 21.98616,
+     "maxDamage": 579.8762,
+     "shieldEfficiency": 0,
+     "minDamage": 463.6437,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_tieadvanced_blaster",
+     "hitpoints": 194.1772,
+     "armor": 196.5391,
+     "rate": 0.3436212,
+     "drain": 21.87287,
+     "maxDamage": 580.8105,
+     "shieldEfficiency": 0,
+     "minDamage": 466.3842,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 248.3474,
+     "armor": 249.6691,
+     "rate": 0.09565558,
+     "drain": 23.20383,
+     "maxDamage": 96.97808,
+     "shieldEfficiency": 0,
+     "minDamage": 24.1312,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tiebomber",
+   "name": "TIE Bomber",
+   "faction": "imperial",
+   "template": "player_tiebomber",
+   "certifications": [
+    "cert_starships_tiebomber"
+   ],
+   "category": "bomber",
+   "level": 3,
+   "slideFactor": 1.88,
+   "chassisHitpoints": 2131,
+   "chassisMass": 190000,
+   "attributes": {
+    "speedRotationFactorMin": 0.1,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.3,
+    "slideDamp": 1.2,
+    "engineAccel": 10,
+    "engineDecel": 15,
+    "engineYawAccel": 50,
+    "enginePitchAccel": 50,
+    "engineRollAccel": 25,
+    "maxSpeed": 0.85
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 297.1225,
+     "armor": 298.5394
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 291.1327,
+     "armor": 291.4838,
+     "speed": 49.77505,
+     "pitch": 40.96615,
+     "roll": 40.48449,
+     "yaw": 20.71066,
+     "acceleration": 19.92171,
+     "rollRate": 59.77399,
+     "pitchRate": 59.32515,
+     "deceleration": 15.39316,
+     "yawRate": 40.19766
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 286.4963,
+     "armor": 293.7139,
+     "regen": 0,
+     "front": 1233.986,
+     "back": 1201.105
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 380.6682,
+     "armor": 390.2642
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 390.0657,
+     "armor": 395.0224
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 78.74741,
+     "energy": 1398.319
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.57087,
+     "armor": 19.6666,
+     "energy": 97.41641,
+     "acceleration": 19.29302,
+     "speed": 14.83059,
+     "energyUsage": 9.64123,
+     "rechargeRate": 4.884814
+    },
+    "weapon_0": {
+     "name": "wpn_generic",
+     "hitpoints": 196.8255,
+     "armor": 196.3449,
+     "rate": 0.2844186,
+     "drain": 27.02139,
+     "maxDamage": 571.19,
+     "shieldEfficiency": 0,
+     "minDamage": 503.3419,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_generic",
+     "hitpoints": 198.6888,
+     "armor": 193.5129,
+     "rate": 0.2754076,
+     "drain": 27.29931,
+     "maxDamage": 563.499,
+     "shieldEfficiency": 0.7923369,
+     "minDamage": 501.4572,
+     "ammo": 32,
+     "ammo_type": 4,
+     "armorEfficiency": 0.536827
+    },
+    "weapon_2": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 19.42762,
+     "armor": 19.98304,
+     "rate": 0.3448843,
+     "drain": 22.75517,
+     "maxDamage": 22.98563,
+     "shieldEfficiency": 0,
+     "minDamage": 23.4936,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 19.37656,
+     "armor": 19.90893,
+     "rate": 0.335216,
+     "drain": 22.67477,
+     "maxDamage": 22.79446,
+     "shieldEfficiency": 0,
+     "minDamage": 23.37662,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 248.3909,
+     "armor": 244.0308,
+     "rate": 0.09544036,
+     "drain": 22.69649,
+     "maxDamage": 95.20827,
+     "shieldEfficiency": 0,
+     "minDamage": 23.93103,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tiefighter",
+   "name": "TIE Fighter",
+   "faction": "imperial",
+   "template": "player_tiefighter",
+   "certifications": [
+    "cert_starships_tiefighter"
+   ],
+   "category": "lightfighter",
+   "level": 1,
+   "slideFactor": 1.78,
+   "chassisHitpoints": 1350,
+   "chassisMass": 20000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.75,
+    "slideDamp": 1.8,
+    "engineAccel": 40,
+    "engineDecel": 50,
+    "engineYawAccel": 500,
+    "enginePitchAccel": 500,
+    "engineRollAccel": 250,
+    "maxSpeed": 0.98
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 293.8558,
+     "armor": 293.7918
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 299.4926,
+     "armor": 291.9119,
+     "speed": 46.92483,
+     "pitch": 57.79565,
+     "roll": 65.51756,
+     "yaw": 39.94093,
+     "acceleration": 16.51487,
+     "rollRate": 81.69034,
+     "pitchRate": 79.91472,
+     "deceleration": 14.73175,
+     "yawRate": 71.56434
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 294.1006,
+     "armor": 299.7027,
+     "regen": 0,
+     "front": 0,
+     "back": 0
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 389.843,
+     "armor": 391.1746
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 390.5956,
+     "armor": 399.9057
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 46.7646,
+     "energy": 794.7725
+    },
+    "weapon_0": {
+     "name": "wpn_generic",
+     "hitpoints": 191.7255,
+     "armor": 190.2055,
+     "rate": 0.2780028,
+     "drain": 26.71595,
+     "maxDamage": 563.3237,
+     "shieldEfficiency": 0,
+     "minDamage": 491.7242,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_seinar_concussion_missile_s01",
+     "hitpoints": 199.22,
+     "armor": 190.3089,
+     "rate": 8.864588,
+     "drain": 30.89153,
+     "maxDamage": 800.2283,
+     "shieldEfficiency": 0.7719823,
+     "minDamage": 499.0948,
+     "ammo": 8,
+     "ammo_type": 2,
+     "armorEfficiency": 0.5506808
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 239.3105,
+     "armor": 242.0033,
+     "rate": 0.09992722,
+     "drain": 22.86495,
+     "maxDamage": 95.85281,
+     "shieldEfficiency": 0,
+     "minDamage": 24.41938,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tieinterceptor",
+   "name": "TIE Interceptor",
+   "faction": "imperial",
+   "template": "player_tieinterceptor",
+   "certifications": [
+    "cert_starships_tieinterceptor"
+   ],
+   "category": "interceptor",
+   "level": 3,
+   "slideFactor": 1.95,
+   "chassisHitpoints": 6000,
+   "chassisMass": 50000,
+   "attributes": {
+    "speedRotationFactorMin": 0.05,
+    "speedRotationFactorOptimal": 0.8,
+    "speedRotationFactorMax": 0.8,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 60,
+    "engineYawAccel": 300,
+    "enginePitchAccel": 300,
+    "engineRollAccel": 150,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 3121.869,
+     "armor": 1536.193
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 3142.305,
+     "armor": 1518.367,
+     "speed": 59.74054,
+     "pitch": 47.48366,
+     "roll": 45.87457,
+     "yaw": 46.3578,
+     "acceleration": 16.51296,
+     "rollRate": 71.13919,
+     "pitchRate": 68.87661,
+     "deceleration": 14.90916,
+     "yawRate": 71.39978
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 3056.586,
+     "armor": 1544.068,
+     "regen": 29.96742,
+     "front": 9790.87,
+     "back": 9655.143
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 7994.37,
+     "armor": 7776.441
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 7840.048,
+     "armor": 7681.589
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 3049.717,
+     "armor": 1545.358,
+     "rechargeRate": 47.68914,
+     "energy": 995.4575
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.5317,
+     "armor": 19.35275,
+     "energy": 98.4522,
+     "acceleration": 19.16425,
+     "speed": 14.65189,
+     "energyUsage": 9.533919,
+     "rechargeRate": 4.80651
+    },
+    "weapon_0": {
+     "name": "wpn_generic",
+     "hitpoints": 3031.25,
+     "armor": 1553.814,
+     "rate": 0.3080769,
+     "drain": 29.32105,
+     "maxDamage": 5278.455,
+     "shieldEfficiency": 0,
+     "minDamage": 3910.032,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_sienar_heatseeker_missile_s01",
+     "hitpoints": 3132.48,
+     "armor": 1525.354,
+     "rate": 0.9553757,
+     "drain": 285.002,
+     "maxDamage": 11949.5,
+     "shieldEfficiency": 0.8711885,
+     "minDamage": 9623.874,
+     "ammo": 12,
+     "ammo_type": 3,
+     "armorEfficiency": 0.7309372
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 247.7015,
+     "armor": 243.9529,
+     "rate": 0.09653933,
+     "drain": 22.77921,
+     "maxDamage": 98.3455,
+     "shieldEfficiency": 0,
+     "minDamage": 24.10794,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "tieoppressor",
+   "name": "TIE Oppressor",
+   "faction": "imperial",
+   "template": "player_tieoppressor",
+   "certifications": [
+    "cert_starships_tieoppressor"
+   ],
+   "category": "heavyfighter",
+   "level": 5,
+   "slideFactor": 1.78,
+   "chassisHitpoints": 1765,
+   "chassisMass": 10000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.35,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.9
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 294.0562,
+     "armor": 287.8408
+    },
+    "engine": {
+     "name": "eng_novaldex_eventhorizon",
+     "hitpoints": 285.8557,
+     "armor": 296.4928,
+     "speed": 57.99641,
+     "pitch": 31.37479,
+     "roll": 31.04428,
+     "yaw": 30.58509,
+     "acceleration": 32.38527,
+     "rollRate": 70.04829,
+     "pitchRate": 69.29912,
+     "deceleration": 38.49465,
+     "yawRate": 68.24411
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 289.5158,
+     "armor": 296.6571,
+     "regen": 7.958282,
+     "front": 1063.478,
+     "back": 1064.046
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 478.1561,
+     "armor": 495.2433
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 479.4083,
+     "armor": 490.7244
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 54.81933,
+     "energy": 887.7081
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.02942,
+     "armor": 19.37799,
+     "energy": 99.82555,
+     "acceleration": 19.31529,
+     "speed": 14.31679,
+     "energyUsage": 9.992661,
+     "rechargeRate": 4.901127
+    },
+    "weapon_0": {
+     "name": "wpn_tieadvanced_blaster",
+     "hitpoints": 197.4888,
+     "armor": 193.9926,
+     "rate": 0.3089833,
+     "drain": 24.2891,
+     "maxDamage": 637.2914,
+     "shieldEfficiency": 0,
+     "minDamage": 534.1018,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_sienar_heatseeker_missile_s01",
+     "hitpoints": 195.5367,
+     "armor": 195.2974,
+     "rate": 14.07183,
+     "drain": 52.63816,
+     "maxDamage": 1191.985,
+     "shieldEfficiency": 0.8767639,
+     "minDamage": 656.8978,
+     "ammo": 24,
+     "ammo_type": 3,
+     "armorEfficiency": 0.744046
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 246.2163,
+     "armor": 244.9379,
+     "rate": 0.098791,
+     "drain": 22.49818,
+     "maxDamage": 99.56401,
+     "shieldEfficiency": 0,
+     "minDamage": 24.45855,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_turret_ship",
+   "name": "M22-T Krayt Heavy Fighter",
+   "faction": "freelancer",
+   "template": "player_hutt_turret_ship",
+   "certifications": [
+    "cert_starships_hutt_turret_ship"
+   ],
+   "category": "heavyfighter",
+   "level": 5,
+   "slideFactor": 1.76,
+   "chassisHitpoints": 1512,
+   "chassisMass": 210000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.92
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 298.5859,
+     "armor": 293.59
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 99.05453,
+     "armor": 99.5019,
+     "speed": 45.28425,
+     "pitch": 39.07172,
+     "roll": 39.94278,
+     "yaw": 20.39184,
+     "acceleration": 12.03205,
+     "rollRate": 59.10788,
+     "pitchRate": 60.85636,
+     "deceleration": 15.43395,
+     "yawRate": 39.61805
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 389.1004,
+     "armor": 488.346,
+     "regen": 4.906437,
+     "front": 944.6312,
+     "back": 956.4858
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 199.7896,
+     "armor": 193.4351
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 194.2157,
+     "armor": 192.6566
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 31.81267,
+     "energy": 509.1956
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.15845,
+     "armor": 19.07937,
+     "energy": 95.04938,
+     "acceleration": 19.82329,
+     "speed": 14.27864,
+     "energyUsage": 9.834052,
+     "rechargeRate": 4.996946
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 197.9332,
+     "armor": 193.0661,
+     "rate": 0.3303496,
+     "drain": 23.39249,
+     "maxDamage": 245.888,
+     "shieldEfficiency": 0,
+     "minDamage": 116.536,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 193.6815,
+     "armor": 194.5917,
+     "rate": 0.3333288,
+     "drain": 23.02759,
+     "maxDamage": 22.62797,
+     "shieldEfficiency": 0,
+     "minDamage": 23.58794,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.27279,
+     "armor": 19.80032,
+     "rate": 0.3447994,
+     "drain": 23.09595,
+     "maxDamage": 22.60188,
+     "shieldEfficiency": 0,
+     "minDamage": 23.1928,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.91959,
+     "armor": 19.5616,
+     "rate": 0.3411166,
+     "drain": 22.83431,
+     "maxDamage": 23.2063,
+     "shieldEfficiency": 0,
+     "minDamage": 22.55597,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 242.1129,
+     "armor": 242.1036,
+     "rate": 9.918377,
+     "drain": 22.79713,
+     "maxDamage": 98.86002,
+     "shieldEfficiency": 0,
+     "minDamage": 24.51417,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_medium_s01",
+   "name": "Ixiyen Fast Attack Craft, Style 1",
+   "faction": "freelancer",
+   "template": "player_blacksun_medium_s01",
+   "certifications": [
+    "cert_starships_mediumblacksunfighter"
+   ],
+   "category": "mediumfighter",
+   "level": 3,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 95000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 25,
+    "engineDecel": 30,
+    "engineYawAccel": 200,
+    "enginePitchAccel": 200,
+    "engineRollAccel": 100,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 285.9048,
+     "armor": 296.7009
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 97.55859,
+     "armor": 97.22115,
+     "speed": 52.7882,
+     "pitch": 33.30356,
+     "roll": 32.81654,
+     "yaw": 32.62107,
+     "acceleration": 16.17783,
+     "rollRate": 60.15535,
+     "pitchRate": 60.08889,
+     "deceleration": 8.137613,
+     "yawRate": 58.67763
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 391.3619,
+     "armor": 499.9176,
+     "regen": 4.790445,
+     "front": 294.0981,
+     "back": 477.6539
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 285.2036,
+     "armor": 286.6887
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 286.6339,
+     "armor": 295.6417
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.94089,
+     "energy": 556.6486
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.84061,
+     "armor": 19.13522,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.7392,
+     "armor": 191.4498,
+     "rate": 0.3381855,
+     "drain": 22.9746,
+     "maxDamage": 242.9811,
+     "shieldEfficiency": 0,
+     "minDamage": 115.7708,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 190.8013,
+     "armor": 196.7648,
+     "rate": 0.3378254,
+     "drain": 23.14337,
+     "maxDamage": 240.4889,
+     "shieldEfficiency": 0,
+     "minDamage": 114.2796,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_medium_s02",
+   "name": "Ixiyen Fast Attack Craft, Style 2",
+   "faction": "freelancer",
+   "template": "player_blacksun_medium_s02",
+   "certifications": [
+    "cert_starships_mediumblacksunfighter"
+   ],
+   "category": "mediumfighter",
+   "level": 3,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 95000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 25,
+    "engineDecel": 30,
+    "engineYawAccel": 200,
+    "enginePitchAccel": 200,
+    "engineRollAccel": 100,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 292.3597,
+     "armor": 289.2545
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.02632,
+     "armor": 97.37484,
+     "speed": 54.40914,
+     "pitch": 33.22331,
+     "roll": 33.01411,
+     "yaw": 32.59493,
+     "acceleration": 16.70522,
+     "rollRate": 58.00322,
+     "pitchRate": 58.84709,
+     "deceleration": 8.202561,
+     "yawRate": 60.46803
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 385.7991,
+     "armor": 482.139,
+     "regen": 4.797288,
+     "front": 290.7639,
+     "back": 481.7832
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 286.1625,
+     "armor": 293.4482
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 298.4027,
+     "armor": 288.8897
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 33.86935,
+     "energy": 543.3336
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.56373,
+     "armor": 19.69364,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.711,
+     "armor": 197.5858,
+     "rate": 0.3354039,
+     "drain": 22.85619,
+     "maxDamage": 241.4807,
+     "shieldEfficiency": 0,
+     "minDamage": 118.5293,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 190.9026,
+     "armor": 199.351,
+     "rate": 0.3305117,
+     "drain": 23.30432,
+     "maxDamage": 238.1044,
+     "shieldEfficiency": 0,
+     "minDamage": 117.2669,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_medium_s03",
+   "name": "Ixiyen Fast Attack Craft, Style 3",
+   "faction": "freelancer",
+   "template": "player_blacksun_medium_s03",
+   "certifications": [
+    "cert_starships_mediumblacksunfighter"
+   ],
+   "category": "mediumfighter",
+   "level": 3,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 95000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 25,
+    "engineDecel": 30,
+    "engineYawAccel": 200,
+    "enginePitchAccel": 200,
+    "engineRollAccel": 100,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 285.8691,
+     "armor": 297.7704
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 98.94013,
+     "armor": 96.83083,
+     "speed": 52.67792,
+     "pitch": 33.38629,
+     "roll": 33.80513,
+     "yaw": 32.58237,
+     "acceleration": 16.22077,
+     "rollRate": 59.31021,
+     "pitchRate": 59.7647,
+     "deceleration": 8.263986,
+     "yawRate": 60.04031
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 388.7778,
+     "armor": 485.3872,
+     "regen": 4.956139,
+     "front": 286.9203,
+     "back": 491.3724
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 289.1444,
+     "armor": 294.4124
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 288.6785,
+     "armor": 295.0154
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 33.83265,
+     "energy": 564.4677
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.64533,
+     "armor": 19.09215,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 193.2914,
+     "armor": 198.8204,
+     "rate": 0.3369405,
+     "drain": 23.02787,
+     "maxDamage": 244.5285,
+     "shieldEfficiency": 0,
+     "minDamage": 114.5678,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 198.9391,
+     "armor": 199.2292,
+     "rate": 0.3357915,
+     "drain": 22.42832,
+     "maxDamage": 239.5728,
+     "shieldEfficiency": 0,
+     "minDamage": 117.0367,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_medium_s04",
+   "name": "Ixiyen Fast Attack Craft, Style 4",
+   "faction": "freelancer",
+   "template": "player_blacksun_medium_s04",
+   "certifications": [
+    "cert_starships_mediumblacksunfighter"
+   ],
+   "category": "mediumfighter",
+   "level": 3,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 95000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 25,
+    "engineDecel": 30,
+    "engineYawAccel": 200,
+    "enginePitchAccel": 200,
+    "engineRollAccel": 100,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 291.0834,
+     "armor": 289.3076
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 97.49711,
+     "armor": 98.88375,
+     "speed": 54.53903,
+     "pitch": 32.56627,
+     "roll": 33.46387,
+     "yaw": 33.49148,
+     "acceleration": 16.57997,
+     "rollRate": 59.83955,
+     "pitchRate": 59.48193,
+     "deceleration": 8.234636,
+     "yawRate": 59.67692
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 386.6447,
+     "armor": 498.0531,
+     "regen": 4.835435,
+     "front": 287.512,
+     "back": 490.744
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 294.0894,
+     "armor": 289.562
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 292.5082,
+     "armor": 295.594
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.11131,
+     "energy": 552.4064
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.64683,
+     "armor": 19.21716,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 197.5466,
+     "armor": 196.4034,
+     "rate": 0.3302174,
+     "drain": 23.58628,
+     "maxDamage": 249.7546,
+     "shieldEfficiency": 0,
+     "minDamage": 117.486,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 198.8782,
+     "armor": 195.1298,
+     "rate": 0.3394141,
+     "drain": 23.02138,
+     "maxDamage": 249.1827,
+     "shieldEfficiency": 0,
+     "minDamage": 117.2194,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_heavy_s01",
+   "name": "Rihkxyrk Attack Ship, Style 1",
+   "faction": "freelancer",
+   "template": "player_blacksun_heavy_s01",
+   "certifications": [
+    "cert_starships_heavyblacksunfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 4,
+   "slideFactor": 1.91,
+   "chassisHitpoints": 519,
+   "chassisMass": 190000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.35,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.89
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 292.9725,
+     "armor": 299.5309
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 96.6465,
+     "armor": 97.75994,
+     "speed": 40.43465,
+     "pitch": 20.62251,
+     "roll": 20.84657,
+     "yaw": 20.48238,
+     "acceleration": 11.59244,
+     "rollRate": 41.15862,
+     "pitchRate": 42.04427,
+     "deceleration": 15.05197,
+     "yawRate": 42.06062
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 783.6112,
+     "armor": 496.0798,
+     "regen": 4.791908,
+     "front": 585.0226,
+     "back": 766.2216
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 678.8878,
+     "armor": 697.2473
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 669.7052,
+     "armor": 680.1978
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 35.18039,
+     "energy": 569.5192
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.62413,
+     "armor": 19.77116,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 197.6348,
+     "armor": 198.6877,
+     "rate": 0.3358833,
+     "drain": 22.88481,
+     "maxDamage": 397.8456,
+     "shieldEfficiency": 0,
+     "minDamage": 310.6662,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 196.2011,
+     "armor": 192.69,
+     "rate": 0.3301291,
+     "drain": 23.57168,
+     "maxDamage": 22.8097,
+     "shieldEfficiency": 0,
+     "minDamage": 23.23072,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.44605,
+     "armor": 19.74653,
+     "rate": 0.3429416,
+     "drain": 22.91661,
+     "maxDamage": 22.54667,
+     "shieldEfficiency": 0,
+     "minDamage": 22.86555,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_heavy_s02",
+   "name": "Rihkxyrk Attack Ship, Style 2",
+   "faction": "freelancer",
+   "template": "player_blacksun_heavy_s02",
+   "certifications": [
+    "cert_starships_heavyblacksunfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 4,
+   "slideFactor": 1.91,
+   "chassisHitpoints": 519,
+   "chassisMass": 190000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.35,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.89
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 298.5643,
+     "armor": 290.8233
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 99.33198,
+     "armor": 97.57671,
+     "speed": 40.67111,
+     "pitch": 20.59248,
+     "roll": 20.88879,
+     "yaw": 20.75872,
+     "acceleration": 11.85273,
+     "rollRate": 42.78871,
+     "pitchRate": 42.86503,
+     "deceleration": 15.57675,
+     "yawRate": 42.67835
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 773.0718,
+     "armor": 486.4986,
+     "regen": 4.869394,
+     "front": 577.5036,
+     "back": 790.7836
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 687.2841,
+     "armor": 693.7894
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 689.0114,
+     "armor": 673.8834
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 33.68177,
+     "energy": 562.0052
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.42347,
+     "armor": 19.25525,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 197.6118,
+     "armor": 191.2112,
+     "rate": 0.3379147,
+     "drain": 23.23726,
+     "maxDamage": 394.2346,
+     "shieldEfficiency": 0,
+     "minDamage": 310.9335,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 198.2586,
+     "armor": 192.2109,
+     "rate": 0.3415117,
+     "drain": 22.8,
+     "maxDamage": 23.43193,
+     "shieldEfficiency": 0,
+     "minDamage": 22.95926,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.93216,
+     "armor": 19.87826,
+     "rate": 0.3423414,
+     "drain": 23.1964,
+     "maxDamage": 22.66079,
+     "shieldEfficiency": 0,
+     "minDamage": 22.90214,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 0,
+     "armor": 0,
+     "rate": 0,
+     "drain": 0,
+     "maxDamage": 0,
+     "shieldEfficiency": 0,
+     "minDamage": 0,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_heavy_s03",
+   "name": "Rihkxyrk Attack Ship, Style 3",
+   "faction": "freelancer",
+   "template": "player_blacksun_heavy_s03",
+   "certifications": [
+    "cert_starships_heavyblacksunfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 4,
+   "slideFactor": 1.91,
+   "chassisHitpoints": 519,
+   "chassisMass": 190000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.35,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.89
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 291.5533,
+     "armor": 296.2093
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 98.18987,
+     "armor": 97.04291,
+     "speed": 39.96843,
+     "pitch": 20.48805,
+     "roll": 20.85472,
+     "yaw": 20.30706,
+     "acceleration": 11.97249,
+     "rollRate": 41.88421,
+     "pitchRate": 41.67138,
+     "deceleration": 15.38523,
+     "yawRate": 41.48264
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 785.5859,
+     "armor": 489.2968,
+     "regen": 4.77468,
+     "front": 584.1962,
+     "back": 768.0731
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 670.9449,
+     "armor": 692.0453
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 671.141,
+     "armor": 696.1824
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 33.83805,
+     "energy": 566.9453
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.07374,
+     "armor": 19.391,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.6955,
+     "armor": 197.2448,
+     "rate": 0.3343826,
+     "drain": 22.70932,
+     "maxDamage": 408.9066,
+     "shieldEfficiency": 0,
+     "minDamage": 318.3311,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.4305,
+     "armor": 192.9223,
+     "rate": 0.3374817,
+     "drain": 23.37844,
+     "maxDamage": 23.47502,
+     "shieldEfficiency": 0,
+     "minDamage": 22.74906,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.07644,
+     "armor": 19.65449,
+     "rate": 0.3281578,
+     "drain": 22.84289,
+     "maxDamage": 22.66249,
+     "shieldEfficiency": 0,
+     "minDamage": 22.71292,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 0,
+     "armor": 0,
+     "rate": 0,
+     "drain": 0,
+     "maxDamage": 0,
+     "shieldEfficiency": 0,
+     "minDamage": 0,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_heavy_s04",
+   "name": "Rihkxyrk Attack Ship, Style 4",
+   "faction": "freelancer",
+   "template": "player_blacksun_heavy_s04",
+   "certifications": [
+    "cert_starships_heavyblacksunfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 4,
+   "slideFactor": 1.91,
+   "chassisHitpoints": 519,
+   "chassisMass": 190000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.35,
+    "speedRotationFactorMax": 0.4,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.89
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 288.6568,
+     "armor": 290.3434
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.81405,
+     "armor": 96.74408,
+     "speed": 41.05715,
+     "pitch": 20.29385,
+     "roll": 20.07003,
+     "yaw": 20.90281,
+     "acceleration": 11.60822,
+     "rollRate": 41.43303,
+     "pitchRate": 42.6875,
+     "deceleration": 14.98052,
+     "yawRate": 41.40241
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 785.334,
+     "armor": 492.5698,
+     "regen": 4.79799,
+     "front": 594.6714,
+     "back": 789.2192
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 674.7458,
+     "armor": 697.7799
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 697.4012,
+     "armor": 667.9643
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.38279,
+     "energy": 565.7834
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.37678,
+     "armor": 19.56945,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 192.8261,
+     "armor": 197.6119,
+     "rate": 0.3332738,
+     "drain": 23.4945,
+     "maxDamage": 399.6004,
+     "shieldEfficiency": 0,
+     "minDamage": 308.6718,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 195.4651,
+     "armor": 191.4426,
+     "rate": 0.3367485,
+     "drain": 22.87436,
+     "maxDamage": 22.90322,
+     "shieldEfficiency": 0,
+     "minDamage": 23.14557,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.86217,
+     "armor": 19.50508,
+     "rate": 0.3435956,
+     "drain": 23.23153,
+     "maxDamage": 23.45263,
+     "shieldEfficiency": 0,
+     "minDamage": 23.3075,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 0,
+     "armor": 0,
+     "rate": 0,
+     "drain": 0,
+     "maxDamage": 0,
+     "shieldEfficiency": 0,
+     "minDamage": 0,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_medium_s01",
+   "name": "Dunelizard, Style 1",
+   "faction": "freelancer",
+   "template": "player_hutt_medium_s01",
+   "certifications": [
+    "cert_starships_mediumhuttfighter"
+   ],
+   "category": "mediumfighter",
+   "level": 1,
+   "slideFactor": 1.76,
+   "chassisHitpoints": 1512,
+   "chassisMass": 10000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.6,
+    "slideDamp": 1.3,
+    "engineAccel": 30,
+    "engineDecel": 35,
+    "engineYawAccel": 300,
+    "enginePitchAccel": 300,
+    "engineRollAccel": 150,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 297.5141,
+     "armor": 294.1929
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 96.71855,
+     "armor": 98.71605,
+     "speed": 44.01991,
+     "pitch": 45.29466,
+     "roll": 52.87426,
+     "yaw": 27.10827,
+     "acceleration": 12.03298,
+     "rollRate": 80.12466,
+     "pitchRate": 70.31098,
+     "deceleration": 15.05467,
+     "yawRate": 76.31455
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 389.3865,
+     "armor": 499.0418,
+     "regen": 4.833342,
+     "front": 973.0168,
+     "back": 969.4529
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 199.1766,
+     "armor": 190.3229
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 196.6376,
+     "armor": 197.9128
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 30.7502,
+     "energy": 496.1897
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.38919,
+     "armor": 19.12807,
+     "energy": 97.60387,
+     "acceleration": 19.84349,
+     "speed": 14.61098,
+     "energyUsage": 9.713359,
+     "rechargeRate": 4.909821
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.3624,
+     "armor": 197.9378,
+     "rate": 0.3292171,
+     "drain": 22.89369,
+     "maxDamage": 247.2647,
+     "shieldEfficiency": 0,
+     "minDamage": 118.9161,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245.9457,
+     "armor": 246.4686,
+     "rate": 0.0992691,
+     "drain": 22.60886,
+     "maxDamage": 97.27991,
+     "shieldEfficiency": 0,
+     "minDamage": 23.78209,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_medium_s02",
+   "name": "Dunelizard, Style 2",
+   "faction": "freelancer",
+   "template": "player_hutt_medium_s02",
+   "certifications": [
+    "cert_starships_mediumhuttfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 2,
+   "slideFactor": 1.95,
+   "chassisHitpoints": 6000,
+   "chassisMass": 110000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.6,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.92
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 298.1105,
+     "armor": 298.715
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 96.08215,
+     "armor": 97.71975,
+     "speed": 44.1099,
+     "pitch": 43.80634,
+     "roll": 52.2076,
+     "yaw": 26.66313,
+     "acceleration": 11.77163,
+     "rollRate": 79.58759,
+     "pitchRate": 67.73086,
+     "deceleration": 15.22928,
+     "yawRate": 76.32036
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 396.9262,
+     "armor": 498.7002,
+     "regen": 4.843915,
+     "front": 939.5843,
+     "back": 950.832
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 197.1332,
+     "armor": 197.1565
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 199.6718,
+     "armor": 193.8375
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 31.40651,
+     "energy": 494.3975
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.05527,
+     "armor": 19.83886,
+     "energy": 98.34339,
+     "acceleration": 19.14887,
+     "speed": 14.25113,
+     "energyUsage": 9.686683,
+     "rechargeRate": 4.868037
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 192.3085,
+     "armor": 199.414,
+     "rate": 0.3291892,
+     "drain": 22.67983,
+     "maxDamage": 241.4728,
+     "shieldEfficiency": 0,
+     "minDamage": 119.2315,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 242.6855,
+     "armor": 240.7494,
+     "rate": 0.09984232,
+     "drain": 22.42602,
+     "maxDamage": 97.34396,
+     "shieldEfficiency": 0,
+     "minDamage": 24.60987,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_heavy_s01",
+   "name": "Kimogila, Style 1",
+   "faction": "freelancer",
+   "template": "player_hutt_heavy_s01",
+   "certifications": [
+    "cert_starships_heavyhuttfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 2,
+   "slideFactor": 1.95,
+   "chassisHitpoints": 6000,
+   "chassisMass": 110000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.92
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 3132.696,
+     "armor": 1588.452
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 3177.075,
+     "armor": 1560.314,
+     "speed": 59.2011,
+     "pitch": 45.70192,
+     "roll": 46.76923,
+     "yaw": 45.68584,
+     "acceleration": 16.38588,
+     "rollRate": 71.96271,
+     "pitchRate": 71.1189,
+     "deceleration": 14.32747,
+     "yawRate": 68.89223
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 3167.762,
+     "armor": 1571.964,
+     "regen": 28.76218,
+     "front": 9736.661,
+     "back": 9566.941
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 7871.088,
+     "armor": 7775.017
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 7903.808,
+     "armor": 7700.184
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 3101.883,
+     "armor": 1588.53,
+     "rechargeRate": 47.75232,
+     "energy": 967.9125
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.3141,
+     "armor": 19.11369,
+     "energy": 98.73798,
+     "acceleration": 19.63684,
+     "speed": 14.54045,
+     "energyUsage": 9.681401,
+     "rechargeRate": 4.961435
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 3166.254,
+     "armor": 1562.477,
+     "rate": 0.3102954,
+     "drain": 29.88041,
+     "maxDamage": 5309.712,
+     "shieldEfficiency": 0,
+     "minDamage": 3808.266,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 3139.729,
+     "armor": 1528.717,
+     "rate": 0.3083006,
+     "drain": 29.2402,
+     "maxDamage": 5196.395,
+     "shieldEfficiency": 0,
+     "minDamage": 3938.993,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 3090.025,
+     "armor": 1552.911,
+     "rate": 0.313054,
+     "drain": 29.51766,
+     "maxDamage": 5305.413,
+     "shieldEfficiency": 0,
+     "minDamage": 3904.571,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 249.2039,
+     "armor": 244.1954,
+     "rate": 9.704676,
+     "drain": 23.5454,
+     "maxDamage": 99.44479,
+     "shieldEfficiency": 0,
+     "minDamage": 24.19794,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_heavy_s02",
+   "name": "Kimogila, Style 2",
+   "faction": "freelancer",
+   "template": "player_hutt_heavy_s02",
+   "certifications": [
+    "cert_starships_heavyhuttfighter"
+   ],
+   "category": "heavyfighter",
+   "level": 2,
+   "slideFactor": 1.76,
+   "chassisHitpoints": 1512,
+   "chassisMass": 10000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.4,
+    "speedRotationFactorMax": 0.5,
+    "slideDamp": 1.3,
+    "engineAccel": 35,
+    "engineDecel": 35,
+    "engineYawAccel": 100,
+    "enginePitchAccel": 100,
+    "engineRollAccel": 50,
+    "maxSpeed": 0.92
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 290.6318,
+     "armor": 288.9599
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 99.67373,
+     "armor": 96.38962,
+     "speed": 43.82066,
+     "pitch": 39.0956,
+     "roll": 39.79986,
+     "yaw": 20.25624,
+     "acceleration": 12.00114,
+     "rollRate": 59.70396,
+     "pitchRate": 60.09761,
+     "deceleration": 15.62894,
+     "yawRate": 40.6769
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 383.7082,
+     "armor": 478.7005,
+     "regen": 4.900551,
+     "front": 970.2797,
+     "back": 976.8123
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 192.5412,
+     "armor": 190.5703
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 194.2573,
+     "armor": 193.0681
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 30.9446,
+     "energy": 491.727
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.12139,
+     "armor": 19.22683,
+     "energy": 96.64861,
+     "acceleration": 19.64554,
+     "speed": 14.64753,
+     "energyUsage": 9.788589,
+     "rechargeRate": 4.914062
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.4251,
+     "armor": 192.6112,
+     "rate": 0.3387578,
+     "drain": 22.58564,
+     "maxDamage": 245.8094,
+     "shieldEfficiency": 0,
+     "minDamage": 115.7852,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 199.9824,
+     "armor": 194.3572,
+     "rate": 0.3296726,
+     "drain": 22.74107,
+     "maxDamage": 22.46696,
+     "shieldEfficiency": 0,
+     "minDamage": 22.4629,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 19.59701,
+     "armor": 19.88243,
+     "rate": 0.3281354,
+     "drain": 22.96898,
+     "maxDamage": 22.56611,
+     "shieldEfficiency": 0,
+     "minDamage": 22.68828,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 248.3284,
+     "armor": 242.9545,
+     "rate": 9.966114,
+     "drain": 23.53407,
+     "maxDamage": 97.73397,
+     "shieldEfficiency": 0,
+     "minDamage": 24.97156,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_light_s01",
+   "name": "Kihraxz Light Fighter, Style 1",
+   "faction": "freelancer",
+   "template": "player_blacksun_light_s01",
+   "certifications": [
+    "cert_starships_lightblacksunfighter"
+   ],
+   "category": "lightfighter",
+   "level": 2,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 40000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.75,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 50,
+    "engineYawAccel": 400,
+    "enginePitchAccel": 400,
+    "engineRollAccel": 200,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 287.8142,
+     "armor": 287.9694
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.56121,
+     "armor": 97.31476,
+     "speed": 54.51305,
+     "pitch": 33.4327,
+     "roll": 33.04952,
+     "yaw": 32.42641,
+     "acceleration": 16.76877,
+     "rollRate": 58.41513,
+     "pitchRate": 59.20968,
+     "deceleration": 8.071388,
+     "yawRate": 60.17678
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 381.9661,
+     "armor": 479.58,
+     "regen": 4.926902,
+     "front": 286.0273,
+     "back": 475.3774
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 296.5002,
+     "armor": 294.2959
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 296.8922,
+     "armor": 297.8156
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.60049,
+     "energy": 556.8726
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.97504,
+     "armor": 19.43354,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 193.6237,
+     "armor": 192.9486,
+     "rate": 0.3404445,
+     "drain": 22.99194,
+     "maxDamage": 239.8239,
+     "shieldEfficiency": 0,
+     "minDamage": 115.6269,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_light_s02",
+   "name": "Kihraxz Light Fighter, Style 2",
+   "faction": "freelancer",
+   "template": "player_blacksun_light_s02",
+   "certifications": [
+    "cert_starships_lightblacksunfighter"
+   ],
+   "category": "lightfighter",
+   "level": 2,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 40000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.75,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 50,
+    "engineYawAccel": 400,
+    "enginePitchAccel": 400,
+    "engineRollAccel": 200,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 291.4553,
+     "armor": 299.544
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.21339,
+     "armor": 96.52626,
+     "speed": 53.26802,
+     "pitch": 32.87218,
+     "roll": 32.52257,
+     "yaw": 32.81568,
+     "acceleration": 16.62004,
+     "rollRate": 59.35811,
+     "pitchRate": 60.43891,
+     "deceleration": 8.105305,
+     "yawRate": 58.75961
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 387.6872,
+     "armor": 497.9937,
+     "regen": 4.822149,
+     "front": 288.0636,
+     "back": 492.3221
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 291.9019,
+     "armor": 289.7846
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 299.5869,
+     "armor": 287.5455
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.02974,
+     "energy": 551.3595
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.22412,
+     "armor": 19.69981,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 190.2314,
+     "armor": 199.3554,
+     "rate": 0.3375937,
+     "drain": 23.52316,
+     "maxDamage": 238.7346,
+     "shieldEfficiency": 0,
+     "minDamage": 117.3354,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_light_s03",
+   "name": "Kihraxz Light Fighter, Style 3",
+   "faction": "freelancer",
+   "template": "player_blacksun_light_s03",
+   "certifications": [
+    "cert_starships_lightblacksunfighter"
+   ],
+   "category": "lightfighter",
+   "level": 2,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 40000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.75,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 50,
+    "engineYawAccel": 400,
+    "enginePitchAccel": 400,
+    "engineRollAccel": 200,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 287.9297,
+     "armor": 294.235
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 97.23067,
+     "armor": 95.93677,
+     "speed": 54.60381,
+     "pitch": 33.58488,
+     "roll": 33.96515,
+     "yaw": 32.33908,
+     "acceleration": 16.46826,
+     "rollRate": 59.2213,
+     "pitchRate": 60.86734,
+     "deceleration": 8.151454,
+     "yawRate": 59.0582
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 389.3561,
+     "armor": 485.1454,
+     "regen": 4.937285,
+     "front": 293.1954,
+     "back": 491.9777
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 297.3101,
+     "armor": 299.945
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 290.776,
+     "armor": 297.7719
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.21119,
+     "energy": 563.2938
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.20337,
+     "armor": 19.98325,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 199.3543,
+     "armor": 197.1463,
+     "rate": 0.3406603,
+     "drain": 23.30942,
+     "maxDamage": 239.8344,
+     "shieldEfficiency": 0,
+     "minDamage": 115.3199,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "blacksun_light_s04",
+   "name": "Kihraxz Light Fighter, Style 4",
+   "faction": "freelancer",
+   "template": "player_blacksun_light_s04",
+   "certifications": [
+    "cert_starships_lightblacksunfighter"
+   ],
+   "category": "lightfighter",
+   "level": 2,
+   "slideFactor": 1.81,
+   "chassisHitpoints": 519,
+   "chassisMass": 40000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.75,
+    "slideDamp": 1.6,
+    "engineAccel": 40,
+    "engineDecel": 50,
+    "engineYawAccel": 400,
+    "enginePitchAccel": 400,
+    "engineRollAccel": 200,
+    "maxSpeed": 1
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 295.0436,
+     "armor": 293.24
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 98.30356,
+     "armor": 97.88931,
+     "speed": 52.62028,
+     "pitch": 32.68404,
+     "roll": 32.41749,
+     "yaw": 33.41313,
+     "acceleration": 15.96255,
+     "rollRate": 59.74601,
+     "pitchRate": 60.37212,
+     "deceleration": 8.003306,
+     "yawRate": 60.8251
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 398.3103,
+     "armor": 476.1999,
+     "regen": 4.782587,
+     "front": 295.0487,
+     "back": 480.9888
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 295.749,
+     "armor": 298.8542
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 287.2855,
+     "armor": 297.9694
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 35.01874,
+     "energy": 555.002
+    },
+    "booster": {
+     "name": "bst_xwing_booster_s01",
+     "hitpoints": 19.93907,
+     "armor": 19.89808,
+     "energy": 0,
+     "acceleration": 0,
+     "speed": 0,
+     "energyUsage": 0,
+     "rechargeRate": 0
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 197.3677,
+     "armor": 199.564,
+     "rate": 0.3323911,
+     "drain": 23.55841,
+     "maxDamage": 248.4767,
+     "shieldEfficiency": 0,
+     "minDamage": 118.0815,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_light_s01",
+   "name": "Scyk Light Fighter, Style 1",
+   "faction": "freelancer",
+   "template": "player_hutt_light_s01",
+   "certifications": [
+    "cert_starships_lighthuttfighter"
+   ],
+   "category": "lightfighter",
+   "level": 0,
+   "slideFactor": 1.95,
+   "chassisHitpoints": 6000,
+   "chassisMass": 10000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.9,
+    "slideDamp": 1.8,
+    "engineAccel": 50,
+    "engineDecel": 50,
+    "engineYawAccel": 600,
+    "enginePitchAccel": 600,
+    "engineRollAccel": 300,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 3088.099,
+     "armor": 1527.99
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 3136.135,
+     "armor": 1581.261,
+     "speed": 58.72906,
+     "pitch": 46.54525,
+     "roll": 47.6611,
+     "yaw": 46.58419,
+     "acceleration": 16.82825,
+     "rollRate": 70.91674,
+     "pitchRate": 70.14632,
+     "deceleration": 14.25979,
+     "yawRate": 69.08958
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 3135.652,
+     "armor": 1586.758,
+     "regen": 29.61802,
+     "front": 9606.966,
+     "back": 9779.191
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 7629.503,
+     "armor": 7855.571
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 7789.208,
+     "armor": 7609.071
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 3047.057,
+     "armor": 1570.661,
+     "rechargeRate": 49.48987,
+     "energy": 975.1318
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.47985,
+     "armor": 19.81534,
+     "energy": 96.9072,
+     "acceleration": 19.69485,
+     "speed": 14.44987,
+     "energyUsage": 9.768956,
+     "rechargeRate": 4.964502
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 3034.379,
+     "armor": 1565.307,
+     "rate": 0.3184879,
+     "drain": 29.52462,
+     "maxDamage": 5235.119,
+     "shieldEfficiency": 0,
+     "minDamage": 3900.653,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 240.8438,
+     "armor": 249.4026,
+     "rate": 0.09872283,
+     "drain": 23.52345,
+     "maxDamage": 98.52152,
+     "shieldEfficiency": 0,
+     "minDamage": 24.50502,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "hutt_light_s02",
+   "name": "Scyk Light Fighter, Style 2",
+   "faction": "freelancer",
+   "template": "player_hutt_light_s02",
+   "certifications": [
+    "cert_starships_lighthuttfighter"
+   ],
+   "category": "lightfighter",
+   "level": 0,
+   "slideFactor": 1.75,
+   "chassisHitpoints": 1340,
+   "chassisMass": 10000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.5,
+    "speedRotationFactorMax": 0.9,
+    "slideDamp": 1.8,
+    "engineAccel": 50,
+    "engineDecel": 50,
+    "engineYawAccel": 600,
+    "enginePitchAccel": 600,
+    "engineRollAccel": 300,
+    "maxSpeed": 0.95
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 298.2066,
+     "armor": 293.7321
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 95.32785,
+     "armor": 95.15446,
+     "speed": 52.7619,
+     "pitch": 58.26368,
+     "roll": 58.92189,
+     "yaw": 39.02379,
+     "acceleration": 16.42248,
+     "rollRate": 78.1004,
+     "pitchRate": 80.05688,
+     "deceleration": 13.90281,
+     "yawRate": 70.91481
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 389.5561,
+     "armor": 486.0786,
+     "regen": 4.926981,
+     "front": 867.2077,
+     "back": 833.345
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 190.9982,
+     "armor": 196.7778
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 194.3873,
+     "armor": 197.3107
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 34.8511,
+     "energy": 122.9136
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.28346,
+     "armor": 19.08301,
+     "energy": 95.53202,
+     "acceleration": 19.7022,
+     "speed": 14.90906,
+     "energyUsage": 9.674501,
+     "rechargeRate": 4.834077
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 190.2451,
+     "armor": 199.6195,
+     "rate": 0.3368293,
+     "drain": 22.63054,
+     "maxDamage": 243.6057,
+     "shieldEfficiency": 0,
+     "minDamage": 118.2645,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 243.0658,
+     "armor": 244.4095,
+     "rate": 0.09646789,
+     "drain": 22.61854,
+     "maxDamage": 96.51807,
+     "shieldEfficiency": 0,
+     "minDamage": 24.82167,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
+    }
+   }
+  },
+  {
+   "id": "yt1300",
+   "name": "YT-1300",
+   "faction": "freelancer",
+   "template": "player_yt1300",
+   "certifications": [
+    "cert_starships_yt1300"
+   ],
+   "category": "pob",
+   "level": 5,
+   "slideFactor": 1.85,
+   "chassisHitpoints": 5000,
+   "chassisMass": 5000000,
+   "attributes": {
+    "speedRotationFactorMin": 0.2,
+    "speedRotationFactorOptimal": 0.3,
+    "speedRotationFactorMax": 0.3,
+    "slideDamp": 1.2,
+    "engineAccel": 5,
+    "engineDecel": 5,
+    "engineYawAccel": 50,
+    "enginePitchAccel": 50,
+    "engineRollAccel": 37.5,
+    "maxSpeed": 0.8
+   },
+   "slots": {
+    "reactor": {
+     "name": "rct_generic",
+     "hitpoints": 391.9558,
+     "armor": 381.4522
+    },
+    "engine": {
+     "name": "eng_incom_fusialthrust",
+     "hitpoints": 96.82562,
+     "armor": 98.25301,
+     "speed": 63.97898,
+     "pitch": 52.14573,
+     "roll": 52.79561,
+     "yaw": 20.14787,
+     "acceleration": 14.34252,
+     "rollRate": 81.50523,
+     "pitchRate": 74.24856,
+     "deceleration": 13.13524,
+     "yawRate": 36.47185
+    },
+    "shield_0": {
+     "name": "shd_generic",
+     "hitpoints": 396.4766,
+     "armor": 477.7777,
+     "regen": 2.886155,
+     "front": 1573.84,
+     "back": 1576.103
+    },
+    "armor_0": {
+     "name": "arm_generic",
+     "hitpoints": 1050.284,
+     "armor": 1075.379
+    },
+    "armor_1": {
+     "name": "arm_generic",
+     "hitpoints": 1065.105,
+     "armor": 1082.513
+    },
+    "capacitor": {
+     "name": "cap_generic",
+     "hitpoints": 0,
+     "armor": 0,
+     "rechargeRate": 35.81905,
+     "energy": 1104.78
+    },
+    "booster": {
+     "name": "bst_generic",
+     "hitpoints": 19.69748,
+     "armor": 19.60778,
+     "energy": 99.83335,
+     "acceleration": 19.59531,
+     "speed": 14.5217,
+     "energyUsage": 9.508913,
+     "rechargeRate": 4.955956
+    },
+    "weapon_0": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 195.9011,
+     "armor": 190.4336,
+     "rate": 0.3411672,
+     "drain": 23.1761,
+     "maxDamage": 1473.524,
+     "shieldEfficiency": 0,
+     "minDamage": 723.5058,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 193.3382,
+     "armor": 194.2152,
+     "rate": 0.3371132,
+     "drain": 23.31378,
+     "maxDamage": 966.0139,
+     "shieldEfficiency": 0,
+     "minDamage": 597.9089,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "name": "wpn_xwing_missile_s01",
+     "hitpoints": 19.89749,
+     "armor": 19.02803,
+     "rate": 5.740155,
+     "drain": 23.16122,
+     "maxDamage": 22.6369,
+     "shieldEfficiency": 0,
+     "minDamage": 22.91667,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 19.2737,
+     "armor": 19.12519,
+     "rate": 0.3286487,
+     "drain": 23.17929,
+     "maxDamage": 22.90508,
+     "shieldEfficiency": 0,
+     "minDamage": 23.23277,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    }
+   }
+  }
+ ]
+}

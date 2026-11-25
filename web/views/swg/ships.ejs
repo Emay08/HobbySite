@@ -1,0 +1,65 @@
+<%- include('../partials/head') %>
+<div class="page-head swg-head">
+  <div>
+    <p class="eyebrow">Star Wars Galaxies</p>
+    <h1>Ship loadout</h1>
+  </div>
+  <div class="swg-head-actions">
+    <span id="swg-build-name" class="muted small" aria-live="polite"></span>
+    <button id="swg-saveload" class="btn" type="button" aria-haspopup="dialog" aria-controls="swg-panel">Save / Load</button>
+  </div>
+</div>
+
+<div class="swg-pick">
+  <div class="swg-factions" role="group" aria-label="Faction filter">
+    <button type="button" class="swg-faction" data-faction="rebel" aria-pressed="false">Rebel</button>
+    <button type="button" class="swg-faction" data-faction="imperial" aria-pressed="false">Imperial</button>
+    <button type="button" class="swg-faction" data-faction="freelancer" aria-pressed="false">Freelancer</button>
+  </div>
+  <label class="swg-ship-label">
+    <span class="sr-only">Ship</span>
+    <select id="swg-ship" aria-label="Ship"></select>
+  </label>
+</div>
+
+<div class="swg-top">
+  <section class="card swg-stats-card">
+    <h2>Ship summary</h2>
+    <table id="swg-stats" class="swg-stats"></table>
+  </section>
+  <section class="card swg-ol-card">
+    <h2>Overloads</h2>
+    <div id="swg-overloads" class="swg-overloads"></div>
+  </section>
+</div>
+
+<section class="swg-mass">
+  <div class="swg-mass-head small"><span>Mass</span><span id="swg-mass-text" class="muted"></span></div>
+  <div id="swg-mass-bar" class="swg-mass-bar" role="meter" aria-label="Mass used" aria-valuemin="0">
+    <div class="swg-mass-fill"></div><div class="swg-mass-over"></div>
+  </div>
+  <p id="swg-mass-note" class="muted small"></p>
+</section>
+
+<section>
+  <h2 class="swg-slots-title">Components</h2>
+  <div id="swg-slots" class="swg-slots"></div>
+  <p class="muted small swg-legend"><img src="/static/swg-frog.png?v=<%= assetV %>" alt="" class="swg-frog"> Character builder terminal default — the ship's stock part from the server script, not a real looted or crafted component.</p>
+</section>
+
+<div id="swg-panel" class="swg-panel card" role="dialog" aria-label="Save or load a build" hidden>
+  <div class="swg-panel-head">
+    <h2>Builds</h2>
+    <button type="button" class="link" data-close aria-label="Close">✕</button>
+  </div>
+  <form id="swg-save-form" class="swg-save-form" autocomplete="off">
+    <input id="swg-save-name" type="text" maxlength="80" placeholder="Build name" aria-label="Build name">
+    <button class="btn primary" type="submit">Save</button>
+  </form>
+  <p id="swg-panel-msg" class="small muted" aria-live="polite"></p>
+  <ul id="swg-build-list" class="swg-build-list"></ul>
+</div>
+
+<script src="/static/swg-calc.js?v=<%= assetV %>" defer></script>
+<script src="/static/swg-ships.js?v=<%= assetV %>" defer></script>
+<%- include('../partials/foot') %>

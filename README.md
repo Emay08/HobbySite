@@ -55,6 +55,7 @@ hobbymini (home PC) – "Vault home runner" scheduled task (functions/scripts/ho
 | `import_staging`| web                  | A spreadsheet import waiting for review |
 | `sessions`      | web                  | Login sessions |
 | `showorder`     | web                  | One doc (`_id: 'project'`): Show Order lists, rules, saved schedules and their locks |
+| `swg_builds`    | web                  | SWG Ship Builder saved builds: ship, overloads, components |
 
 Prices come from GoatBots' public daily price file, keyed by MTGO catalog ID — the same number as the `ID #` column in the MTGO CSV export — so cards match exactly, including foils and different printings.
 
@@ -410,6 +411,24 @@ A dance's dancers are everyone in its class(es). **Generate** makes a simulated 
 **Working with the results**: tabs per schedule with a scorecard; click a dance to see its dancers and where else each dances (shared dances highlighted); find a dancer or family; drag dances (also across the intermission or to the other night) and the page re-checks instantly; 🔒 a dance to keep it in its slot, then **Re-solve around locked** (the schedule before the re-solve is kept as a tab). Locks belong to that schedule. Exports: running order CSV, per-dancer list CSV (nights, slots, closest change), and a print layout. **Save** stores everything in MongoDB.
 
 Tests: `web/test/showorder.test.js` (rules, solver, locks, sample data).
+
+## SWG Ship Builder (`/swg/ships`)
+
+Star Wars Galaxies starship loadouts. Tabs: **Ship Builder** · **Loot** · **Crafting** (the last two are placeholders for now).
+
+- **Ships** come from `web/data/swg-ships.json`, built from the NFS server scripts (`MMOCoreORB/bin/scripts/object/ship/player/player_*.lua`) and named / sorted into factions by `web/data/swg-ship-names.txt` ("Neutral" = Freelancer). Ships not in the name list are left out. Rebuild after changing either:
+  ```bash
+  cd web
+  node scripts/swg-import-ships.js "C:\Users\ericd\OneDrive\Documents\SWG\NFS source\swgnfs-nfs_unstable\swgnfs-nfs_unstable\MMOCoreORB\bin\scripts\object\ship\player"
+  ```
+  It prints any named ship without a LUA file and any LUA file left out.
+- **Faction toggle** filters the ship dropdown; clicking the active faction again shows all ships.
+- **Components**: every slot in the ship's LUA file, pre-filled with the stock part listed there and marked with the blue frog (character builder terminal default, not a real part). Stock parts have no mass, so the mass bar stays empty until real components exist; over the chassis mass it turns red and shows by how much.
+- **Overloads** (reactor / engine / capacitor / weapon, levels 1–4, from `overload.txt`): engine and weapon energy values are divisors (0.1 = 10× the energy use). Capacitor overload is applied to the capacitor recharge rate.
+- **Summary formulas** (first pass, all in `web/public/swg-calc.js` → `shipStats`): speed = engine speed × chassis `maxSpeed` × engine overload; boost speed adds the booster's speed; DPS = guns only (no missiles or countermeasures), average of min/max damage ÷ refire time × weapon overload; gun drain = drain per shot ÷ refire × weapon energy use; sustained fire = capacitor energy ÷ (gun drain − recharge). Values changed by overloads are shown in gold; hover for the value without overloads.
+- **Save / Load** keeps named builds in MongoDB `swg_builds` (`_id` = lower-case name).
+
+Tests: `web/test/swg.test.js` (LUA parsing, name list, stat math, mass).
 
 ## Adding more tools later
 

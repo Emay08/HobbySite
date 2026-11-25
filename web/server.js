@@ -24,6 +24,7 @@ const { router: tradeRoutes } = require('./routes/trades');
 const { router: historyRoutes } = require('./routes/history');
 const { router: importRoutes } = require('./routes/import');
 const { router: showOrderRoutes } = require('./routes/showorder');
+const { router: swgRoutes } = require('./routes/swg');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -119,6 +120,7 @@ async function main() {
   app.use('/mtgo', requireLogin, historyRoutes);
   app.use('/mtgo', requireLogin, importRoutes);
   app.use('/showorder', requireLogin, showOrderRoutes);
+  app.use('/swg', requireLogin, swgRoutes);
 
   app.use((req, res) => res.status(404).render('error', { title: 'Not found', message: 'Page not found.' }));
   app.use((err, req, res, _next) => {

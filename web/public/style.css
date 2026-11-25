@@ -537,3 +537,78 @@ form.inline { display: inline; }
 .via { display: inline-block; margin-left: .3rem; font-size: .72rem; font-weight: 700; cursor: help; }
 .via-goatbots { color: #6fcf97; }
 .via-guess { color: #f2c94c; border: 1px solid rgba(242,201,76,.5); border-radius: 50%; width: 1.05em; height: 1.05em; line-height: 1em; text-align: center; }
+
+/* ---- SWG ship builder */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.bad { color: var(--bad); }
+.swg-head { margin-bottom: 1rem; }
+.swg-head-actions { display: flex; align-items: center; gap: .75rem; position: relative; }
+.swg-pick { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.swg-factions { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.swg-faction { background: var(--bg-raised); color: var(--muted); border: 0; border-right: 1px solid var(--line); padding: .5rem .95rem; font: inherit; font-size: .9rem; cursor: pointer; }
+.swg-faction:last-child { border-right: 0; }
+.swg-faction:hover { color: var(--text); }
+.swg-faction.active { color: var(--accent-ink); background: var(--accent); font-weight: 600; }
+.swg-faction[data-faction="rebel"].active { background: #e86a5a; color: #1d0805; }
+.swg-faction[data-faction="imperial"].active { background: #8fa3bf; color: #0b1220; }
+.swg-ship-label { flex: 1 1 280px; max-width: 420px; }
+
+.swg-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.25rem; align-items: start; }
+@media (max-width: 900px) { .swg-top { grid-template-columns: 1fr; } }
+.swg-top .card { margin-bottom: 1rem; }
+.swg-stats { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.swg-stats th { text-align: left; font-weight: 500; color: var(--muted); padding: .28rem .5rem .28rem 0; white-space: nowrap; cursor: help; }
+.swg-stats td { padding: .28rem 1rem .28rem 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.swg-stats tr + tr th, .swg-stats tr + tr td { border-top: 1px solid var(--line); }
+.swg-v.up { color: var(--accent); }
+.swg-v.bad { color: var(--bad); }
+
+.swg-overloads { display: grid; gap: .45rem; }
+.swg-ol { display: grid; grid-template-columns: 7.2rem auto; grid-template-rows: auto auto; column-gap: .6rem; align-items: center; padding: .45rem .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-sunken); }
+.swg-ol.on { border-color: rgba(232,176,75,.55); }
+.swg-ol-title { display: flex; align-items: center; gap: .45rem; background: none; border: 0; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; padding: 0; text-align: left; }
+.swg-ol.on .swg-ol-title { color: var(--text); }
+.swg-ol-dot { width: .7rem; height: .7rem; border-radius: 50%; border: 1.5px solid currentColor; }
+.swg-ol.on .swg-ol-dot { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px rgba(232,176,75,.6); }
+.swg-ol-levels { display: inline-flex; gap: .25rem; }
+.swg-ol-lv { width: 2rem; padding: .2rem 0; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-raised); color: var(--text); font: inherit; font-size: .85rem; cursor: pointer; }
+.swg-ol-lv:disabled { opacity: .35; cursor: default; }
+.swg-ol-lv.sel:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.swg-ol-fx { grid-column: 1 / -1; margin-top: .25rem; }
+
+.swg-mass { margin: .25rem 0 1.4rem; }
+.swg-mass-head { display: flex; justify-content: space-between; margin-bottom: .3rem; font-weight: 600; }
+.swg-mass-bar { display: flex; height: 14px; border-radius: 7px; background: var(--bg-sunken); border: 1px solid var(--line); overflow: hidden; }
+.swg-mass-fill { background: linear-gradient(90deg, #4c8cd6, #6fb0f0); transition: width .25s; }
+.swg-mass-over { background: repeating-linear-gradient(45deg, var(--bad) 0 6px, #c94f4f 6px 12px); transition: width .25s; }
+.swg-mass-bar.over { border-color: var(--bad); }
+.swg-mass-bar.over .swg-mass-fill { background: #b54848; }
+.swg-mass p { margin: .3rem 0 0; }
+
+.swg-slots-title { margin-bottom: .7rem; }
+.swg-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: .8rem; }
+.swg-slot { background: var(--bg-raised); border: 1px solid var(--line); border-top: 3px solid var(--muted); border-radius: var(--radius); padding: .65rem .75rem .7rem; }
+.swg-k-reactor { border-top-color: #e8b04b; } .swg-k-engine { border-top-color: #6fb0f0; }
+.swg-k-shield { border-top-color: #a58cf5; } .swg-k-armor { border-top-color: #9aa3b2; }
+.swg-k-capacitor { border-top-color: #5fcf9a; } .swg-k-booster { border-top-color: #f2a65a; }
+.swg-k-weapon { border-top-color: #ef6b6b; } .swg-k-droid_interface { border-top-color: #7ad3d3; }
+.swg-slot-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .2rem; }
+.swg-slot-name { font-size: .74rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.swg-frog { width: 20px; height: auto; vertical-align: middle; cursor: help; }
+.swg-legend .swg-frog { width: 16px; margin-right: .2rem; cursor: default; }
+.swg-part { margin-bottom: .45rem; line-height: 1.3; }
+.swg-part strong { display: block; }
+.swg-part code { font-family: var(--mono); font-size: .72rem; }
+.swg-tag { display: inline-block; margin-left: .35rem; padding: 0 .4rem; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); text-transform: uppercase; font-size: .66rem; letter-spacing: .05em; }
+.swg-attrs { display: grid; grid-template-columns: auto 1fr; gap: .1rem .7rem; margin: 0; }
+.swg-attrs dt { color: var(--muted); }
+.swg-attrs dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.swg-legend { margin-top: .9rem; }
+
+.swg-panel { position: fixed; z-index: 50; top: 9.5rem; right: max(1.5rem, calc((100vw - 1180px) / 2 + 1.5rem)); width: min(380px, calc(100vw - 2rem)); max-height: calc(100vh - 11rem); overflow: auto; box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+.swg-panel-head { display: flex; justify-content: space-between; align-items: center; }
+.swg-save-form { display: flex; gap: .5rem; margin: .4rem 0; }
+.swg-build-list { list-style: none; padding: 0; margin: .3rem 0 0; display: grid; gap: .3rem; }
+.swg-build { display: flex; align-items: center; gap: .5rem; border: 1px solid var(--line); border-radius: 8px; padding: .35rem .55rem; }
+.swg-build.current { border-color: rgba(232,176,75,.55); }
+.swg-build-load { flex: 1; display: flex; flex-direction: column; align-items: flex-start; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; padding: 0; }
