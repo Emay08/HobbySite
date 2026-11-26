@@ -379,6 +379,15 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.deepStrictEqual(gotRe.components[0].typical, { mass: 5000 });
     const badTier = await req('/swg/api/components/x', { method: 'PUT', headers: json, body: JSON.stringify({ ...comp, tier: 11 }) });
     assert.strictEqual(badTier.status, 400);
+    // tile layout per ship type
+    assert.deepStrictEqual((await (await req('/swg/api/prefs', { headers: json })).json()).layouts, {});
+    const order = ['weapon_1', 'weapon_0', 'reactor'];
+    assert.strictEqual((await req('/swg/api/prefs/layout/xwing', { method: 'PUT', headers: json, body: JSON.stringify({ order }) })).status, 200);
+    assert.deepStrictEqual((await (await req('/swg/api/prefs', { headers: json })).json()).layouts, { xwing: order });
+    assert.strictEqual((await req('/swg/api/prefs/layout/nope', { method: 'PUT', headers: json, body: JSON.stringify({ order }) })).status, 400);
+    await req('/swg/api/prefs/layout/xwing', { method: 'PUT', headers: json, body: JSON.stringify({ order: [] }) }); // reset
+    assert.deepStrictEqual((await (await req('/swg/api/prefs', { headers: json })).json()).layouts, {});
+
     const cm = { kind: 'crafted', type: 'weapon', tier: 1, launcher: 'countermeasure', ship: { mass: 100 } };
     assert.strictEqual((await req('/swg/api/components/Chaff', { method: 'PUT', headers: json, body: JSON.stringify(cm) })).status, 200);
     const weapons = (await (await req('/swg/api/components?type=weapon', { headers: json })).json()).components;

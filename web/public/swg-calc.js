@@ -31,7 +31,7 @@
     const x = (v) => '×' + round(v, 2);
     if (key === 'reactor') return 'Energy output ' + x(o.output[i]);
     if (key === 'engine') return 'Speed +' + Math.round((o.speed[i] - 1) * 100) + '% · energy use ' + x(1 / o.energy[i]);
-    if (key === 'capacitor') return 'Efficiency ' + x(o.efficiency[i]) + ' · no extra drain';
+    if (key === 'capacitor') return 'Capacity and recharge ' + x(o.efficiency[i]) + ' · no extra drain';
     if (key === 'weapon') return 'Damage ' + x(o.damage[i]) + ' · energy use ' + x(1 / o.energy[i]);
     return '';
   }
@@ -73,26 +73,31 @@
   /** A new build for a ship: every slot gets the ship's default (character builder) part. */
   function defaultBuild(ship) {
     const components = {};
-    for (const [slot, c] of Object.entries(ship.slots)) components[slot] = { ...c, source: 'default' };
+    // a stock "part" marked empty (an ordnance slot the template leaves unfilled) starts empty
+    for (const [slot, c] of Object.entries(ship.slots)) components[slot] = c.empty ? { source: 'empty' } : { ...c, source: 'default' };
     return ensureSlots(ship, { ship: ship.id, overloads: emptyOverloads(), components });
   }
 
   /**
-   * Every ship gets a droid interface slot (empty unless its chassis lists a part), placed
-   * before the weapons. Also fixes up builds saved before the slot existed.
+   * Every ship gets a droid interface slot (empty unless its chassis lists a part), placed before
+   * the weapons. Builds saved before a slot existed (the droid interface, or a slot added by a
+   * template fix) get the missing slots with their stock part, in the chassis' slot order.
    */
   function ensureSlots(ship, build) {
-    if (build.components.droid_interface) return build;
-    const out = {};
-    let added = false;
-    for (const [slot, c] of Object.entries(build.components)) {
-      if (!added && slotKind(slot) === 'weapon') {
-        out.droid_interface = { source: 'empty' };
-        added = true;
-      }
-      out[slot] = c;
+    const stock = (slot) => {
+      const c = ship.slots && ship.slots[slot];
+      return !c || c.empty ? { source: 'empty' } : { ...c, source: 'default' };
+    };
+    const want = [];
+    for (const slot of Object.keys(ship.slots || {})) {
+      if (slotKind(slot) === 'weapon' && !want.includes('droid_interface')) want.push('droid_interface');
+      want.push(slot);
     }
-    if (!added) out.droid_interface = { source: 'empty' };
+    if (!want.includes('droid_interface')) want.push('droid_interface');
+    if (want.every((k) => build.components[k])) return build;
+    const out = {};
+    for (const k of want) out[k] = build.components[k] || stock(k);
+    for (const [k, c] of Object.entries(build.components)) if (!out[k]) out[k] = c; // anything else kept
     build.components = out;
     return build;
   }
@@ -158,7 +163,8 @@
       gunDrain += (num(w.drain) * f.weaponEnergyUse) / w.rate;
     }
 
-    const capEnergy = cap && has(cap.energy) ? cap.energy : null;
+    // the capacitor overload's efficiency multiplies both capacity and recharge
+    const capEnergy = cap && has(cap.energy) ? cap.energy * f.capacitorEfficiency : null;
     const capRecharge = cap && has(cap.rechargeRate) ? cap.rechargeRate * f.capacitorEfficiency : null;
     let sustain = null; // seconds of continuous fire before the capacitor runs dry
     if (guns && capEnergy != null && capRecharge != null) sustain = gunDrain > capRecharge ? capEnergy / (gunDrain - capRecharge) : Infinity;

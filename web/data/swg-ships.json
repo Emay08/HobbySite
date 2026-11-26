@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-25T19:02:22.241Z",
+ "generatedAt": "2026-11-26T18:11:56.615Z",
  "ships": [
   {
    "id": "awing",
@@ -496,6 +496,19 @@
      "ammo_type": 0,
      "armorEfficiency": 0
     },
+    "weapon_2": {
+     "name": "wpn_incom_blaster",
+     "hitpoints": 3146.795,
+     "armor": 1583.318,
+     "rate": 0.3987256,
+     "drain": 19.05866,
+     "maxDamage": 5288.59,
+     "shieldEfficiency": 0,
+     "minDamage": 3967.771,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
     "weapon_3": {
      "name": "wpn_xwing_missile_s01",
      "hitpoints": 3062.799,
@@ -656,7 +669,11 @@
      "ammo_type": 6,
      "armorEfficiency": 0
     }
-   }
+   },
+   "turrets": [
+    "weapon_0",
+    "weapon_1"
+   ]
   },
   {
    "id": "ywing",
@@ -790,7 +807,10 @@
      "ammo_type": 6,
      "armorEfficiency": 0
     }
-   }
+   },
+   "turrets": [
+    "weapon_1"
+   ]
   },
   {
    "id": "ywing_longprobe",
@@ -1179,7 +1199,11 @@
      "ammo_type": 6,
      "armorEfficiency": 0
     }
-   }
+   },
+   "turrets": [
+    "weapon_0",
+    "weapon_1"
+   ]
   },
   {
    "id": "tie_in",
@@ -1630,6 +1654,10 @@
      "ammo_type": 0,
      "armorEfficiency": 0
     },
+    "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
     "weapon_3": {
      "name": "wpn_std_countermeasure",
      "hitpoints": 248.3474,
@@ -1643,7 +1671,10 @@
      "ammo_type": 6,
      "armorEfficiency": 0
     }
-   }
+   },
+   "turrets": [
+    "weapon_1"
+   ]
   },
   {
    "id": "tiebomber",
@@ -2290,7 +2321,10 @@
      "ammo_type": 6,
      "armorEfficiency": 0
     }
-   }
+   },
+   "turrets": [
+    "weapon_1"
+   ]
   },
   {
    "id": "blacksun_medium_s01",
@@ -3340,7 +3374,24 @@
      "ammo_type": 0,
      "armorEfficiency": 0
     },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 194.3624,
+     "armor": 197.9378,
+     "rate": 0.3292171,
+     "drain": 22.89369,
+     "maxDamage": 247.2647,
+     "shieldEfficiency": 0,
+     "minDamage": 118.9161,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
     "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_3": {
      "name": "wpn_std_countermeasure",
      "hitpoints": 245.9457,
      "armor": 246.4686,
@@ -3448,7 +3499,24 @@
      "ammo_type": 0,
      "armorEfficiency": 0
     },
+    "weapon_1": {
+     "name": "wpn_incom_disruptor",
+     "hitpoints": 192.3085,
+     "armor": 199.414,
+     "rate": 0.3291892,
+     "drain": 22.67983,
+     "maxDamage": 241.4728,
+     "shieldEfficiency": 0,
+     "minDamage": 119.2315,
+     "ammo": 0,
+     "ammo_type": 0,
+     "armorEfficiency": 0
+    },
     "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_3": {
      "name": "wpn_std_countermeasure",
      "hitpoints": 242.6855,
      "armor": 240.7494,
@@ -3581,6 +3649,10 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "empty": true,
+     "launcher": "missile"
     },
     "weapon_4": {
      "name": "wpn_std_countermeasure",
@@ -3715,6 +3787,10 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "empty": true,
+     "launcher": "missile"
     },
     "weapon_4": {
      "name": "wpn_std_countermeasure",
@@ -4204,6 +4280,10 @@
      "ammo_type": 0,
      "armorEfficiency": 0
     },
+    "weapon_1": {
+     "empty": true,
+     "launcher": "missile"
+    },
     "weapon_2": {
      "name": "wpn_std_countermeasure",
      "hitpoints": 240.8438,
@@ -4311,6 +4391,10 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_1": {
+     "empty": true,
+     "launcher": "missile"
     },
     "weapon_2": {
      "name": "wpn_std_countermeasure",
@@ -4459,7 +4543,11 @@
      "ammo_type": 0,
      "armorEfficiency": 0
     }
-   }
+   },
+   "turrets": [
+    "weapon_0",
+    "weapon_1"
+   ]
   }
  ]
 }

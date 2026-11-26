@@ -98,6 +98,31 @@ router.delete('/api/builds/:name', async (req, res, next) => {
   }
 });
 
+// ---------- preferences: tile layout per ship type ----------
+const PREFS = 'swg_prefs';
+
+router.get('/api/prefs', async (req, res, next) => {
+  try {
+    const doc = await getDb().collection(PREFS).findOne({ _id: 'layout' });
+    res.json({ layouts: (doc && doc.ships) || {} });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/api/prefs/layout/:ship', async (req, res, next) => {
+  try {
+    const id = req.params.ship;
+    if (!ships().some((s) => s.id === id)) return res.status(400).json({ error: 'Unknown ship' });
+    const order = Array.isArray(req.body && req.body.order) ? req.body.order.filter((k) => typeof k === 'string' && /^[a-z_0-9]{1,40}$/.test(k)).slice(0, 40) : [];
+    const update = order.length ? { $set: { ['ships.' + id]: order } } : { $unset: { ['ships.' + id]: '' } };
+    await getDb().collection(PREFS).updateOne({ _id: 'layout' }, update, { upsert: true });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ---------- saved components (looted parts, RE projects; crafted later) ----------
 
 const num = (v) => typeof v === 'number' && Number.isFinite(v);

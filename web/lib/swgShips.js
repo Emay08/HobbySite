@@ -111,6 +111,74 @@ function parseShipNames(text) {
  * Ships in the name list without a LUA file are reported in `missing`; LUA files that
  * aren't in the name list are left out (`unnamed`).
  */
+/**
+ * Corrections to the server's ship templates, applied on every import.
+ *
+ * Gaps in the weapon slot numbers are empty ordnance (missile launcher) slots the templates leave
+ * unfilled; they are listed as { empty: true, launcher: 'missile' } so the builder treats them as
+ * ordnance slots that start empty. Two templates are missing a slot outright:
+ * - X-wing: 3 blasters + ordnance + countermeasures, but weapon_2 is skipped, so it gets a copy of
+ *   the stock Incom blaster;
+ * - Dunelizard: 2 guns + ordnance + countermeasures, but the template has one gun and puts the
+ *   countermeasure launcher in weapon_2, so it gets a second stock disruptor in weapon_1, an empty
+ *   ordnance slot in weapon_2 and the countermeasures move to weapon_3.
+ */
+const ORDNANCE = () => ({ empty: true, launcher: 'missile' });
+const SHIP_FIXES = {
+  xwing(ship) {
+    if (!ship.slots.weapon_2 && ship.slots.weapon_1) ship.slots.weapon_2 = { ...ship.slots.weapon_1 };
+  },
+  tieaggressor(ship) {
+    if (!ship.slots.weapon_2) ship.slots.weapon_2 = ORDNANCE();
+  },
+  hutt_light_s01: scyk,
+  hutt_light_s02: scyk,
+  hutt_heavy_s01: kimogila,
+  hutt_heavy_s02: kimogila,
+  hutt_medium_s01: dunelizard,
+  hutt_medium_s02: dunelizard,
+};
+function scyk(ship) {
+  if (!ship.slots.weapon_1) ship.slots.weapon_1 = ORDNANCE();
+}
+function kimogila(ship) {
+  if (!ship.slots.weapon_3) ship.slots.weapon_3 = ORDNANCE();
+}
+function dunelizard(ship) {
+  const s = ship.slots;
+  if (s.weapon_1 || !s.weapon_0 || !s.weapon_2 || s.weapon_3) return;
+  s.weapon_3 = s.weapon_2; // countermeasures
+  s.weapon_2 = ORDNANCE();
+  s.weapon_1 = { ...s.weapon_0 };
+}
+
+/**
+ * Turret weapon slots: a second crew member can aim these independently of the ship's heading.
+ * From the turret table the server loads out of the client (datatables/space/ship_turret.iff,
+ * mirrored, commented out, in bin/scripts/managers/space/ship_turret.lua): the weapon index there
+ * is the slot number (1 = weapon_1).
+ */
+const TURRETS = {
+  yt1300: ['weapon_0', 'weapon_1'],
+  ywing: ['weapon_1'],
+  hutt_turret_ship: ['weapon_1'],
+  tieaggressor: ['weapon_1'],
+  decimator: ['weapon_0', 'weapon_1'],
+  ykl37r: ['weapon_0', 'weapon_1'],
+};
+
+function applyFixes(ship) {
+  if (SHIP_FIXES[ship.id]) {
+    SHIP_FIXES[ship.id](ship);
+    const ordered = {};
+    for (const k of Object.keys(ship.slots).sort((a, b) => slotSortKey(a) - slotSortKey(b))) ordered[k] = ship.slots[k];
+    ship.slots = ordered;
+  }
+  const turrets = (TURRETS[ship.id] || []).filter((k) => ship.slots[k]);
+  if (turrets.length) ship.turrets = turrets;
+  return ship;
+}
+
 function buildShipData(namesText, luaFiles) {
   const names = parseShipNames(namesText);
   const ships = [];
@@ -125,10 +193,10 @@ function buildShipData(namesText, luaFiles) {
       continue;
     }
     used.add(file);
-    ships.push({ id: n.iff.replace(/\.iff$/, ''), name: n.name, faction: n.faction, ...parsed });
+    ships.push(applyFixes({ id: n.iff.replace(/\.iff$/, ''), name: n.name, faction: n.faction, ...parsed }));
   }
   const unnamed = Object.keys(luaFiles).filter((f) => /^player_.*\.lua$/.test(f) && !used.has(f)).sort();
   return { ships, missing, unnamed };
 }
 
-module.exports = { parseShipLua, parseShipNames, buildShipData, luaFlatTable };
+module.exports = { parseShipLua, parseShipNames, buildShipData, luaFlatTable, applyFixes };

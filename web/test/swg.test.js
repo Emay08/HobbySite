@@ -74,6 +74,7 @@ test('shipStats: base numbers, then overloads', () => {
   assert.strictEqual(st.dps, 1400);
   assert.strictEqual(st.gunDrain, 20);
   assert.strictEqual(st.capRecharge, 30);
+  assert.strictEqual(st.capEnergy, 750); // capacity × 1.5 too
   assert.strictEqual(st.sustain, Infinity);
   assert.strictEqual(C.overloadFactors(b.overloads).engineEnergyUse, 10); // 1 / 0.1
   b.overloads.weapon.on = false; // off = no effect, level remembered
@@ -106,9 +107,12 @@ test('every ship gets a droid interface slot, empty, before the weapons', () => 
   const b = C.defaultBuild(ship);
   assert.deepStrictEqual(b.components.droid_interface, { source: 'empty' });
   assert.deepStrictEqual(Object.keys(b.components).slice(5, 8), ['capacitor', 'droid_interface', 'weapon_0']);
-  // an old build without the slot gets it; one with a part keeps it
-  const old = { ship: 'test', components: { reactor: {}, weapon_0: {} } };
-  assert.deepStrictEqual(Object.keys(C.ensureSlots(ship, old).components), ['reactor', 'droid_interface', 'weapon_0']);
+  // an old build gets the slots it lacks (stock parts, chassis order); its own parts stay
+  const old = { ship: 'test', components: { reactor: { name: 'mine' }, weapon_0: { name: 'gun' } } };
+  const fixed = C.ensureSlots(ship, old).components;
+  assert.deepStrictEqual(Object.keys(fixed), ['reactor', 'engine', 'shield_0', 'armor_0', 'armor_1', 'capacitor', 'droid_interface', 'weapon_0', 'weapon_1', 'weapon_2']);
+  assert.strictEqual(fixed.reactor.name, 'mine');
+  assert.strictEqual(fixed.engine.source, 'default');
   const has = { ship: 'test', components: { droid_interface: { name: 'ddi_x', source: 'loot' } } };
   assert.strictEqual(C.ensureSlots(ship, has).components.droid_interface.name, 'ddi_x');
   // removed parts are empty: no stats, not counted for mass
@@ -141,4 +145,37 @@ test('DPS vs shields / armor: each gun\u2019s DPS × its own effectiveness', () 
   const st = C.shipStats(ship, b); // gun DPS 300 and 400
   assert.ok(Math.abs(st.dpsShields - (300 * 0.6 + 400 * 0.5)) < 1e-9);
   assert.ok(Math.abs(st.dpsArmor - (300 * 0.8 + 400 * 0.5)) < 1e-9);
+});
+
+test('ship fixes: empty ordnance slots, the Dunelizard\u2019s second gun, turrets', () => {
+  const { ships } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'swg-ships.json'), 'utf8'));
+  const byId = (id) => ships.find((s) => s.id === id);
+  const layout = (s) => Object.entries(s.slots).filter(([k]) => k.startsWith('weapon')).map(([k, v]) => k + ':' + (v.empty ? v.launcher : C.weaponKind(v)));
+  assert.deepStrictEqual(layout(byId('tieaggressor')), ['weapon_0:gun', 'weapon_1:gun', 'weapon_2:missile', 'weapon_3:countermeasure']);
+  assert.deepStrictEqual(layout(byId('hutt_light_s01')), ['weapon_0:gun', 'weapon_1:missile', 'weapon_2:countermeasure']);
+  assert.deepStrictEqual(layout(byId('hutt_heavy_s02')), ['weapon_0:gun', 'weapon_1:gun', 'weapon_2:gun', 'weapon_3:missile', 'weapon_4:countermeasure']);
+  assert.deepStrictEqual(layout(byId('hutt_medium_s01')), ['weapon_0:gun', 'weapon_1:gun', 'weapon_2:missile', 'weapon_3:countermeasure']);
+  // an empty ordnance slot starts empty in a new build
+  assert.deepStrictEqual(C.defaultBuild(byId('tieaggressor')).components.weapon_2, { source: 'empty' });
+  // turrets (weapon index from ship_turret.lua = slot number)
+  const t = Object.fromEntries(ships.filter((s) => s.turrets).map((s) => [s.id, s.turrets]));
+  assert.deepStrictEqual(t, {
+    ykl37r: ['weapon_0', 'weapon_1'], ywing: ['weapon_1'], decimator: ['weapon_0', 'weapon_1'],
+    tieaggressor: ['weapon_1'], hutt_turret_ship: ['weapon_1'], yt1300: ['weapon_0', 'weapon_1'],
+  });
+  // a Dunelizard build saved before the fix gets the new slots
+  const dl = byId('hutt_medium_s01');
+  const old = { ship: dl.id, components: { weapon_0: { name: 'x', source: 'loot' }, weapon_2: { name: 'wpn_std_countermeasure', source: 'default' } } };
+  assert.deepStrictEqual(Object.keys(C.ensureSlots(dl, old).components).filter((k) => k.startsWith('weapon')), ['weapon_0', 'weapon_1', 'weapon_2', 'weapon_3']);
+});
+
+test('ship fixes: the X-wing gets its missing third blaster in weapon_2, before ordnance', () => {
+  const { ships } = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'swg-ships.json'), 'utf8'));
+  const x = ships.find((s) => s.id === 'xwing');
+  const weapons = Object.keys(x.slots).filter((k) => k.startsWith('weapon'));
+  assert.deepStrictEqual(weapons, ['weapon_0', 'weapon_1', 'weapon_2', 'weapon_3', 'weapon_4']);
+  assert.deepStrictEqual(weapons.map((k) => C.weaponKind(x.slots[k])), ['gun', 'gun', 'gun', 'missile', 'countermeasure']);
+  assert.strictEqual(x.slots.weapon_2.name, 'wpn_incom_blaster');
+  const fixed = L.applyFixes({ id: 'xwing', slots: { weapon_0: { name: 'a' }, weapon_1: { name: 'b' }, weapon_3: { name: 'm' } } });
+  assert.deepStrictEqual(Object.keys(fixed.slots), ['weapon_0', 'weapon_1', 'weapon_2', 'weapon_3']);
 });

@@ -69,7 +69,7 @@
         const label = lk === 'countermeasure' ? 'Countermeasure Launcher' : 'Ordnance';
         return same.length > 1 ? label + ' ' + (same.indexOf(slot) + 1) : label;
       }
-      return 'Weapon ' + (i + 1);
+      return 'Weapon ' + (i + 1) + (ship() && (ship().turrets || []).includes(slot) ? ' · Turret' : '');
     }
     if (kind === 'armor') return 'Armor ' + (i === 0 ? '(front)' : i === 1 ? '(back)' : i + 1);
     if (kind === 'shield') return i ? 'Shield ' + (i + 1) : 'Shield';
@@ -156,10 +156,10 @@
         if (st.energyUse != null && st.reactorOutput != null && st.energyUse > st.reactorOutput) td.classList.add('bad');
         return td;
       })()],
-      [th('Capacitor'), cell('capEnergy', 0), th('Cap recharge', 'Capacitor recharge × capacitor overload efficiency'), cell('capRecharge', 1, '/s')],
+      [th('Capacitor', 'Capacitor energy × capacitor overload efficiency'), cell('capEnergy', 0), th('Cap recharge', 'Capacitor recharge × capacitor overload efficiency'), cell('capRecharge', 1, '/s')],
       [th('DPS vs shields', 'Guns only (no missiles or countermeasures): each gun\u2019s average damage ÷ refire time × weapon overload × its effectiveness vs shields'), cell('dpsShields', 1),
-        th('DPS vs armor', 'Guns only: each gun\u2019s average damage ÷ refire time × weapon overload × its effectiveness vs armor'), cell('dpsArmor', 1)],
-      [th('Gun drain', 'Capacitor energy the guns use per second of fire'), cell('gunDrain', 1, '/s'),
+        th('Gun drain', 'Capacitor energy the guns use per second of fire'), cell('gunDrain', 1, '/s')],
+      [th('DPS vs armor', 'Guns only: each gun\u2019s average damage ÷ refire time × weapon overload × its effectiveness vs armor'), cell('dpsArmor', 1),
         th('Sustained fire', 'Seconds of continuous fire before the capacitor is empty'), cell('sustain', 1, ' s')],
       [th('Booster', 'Booster energy / energy use per second'), pair('boosterEnergy', 'boosterUse', 1), el('th'), el('td')],
     ];
@@ -184,7 +184,8 @@
         levels.append(el('button', {
           type: 'button', class: 'swg-ol-lv' + (o.on && o.level === lv ? ' sel' : ''), 'aria-pressed': String(o.on && o.level === lv),
           title: C.overloadEffect(key, lv),
-          onclick: () => { o.level = lv; o.on = true; touch(); },
+          // clicking the level that's already on turns the overload off
+          onclick: () => { if (o.on && o.level === lv) o.on = false; else { o.level = lv; o.on = true; } touch(); },
         }, String(lv)));
       }
       row.append(levels, el('div', { class: 'swg-ol-fx small' + (o.on ? '' : ' muted') }, o.on ? C.overloadEffect(key, o.level) : 'Off'));
@@ -216,11 +217,13 @@
   function renderSlots() {
     const box = $('#swg-slots');
     box.replaceChildren();
-    for (const [slot, c] of Object.entries(build.components)) {
+    for (const slot of slotOrder()) {
+      const c = build.components[slot];
       const kind = C.slotKind(slot);
       const empty = C.isEmpty(c);
       const tile = el('article', {
         class: 'swg-slot swg-k-' + kind + (menuSlot === slot ? ' picked' : '') + (empty ? ' empty' : ''), tabindex: '0', role: 'button', 'aria-haspopup': 'dialog',
+        draggable: 'true', 'data-slot': slot,
         'aria-label': slotLabel(slot) + ': ' + (empty ? 'empty' : c.source === 'default' ? pretty(c.name) : c.name) + '. Change component',
         onclick: (e) => openMenu(slot, e.currentTarget),
         onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(slot, e.currentTarget); } },
@@ -229,6 +232,7 @@
       const tools = el('span', { class: 'swg-slot-tools' });
       if (c.source === 'loot' || c.source === 're') {
         const edit = el('a', {
+          draggable: 'false',
           class: 'icon-btn icon-edit', href: '/swg/loot?slot=' + encodeURIComponent(slot) + '&edit=' + encodeURIComponent(c.name),
           title: 'Edit ' + c.name + ' on the Loot page', 'aria-label': 'Edit ' + c.name,
         });
@@ -279,6 +283,90 @@
     }
   }
 
+  // ---------- tile layout and drag & drop ----------
+  // One drag does both: drop on the middle of a tile that takes the same kind of part (gun ↔ gun,
+  // ordnance ↔ ordnance, shield ↔ shield…) to swap the two parts; drop on a tile's left or right
+  // edge (or anywhere on a tile that can't take the part) to move the dragged tile there.
+  // The tile order is remembered per ship type, on the server (and in this browser for a fast start).
+  let layouts = store.get('layouts') || {}; // ship id → [slot, …]
+  function slotOrder() {
+    const keys = Object.keys(build.components);
+    const saved = (layouts[build.ship] || []).filter((k) => keys.includes(k));
+    return saved.concat(keys.filter((k) => !saved.includes(k)));
+  }
+  function saveLayout(order) {
+    if (order) layouts[build.ship] = order;
+    else delete layouts[build.ship];
+    store.set('layouts', layouts);
+    api('/prefs/layout/' + encodeURIComponent(build.ship), { method: 'PUT', body: JSON.stringify({ order: order || [] }) }).catch(() => {});
+    renderSlots();
+    renderLayoutReset();
+  }
+  function renderLayoutReset() {
+    const b = $('#swg-layout-reset');
+    if (b) b.hidden = !(layouts[build.ship] && layouts[build.ship].length);
+  }
+  /** Can the part in slot a go in slot b (and the other way round)? */
+  function swappable(a, b) {
+    return a !== b && C.slotKind(a) === C.slotKind(b) && launcherKind(a) === launcherKind(b);
+  }
+  let dragSlot = null;
+  let dropAt = null; // { slot, mode: 'swap' | 'before' | 'after' }
+  function clearDropMarks() {
+    for (const t of document.querySelectorAll('.swg-slot.drop-swap, .swg-slot.drop-before, .swg-slot.drop-after')) t.classList.remove('drop-swap', 'drop-before', 'drop-after');
+  }
+  function wireDragging(box) {
+    box.addEventListener('dragstart', (e) => {
+      const t = e.target.closest && e.target.closest('.swg-slot');
+      if (!t) return;
+      dragSlot = t.dataset.slot;
+      closeMenu();
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragSlot);
+      requestAnimationFrame(() => t.classList.add('dragging'));
+      for (const o of box.querySelectorAll('.swg-slot')) if (swappable(dragSlot, o.dataset.slot)) o.classList.add('can-swap');
+    });
+    box.addEventListener('dragover', (e) => {
+      if (!dragSlot) return;
+      const t = e.target.closest && e.target.closest('.swg-slot');
+      if (!t) return;
+      e.preventDefault();
+      const slot = t.dataset.slot;
+      const r = t.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      let mode;
+      if (slot === dragSlot) mode = null;
+      else if (swappable(dragSlot, slot) && x > 0.25 && x < 0.75) mode = 'swap';
+      else mode = x < 0.5 ? 'before' : 'after';
+      if (dropAt && dropAt.slot === slot && dropAt.mode === mode) return;
+      clearDropMarks();
+      dropAt = mode ? { slot, mode } : null;
+      if (mode) t.classList.add('drop-' + mode);
+      e.dataTransfer.dropEffect = 'move';
+    });
+    box.addEventListener('drop', (e) => {
+      if (!dragSlot || !dropAt) return;
+      e.preventDefault();
+      const { slot, mode } = dropAt;
+      if (mode === 'swap') {
+        const a = build.components[dragSlot];
+        build.components[dragSlot] = build.components[slot];
+        build.components[slot] = a;
+        touch();
+      } else {
+        const order = slotOrder().filter((k) => k !== dragSlot);
+        order.splice(order.indexOf(slot) + (mode === 'after' ? 1 : 0), 0, dragSlot);
+        saveLayout(order);
+      }
+    });
+    box.addEventListener('dragend', () => {
+      dragSlot = null;
+      dropAt = null;
+      clearDropMarks();
+      for (const t of box.querySelectorAll('.swg-slot.dragging, .swg-slot.can-swap')) t.classList.remove('dragging', 'can-swap');
+    });
+  }
+
   // ---------- how good a looted / RE part's stats are ----------
   /** red (0) → yellow (0.5) → green (1) */
   const pctColor = (p) => 'hsl(' + Math.round(120 * p) + ', 75%, 58%)';
@@ -318,6 +406,7 @@
   }
   function renderAll() {
     if (!ship()) return;
+    renderLayoutReset();
     const sn = $('#swg-shipname');
     if (sn && document.activeElement !== sn) sn.value = build.shipName || '';
     session.set('work', { build, buildName, dirty });
@@ -356,7 +445,7 @@
       el('div', { class: 'swg-menu-actions' },
         type && !launcher ? el('a', { class: 'btn', href: '/swg/loot?slot=' + encodeURIComponent(slot) }, 'New looted component…') : null,
         el('a', { class: 'btn', href: craftHref }, launcher ? 'New crafted ' + LAUNCHER_LABEL[launcher] + '…' : 'New crafted component…'),
-        c.source !== 'default' && ship().slots[slot] ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null,
+        c.source !== 'default' && ship().slots[slot] && !ship().slots[slot].empty ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null,
         null),
       launcher ? el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'This slot holds a ' + LAUNCHER_LABEL[launcher] + ': only the default part or a crafted ' + LAUNCHER_LABEL[launcher] + ' fits.') : null,
       el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'Load a saved component'),
@@ -416,6 +505,7 @@
   function launcherKind(slot) {
     const stock = ship().slots[slot];
     if (C.slotKind(slot) !== 'weapon' || !stock) return null;
+    if (stock.launcher) return stock.launcher; // an empty ordnance slot
     const k = C.weaponKind(stock);
     return k === 'gun' ? null : k;
   }
@@ -540,6 +630,12 @@
       if (dirty && !confirm('Switching ships starts a new build. Discard unsaved changes?')) { e.target.value = build.ship; return; }
       selectShip(e.target.value);
     });
+    wireDragging($('#swg-slots'));
+    $('#swg-layout-reset').addEventListener('click', () => saveLayout(null));
+    // the server copy of the tile layouts wins (it follows you between computers)
+    api('/prefs').then((p) => {
+      if (p && p.layouts) { layouts = p.layouts; store.set('layouts', layouts); if (ship()) { renderSlots(); renderLayoutReset(); } }
+    }).catch(() => {});
     $('#swg-shipname').addEventListener('input', (e) => {
       build.shipName = e.target.value;
       dirty = true;

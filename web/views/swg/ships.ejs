@@ -45,7 +45,11 @@
 </section>
 
 <section>
-  <h2 class="swg-slots-title">Components</h2>
+  <div class="swg-slots-head">
+    <h2 class="swg-slots-title">Components</h2>
+    <span class="muted small">Drag a tile onto a matching slot to swap parts, or to a tile's edge to move it.</span>
+    <button id="swg-layout-reset" class="link small" type="button" hidden>Reset tile order</button>
+  </div>
   <div id="swg-slots" class="swg-slots"></div>
   <p class="muted small swg-legend"><img src="/static/swg-frog.png?v=<%= assetV %>" alt="" class="swg-frog"> Character builder terminal default — the ship's stock part from the server script, not a real looted or crafted component. Click a component to swap it.</p>
 </section>
