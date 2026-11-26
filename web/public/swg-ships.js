@@ -28,6 +28,7 @@
   const LT = window.SwgLoot; // slot ↔ component type
 
   const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const EDIT_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   /** A trash-can icon button (the icon is a fixed string, not user data). */
   function trashButton(label, onclick) {
     const b = el('button', { type: 'button', class: 'icon-btn', title: label, 'aria-label': label, onclick });
@@ -224,9 +225,26 @@
         onclick: (e) => openMenu(slot, e.currentTarget),
         onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMenu(slot, e.currentTarget); } },
       });
+      // corner tools: edit (looted parts and RE projects open on the Loot page), remove
+      const tools = el('span', { class: 'swg-slot-tools' });
+      if (c.source === 'loot' || c.source === 're') {
+        const edit = el('a', {
+          class: 'icon-btn icon-edit', href: '/swg/loot?slot=' + encodeURIComponent(slot) + '&edit=' + encodeURIComponent(c.name),
+          title: 'Edit ' + c.name + ' on the Loot page', 'aria-label': 'Edit ' + c.name,
+        });
+        edit.innerHTML = EDIT_SVG;
+        tools.append(edit);
+      }
+      if (!empty) tools.append(trashButton('Remove the ' + slotLabel(slot).toLowerCase() + ' component', () => removePart(slot)));
+      for (const b of tools.children) {
+        b.addEventListener('click', (e) => e.stopPropagation()); // not the slot menu
+        b.addEventListener('keydown', (e) => e.stopPropagation());
+      }
       const head = el('header', { class: 'swg-slot-head' },
         el('span', { class: 'swg-slot-name' }, slotLabel(slot)),
-        c.source === 'default' ? el('img', { src: '/static/swg-frog.png', class: 'swg-frog', alt: 'Default part', title: 'Character builder terminal default — not a real part' }) : null);
+        el('span', { class: 'swg-slot-right' },
+          c.source === 'default' ? el('img', { src: '/static/swg-frog.png', class: 'swg-frog', alt: 'Default part', title: 'Character builder terminal default — not a real part' }) : null,
+          tools));
       if (empty) {
         tile.append(head, el('div', { class: 'swg-part' }, el('strong', { class: 'muted' }, 'Empty')), el('p', { class: 'small muted', style: 'margin:0' }, 'Click to add a component.'));
         box.append(tile);
@@ -339,7 +357,7 @@
         type && !launcher ? el('a', { class: 'btn', href: '/swg/loot?slot=' + encodeURIComponent(slot) }, 'New looted component…') : null,
         el('a', { class: 'btn', href: craftHref }, launcher ? 'New crafted ' + LAUNCHER_LABEL[launcher] + '…' : 'New crafted component…'),
         c.source !== 'default' && ship().slots[slot] ? el('button', { type: 'button', class: 'btn', onclick: () => restoreDefault(slot) }, 'Put the default part back') : null,
-        !C.isEmpty(c) ? el('button', { type: 'button', class: 'btn', onclick: () => removePart(slot) }, 'Remove component') : null),
+        null),
       launcher ? el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'This slot holds a ' + LAUNCHER_LABEL[launcher] + ': only the default part or a crafted ' + LAUNCHER_LABEL[launcher] + ' fits.') : null,
       el('p', { class: 'small muted', style: 'margin:.2rem 0 .3rem' }, 'Load a saved component'),
       list);

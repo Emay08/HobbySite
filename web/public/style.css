@@ -708,3 +708,8 @@ form.inline { display: inline; }
 
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 1.8rem; height: 1.8rem; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; flex: none; }
 .icon-btn:hover, .icon-btn:focus-visible { color: var(--bad); border-color: var(--line); outline: none; }
+
+.swg-slot-right { display: inline-flex; align-items: center; gap: .15rem; margin-right: -.35rem; }
+.swg-slot-tools { display: inline-flex; gap: .05rem; }
+.swg-slot-tools .icon-btn { width: 1.6rem; height: 1.6rem; }
+.icon-btn.icon-edit:hover, .icon-btn.icon-edit:focus-visible { color: var(--accent); }

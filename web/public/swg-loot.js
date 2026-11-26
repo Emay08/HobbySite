@@ -41,7 +41,8 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     sel: new Set(), // item ids the user picked (empty = all)
     values: {}, // stat → value the user entered (display units)
     npc: null, // picked NPC id
-    compName: null, // name the current component was loaded / saved as
+    compName: null, // name the current component was loaded / saved as (cleared on any change)
+    editing: null, // saved component being edited: kept through changes, so Save / Use overwrite it
   };
   let project = session.get('reProject') || { name: '', type: null, tier: null, components: [] };
   let target = session.get('lootTarget'); // { slot, label } from the ship builder
@@ -287,7 +288,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     const hasProject = project.components.length > 0;
     // Save / Load stays on: loading a saved project doesn't need one on screen
     for (const id of ['#re-clear', '#re-use']) $(id).disabled = !hasProject;
-    $('#lt-comp-name').textContent = state.compName ? state.compName : '';
+    $('#lt-comp-name').textContent = state.compName ? state.compName : state.editing ? 'Editing “' + state.editing + '” · unsaved changes' : '';
   }
 
   // ---------- RE project ----------
@@ -455,6 +456,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     state.values = {};
     state.npc = null;
     state.compName = null;
+    state.editing = null;
     $('#lt-all-pct').textContent = '—';
     $('#lt-all-note').textContent = '';
     $('#lt-all').value = '500';
@@ -491,6 +493,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     if (!keepValues) state.values = {};
     state.npc = null;
     state.compName = null;
+    state.editing = null;
     local.set('loot.type', t);
     $('#lt-type').value = t;
     update();
@@ -502,6 +505,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     state.values = {};
     state.npc = null;
     state.compName = null;
+    state.editing = null;
     local.set('loot.tier', n);
     update();
   }
@@ -539,7 +543,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
   async function save(kind, name) {
     const doc = kind === 're' ? projectDoc() : componentDoc();
     const r = await api('/components/' + encodeURIComponent(name), { method: 'PUT', body: JSON.stringify(doc) });
-    if (kind === 're') { project.name = r.name; saveProject(); } else state.compName = r.name;
+    if (kind === 're') { project.name = r.name; saveProject(); } else { state.compName = r.name; state.editing = r.name; }
     return r.name;
   }
 
@@ -551,8 +555,8 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
         name = await save('re', project.name || reName(project.type, project.tier));
       } else {
         const c = currentComponent();
-        name = state.compName || (await save('loot', c.name + ' · ' + new Date().toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' })));
-        if (state.compName) await save('loot', state.compName);
+        const keep = state.compName || state.editing; // editing a saved component: overwrite it
+        name = keep ? await save('loot', keep) : await save('loot', c.name + ' · ' + new Date().toLocaleString('en-CA', { dateStyle: 'short', timeStyle: 'short' }));
       }
       const type = kind === 're' ? project.type : state.type;
       const slot = target && target.slot && L.typeForSlot(target.slot) === type ? target.slot : '';
@@ -571,7 +575,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
   function openPanel(kind, anchor) {
     panelKind = kind;
     $('#lt-panel-title').textContent = kind === 're' ? 'RE projects' : 'Looted components';
-    $('#lt-save-name').value = kind === 're' ? project.name || '' : state.compName || currentComponent().name;
+    $('#lt-save-name').value = kind === 're' ? project.name || '' : state.compName || state.editing || currentComponent().name;
     $('#lt-save-form').hidden = kind === 're' && !project.components.length;
     // anchored under its button in page coordinates: it scrolls with the page, so a long list
     // can always be scrolled into view (the list itself also scrolls past 60% of the screen)
@@ -625,6 +629,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
         state.values = { ...(c.values || {}) };
         state.npc = null;
         state.compName = c.name;
+        state.editing = c.name;
         update();
         // values that were pre-filled (fixed stats) don't count as entered
         for (const [k, v] of Object.entries(view.fixed)) if (Math.abs((state.values[k] ?? NaN) - v) < 1e-6) delete state.values[k];
@@ -689,8 +694,9 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
       if (!panel.hidden && !panel.contains(e.target) && !e.target.closest('#lt-comp-saveload, #re-saveload')) closePanel();
     });
 
-    // arriving from a ship builder slot: /swg/loot?slot=weapon_1
+    // arriving from a ship builder slot: /swg/loot?slot=weapon_1, or ?slot=…&edit=<saved component>
     const qs = new URLSearchParams(location.search);
+    const editName = qs.get('edit');
     if (qs.get('slot')) {
       target = { slot: qs.get('slot') };
       session.set('lootTarget', target);
@@ -716,6 +722,11 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     update();
     renderProject();
     renderButtons();
+    if (editName) {
+      await load(editName);
+      if (!project.name && !state.compName) $('#lt-comp-name').textContent = 'Couldn\u2019t load “' + editName + '”: ' + ($('#lt-panel-msg').textContent || 'not found');
+      else if (project.name === editName) $('#re-name').scrollIntoView({ block: 'center' });
+    }
   }
   init();
 })();
