@@ -47,10 +47,11 @@
     weapon_energy_per_shot: { label: 'Energy / shot', ship: 'drain', lower: true },
     weapon_refire_rate: { label: 'Refire rate (s)', ship: 'rate', lower: true, scale: 0.001 },
     droidinterface_speed: { label: 'Command speed', ship: 'droidSpeed', lower: true },
+    energy_required: { label: 'Reactor drain', ship: 'energyMaintenance', lower: true },
+    mass: { label: 'Mass', ship: 'mass', lower: true },
+    // last on every component, armor plating included
     hitpoints: { label: 'Hitpoints', ship: 'hitpoints' },
     armor: { label: 'Armor', ship: 'armor' },
-    energy_required: { label: 'Energy required', ship: 'energyMaintenance', lower: true },
-    mass: { label: 'Mass', ship: 'mass', lower: true },
   };
   const STAT_ORDER = Object.keys(STATS);
 

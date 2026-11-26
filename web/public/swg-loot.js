@@ -15,6 +15,13 @@
     for (const kid of kids.flat()) if (kid != null) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
     return n;
   };
+const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /** A trash-can icon button (the icon is a fixed string, not user data). */
+  function trashButton(label, onclick) {
+    const b = el('button', { type: 'button', class: 'icon-btn', title: label, 'aria-label': label, onclick });
+    b.innerHTML = TRASH_SVG;
+    return b;
+  }
   const local = {
     get(k) { try { return JSON.parse(localStorage.getItem('swg.' + k)); } catch { return null; } },
     set(k, v) { try { localStorage.setItem('swg.' + k, JSON.stringify(v)); } catch { /* ignore */ } },
@@ -278,7 +285,8 @@
     const hasUserValue = view.stats.some((st) => st.value != null); // typed, slid or pre-filled
     $('#re-add').disabled = !hasUserValue;
     const hasProject = project.components.length > 0;
-    for (const id of ['#re-clear', '#re-saveload', '#re-use']) $(id).disabled = !hasProject;
+    // Save / Load stays on: loading a saved project doesn't need one on screen
+    for (const id of ['#re-clear', '#re-use']) $(id).disabled = !hasProject;
     $('#lt-comp-name').textContent = state.compName ? state.compName : '';
   }
 
@@ -329,7 +337,7 @@
       }
       box.append(el('article', { class: 'swg-slot swg-k-' + (L.TYPES[type] ? L.TYPES[type].slot : type) },
         el('header', { class: 'swg-slot-head' }, el('span', { class: 'swg-slot-name' }, 'Component ' + (i + 1)),
-          el('button', { type: 'button', class: 'link small', title: 'Remove from the project', 'aria-label': 'Remove ' + c.name, onclick: () => removeFromProject(i) }, '✕')),
+          trashButton('Remove ' + c.name + ' from the project', () => removeFromProject(i))),
         el('div', { class: 'swg-part' }, el('strong', null, c.name), el('code', { class: 'small muted' }, c.itemIds.length === 1 ? c.itemIds[0] : c.itemIds.length + ' possible components')),
         dl));
     });
@@ -474,7 +482,7 @@
     update();
     $('#lt-all-note').textContent = view.effective.length
       ? ''
-      : 'No single component can roll every stat at ' + Math.round(p * 1000) / 10 + '% of these ranges. Press Clear Component, tick one component, then set the percentile again to use that component’s own ranges.';
+      : 'No single component can roll every stat at ' + Math.round(p * 1000) / 10 + '% of these ranges. For one component\u2019s own ranges: Clear Component, tick it, then set this again.';
   }
   function setType(t, keepValues) {
     if (t === state.type) return;
@@ -565,12 +573,13 @@
     $('#lt-panel-title').textContent = kind === 're' ? 'RE projects' : 'Looted components';
     $('#lt-save-name').value = kind === 're' ? project.name || '' : state.compName || currentComponent().name;
     $('#lt-save-form').hidden = kind === 're' && !project.components.length;
+    // anchored under its button in page coordinates: it scrolls with the page, so a long list
+    // can always be scrolled into view (the list itself also scrolls past 60% of the screen)
     const r = anchor.getBoundingClientRect();
-    panel.style.top = Math.min(window.innerHeight - 200, r.bottom + 8) + 'px';
-    panel.style.left = Math.max(16, Math.min(window.innerWidth - panel.offsetWidth - 16, r.left)) + 'px';
     panel.hidden = false;
     const w = panel.offsetWidth;
-    panel.style.left = Math.max(16, Math.min(window.innerWidth - w - 16, r.right - w)) + 'px';
+    panel.style.top = window.scrollY + r.bottom + 8 + 'px';
+    panel.style.left = window.scrollX + Math.max(16, Math.min(document.documentElement.clientWidth - w - 16, r.right - w)) + 'px';
     pmsg('');
     $('#lt-save-name').focus();
     refreshSaved();
@@ -588,7 +597,10 @@
           el('button', { type: 'button', class: 'swg-build-load', onclick: () => load(c.name) },
             el('span', { class: 'strong' }, c.name),
             el('span', { class: 'muted small' }, typeLabel(c.type) + ' · RE ' + c.tier + ' · ' + new Date(c.updatedAt).toLocaleDateString())),
-          el('button', { type: 'button', class: 'link small', 'aria-label': 'Delete ' + c.name, onclick: () => remove(c.name) }, 'Delete')));
+          panelKind === 'loot' || project.components.length
+            ? el('button', { type: 'button', class: 'link small', title: 'Save what\u2019s on screen under this name', onclick: () => overwrite(c.name) }, 'Overwrite')
+            : null,
+          trashButton('Delete ' + c.name, () => remove(c.name))));
       }
     } catch (err) {
       ul.replaceChildren();
@@ -619,6 +631,17 @@
         update();
       }
       closePanel();
+    } catch (err) { pmsg(err.message, true); }
+  }
+  async function overwrite(name) {
+    const what = panelKind === 're' ? 'the RE project on screen' : 'the component on screen';
+    if (!confirm('Overwrite the saved “' + name + '” with ' + what + '?')) return;
+    try {
+      const saved = await save(panelKind, name);
+      pmsg('Saved “' + saved + '”.');
+      renderButtons();
+      renderProject();
+      refreshSaved();
     } catch (err) { pmsg(err.message, true); }
   }
   async function remove(name) {

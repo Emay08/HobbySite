@@ -27,6 +27,13 @@
   };
   const LT = window.SwgLoot; // slot ↔ component type
 
+  const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  /** A trash-can icon button (the icon is a fixed string, not user data). */
+  function trashButton(label, onclick) {
+    const b = el('button', { type: 'button', class: 'icon-btn', title: label, 'aria-label': label, onclick });
+    b.innerHTML = TRASH_SVG;
+    return b;
+  }
   const FACTION_LABEL = { rebel: 'Rebel', imperial: 'Imperial', freelancer: 'Freelancer' };
   let ships = [];
   let faction = store.get('faction') || null;
@@ -53,7 +60,16 @@
   function slotLabel(slot) {
     const kind = C.slotKind(slot);
     const i = Number((slot.match(/_(\d+)$/) || [])[1] || 0);
-    if (kind === 'weapon') return 'Weapon ' + (i + 1);
+    if (kind === 'weapon') {
+      // launcher slots are named for what they hold
+      const lk = ship() ? launcherKind(slot) : null;
+      if (lk) {
+        const same = Object.keys(build.components).filter((s2) => launcherKind(s2) === lk);
+        const label = lk === 'countermeasure' ? 'Countermeasure Launcher' : 'Ordnance';
+        return same.length > 1 ? label + ' ' + (same.indexOf(slot) + 1) : label;
+      }
+      return 'Weapon ' + (i + 1);
+    }
     if (kind === 'armor') return 'Armor ' + (i === 0 ? '(front)' : i === 1 ? '(back)' : i + 1);
     if (kind === 'shield') return i ? 'Shield ' + (i + 1) : 'Shield';
     if (kind === 'droid_interface') return 'Droid interface';
@@ -63,7 +79,7 @@
     hitpoints: 'Hitpoints', armor: 'Armor', mass: 'Mass', speed: 'Speed', acceleration: 'Acceleration', deceleration: 'Deceleration',
     pitch: 'Pitch', yaw: 'Yaw', roll: 'Roll', pitchRate: 'Pitch rate', yawRate: 'Yaw rate', rollRate: 'Roll rate',
     regen: 'Regen', front: 'Front', back: 'Back', rechargeRate: 'Recharge', energy: 'Energy', energyUsage: 'Energy use',
-    energyGeneration: 'Generation', energyMaintenance: 'Energy req.', rate: 'Refire (s)', drain: 'Drain / shot', droidSpeed: 'Command speed', reLevel: 'RE level',
+    energyGeneration: 'Generation', energyMaintenance: 'Reactor drain', rate: 'Refire (s)', drain: 'Drain / shot', droidSpeed: 'Command speed', reLevel: 'RE level',
     minDamage: 'Min damage', maxDamage: 'Max damage', shieldEfficiency: 'Vs shields', armorEfficiency: 'Vs armor', ammo: 'Ammo', ammo_type: 'Ammo type',
   };
   const STAT_ORDER = ['reLevel', 'mass', 'hitpoints', 'armor', 'energyMaintenance', 'droidSpeed', 'energyGeneration', 'speed', 'acceleration', 'deceleration', 'pitchRate', 'yawRate', 'rollRate', 'pitch', 'yaw', 'roll',
@@ -134,16 +150,17 @@
       [th('Chassis HP'), cell('chassisHitpoints', 0), th('Mass', 'Component mass / chassis maximum'),
         el('td', { class: 'swg-v' + (mass.over ? ' bad' : '') }, (mass.known ? fmt(mass.used, 0) : '—') + ' / ' + fmt(mass.max, 0))],
       [th('Armor F / B'), pair('armorFront', 'armorBack', 0), th('Shield F / B'), pair('shieldFront', 'shieldBack', 0)],
-      [th('Shield regen'), cell('shieldRegen', 2), th('Reactor load', 'Energy the components require (engine and weapons × their overload energy use) / reactor generation × reactor overload'), (() => {
+      [th('Shield regen'), cell('shieldRegen', 2), th('Reactor load', 'Reactor drain of all components (engine and weapons × their overload energy use) / reactor generation × reactor overload'), (() => {
         const td = pair('energyUse', 'reactorOutput', 0);
         if (st.energyUse != null && st.reactorOutput != null && st.energyUse > st.reactorOutput) td.classList.add('bad');
         return td;
       })()],
       [th('Capacitor'), cell('capEnergy', 0), th('Cap recharge', 'Capacitor recharge × capacitor overload efficiency'), cell('capRecharge', 1, '/s')],
-      [th('DPS', 'Guns only: average damage ÷ refire time × weapon overload (missiles and countermeasures left out)'), cell('dps', 1),
-        th('Gun drain', 'Capacitor energy the guns use per second of fire'), cell('gunDrain', 1, '/s')],
-      [th('Sustained fire', 'Seconds of continuous fire before the capacitor is empty'), cell('sustain', 1, ' s'),
-        th('Booster', 'Booster energy / energy use per second'), pair('boosterEnergy', 'boosterUse', 1)],
+      [th('DPS vs shields', 'Guns only (no missiles or countermeasures): each gun\u2019s average damage ÷ refire time × weapon overload × its effectiveness vs shields'), cell('dpsShields', 1),
+        th('DPS vs armor', 'Guns only: each gun\u2019s average damage ÷ refire time × weapon overload × its effectiveness vs armor'), cell('dpsArmor', 1)],
+      [th('Gun drain', 'Capacitor energy the guns use per second of fire'), cell('gunDrain', 1, '/s'),
+        th('Sustained fire', 'Seconds of continuous fire before the capacitor is empty'), cell('sustain', 1, ' s')],
+      [th('Booster', 'Booster energy / energy use per second'), pair('boosterEnergy', 'boosterUse', 1), el('th'), el('td')],
     ];
     $('#swg-stats').replaceChildren(el('tbody', null, rows.map((r) => el('tr', null, r))));
   }
@@ -427,7 +444,8 @@
           el('button', { type: 'button', class: 'swg-build-load', onclick: () => loadBuild(b.name) },
             el('span', { class: 'strong' }, b.name),
             el('span', { class: 'muted small' }, (s ? s.name : b.ship) + ' · ' + new Date(b.updatedAt).toLocaleDateString())),
-          el('button', { type: 'button', class: 'link small', title: 'Delete', 'aria-label': 'Delete ' + b.name, onclick: () => deleteBuild(b.name) }, 'Delete')));
+          el('button', { type: 'button', class: 'link small', title: 'Save the current build under this name', onclick: () => overwriteBuild(b.name) }, 'Overwrite'),
+          trashButton('Delete ' + b.name, () => deleteBuild(b.name))));
       }
     } catch (err) {
       ul.replaceChildren();
@@ -437,15 +455,22 @@
   function openPanel() {
     panel.hidden = false;
     msg('');
-    $('#swg-save-name').value = buildName || '';
+    $('#swg-save-name').value = (build.shipName || '').trim() || buildName || ''; // the ship's name, if it has one
     $('#swg-save-name').focus();
     refreshList();
   }
   const closePanel = () => { panel.hidden = true; };
+  async function overwriteBuild(name) {
+    if (!confirm('Overwrite the saved build “' + name + '” with the build on screen?')) return;
+    await putBuild(name);
+  }
   async function saveBuild(e) {
     e.preventDefault();
     const name = $('#swg-save-name').value.trim();
     if (!name) return msg('Give the build a name.', true);
+    await putBuild(name);
+  }
+  async function putBuild(name) {
     try {
       const r = await api('/builds/' + encodeURIComponent(name), { method: 'PUT', body: JSON.stringify(build) });
       buildName = r.name;

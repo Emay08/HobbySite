@@ -145,12 +145,16 @@
     const speed = engine && has(engine.speed) ? engine.speed * speedMod * f.engineSpeed : null;
 
     // guns: average damage per shot / seconds between shots
-    let dps = 0, gunDrain = 0, guns = 0;
+    let dps = 0, dpsShields = 0, dpsArmor = 0, gunDrain = 0, guns = 0;
     for (const w of weapons) {
       if (weaponKind(w) !== 'gun' || !(num(w.rate) > 0)) continue;
       guns++;
       const avg = (num(w.minDamage) + num(w.maxDamage)) / 2;
-      dps += (avg * f.weaponDamage) / w.rate;
+      const g = (avg * f.weaponDamage) / w.rate;
+      dps += g;
+      // each gun's damage × its own effectiveness (= DPS × the DPS-weighted average effectiveness)
+      dpsShields += g * num(w.shieldEfficiency);
+      dpsArmor += g * num(w.armorEfficiency);
       gunDrain += (num(w.drain) * f.weaponEnergyUse) / w.rate;
     }
 
@@ -192,6 +196,8 @@
       capEnergy,
       capRecharge,
       dps: guns ? dps : null,
+      dpsShields: guns ? dpsShields : null,
+      dpsArmor: guns ? dpsArmor : null,
       gunDrain: guns ? gunDrain : null,
       sustain,
       boosterEnergy: booster && has(booster.energy) ? booster.energy : null,

@@ -553,9 +553,9 @@ form.inline { display: inline; }
 .swg-faction[data-faction="imperial"].active { background: #8fa3bf; color: #0b1220; }
 .swg-ship-label { flex: 1 1 280px; max-width: 420px; }
 
-.swg-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.25rem; align-items: start; }
+.swg-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1.25rem; align-items: stretch; margin-bottom: 1rem; }
 @media (max-width: 900px) { .swg-top { grid-template-columns: 1fr; } }
-.swg-top .card { margin-bottom: 1rem; }
+.swg-top .card { margin-bottom: 0; } /* summary and overloads: same height */
 .swg-stats { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .swg-stats th { text-align: left; font-weight: 500; color: var(--muted); padding: .28rem .5rem .28rem 0; white-space: nowrap; cursor: help; }
 .swg-stats td { padding: .28rem 1rem .28rem 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -702,5 +702,9 @@ form.inline { display: inline; }
 .lt-all label { font-weight: 600; white-space: nowrap; }
 .lt-all input[type=range] { width: 100%; accent-color: var(--accent); }
 .lt-all output { color: var(--accent); font-variant-numeric: tabular-nums; text-align: right; }
-.lt-all-note { grid-column: 1 / -1; }
-.lt-all-note:empty { display: none; }
+.lt-all-note { grid-column: 1 / -1; line-height: 1.4; height: 2.8em; overflow: hidden; contain: inline-size; } /* fixed room for the note, so the row never changes size */
+.lt-panel { position: absolute; right: auto; max-height: none; overflow: visible; }
+.lt-panel .swg-build-list { max-height: 60vh; overflow-y: auto; }
+
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 1.8rem; height: 1.8rem; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; flex: none; }
+.icon-btn:hover, .icon-btn:focus-visible { color: var(--bad); border-color: var(--line); outline: none; }

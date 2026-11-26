@@ -130,3 +130,15 @@ test('reactor load: engine and weapon overloads multiply their energy required',
   assert.ok(Math.abs(st.energyUse - (100 / 0.6 + 500 + 30)) < 1e-9);
   assert.strictEqual(st.gunDrain, (10 * 10) / 0.5 + (10 * 10) / 0.5); // energy per shot too
 });
+
+test('DPS vs shields / armor: each gun\u2019s DPS × its own effectiveness', () => {
+  const ship = { id: 'test', ...L.parseShipLua(LUA) };
+  const b = C.defaultBuild(ship);
+  b.components.weapon_0.shieldEfficiency = 0.6;
+  b.components.weapon_0.armorEfficiency = 0.8;
+  b.components.weapon_1.shieldEfficiency = 0.5;
+  b.components.weapon_1.armorEfficiency = 0.5;
+  const st = C.shipStats(ship, b); // gun DPS 300 and 400
+  assert.ok(Math.abs(st.dpsShields - (300 * 0.6 + 400 * 0.5)) < 1e-9);
+  assert.ok(Math.abs(st.dpsArmor - (300 * 0.8 + 400 * 0.5)) < 1e-9);
+});
