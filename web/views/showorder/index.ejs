@@ -2,7 +2,7 @@
 <div class="page-head so-head">
   <div>
     <p class="eyebrow">Recital planner</p>
-    <h1>Show order</h1>
+    <h1>Dance Recital Scheduler</h1>
     <p class="muted lede">Load the dancer, class and dance lists, set the rules, and let the solver propose running orders. Lock the dances you like, drag the rest around, and re-solve.</p>
   </div>
   <div class="so-save">
@@ -59,14 +59,13 @@
         <label>Dancers under this age only dance before intermission <input name="youngAge" type="text" inputmode="decimal" class="tiny"></label>
       </div>
       <label class="so-check"><input name="gapResetAtIntermission" type="checkbox"> Intermission gives enough time for any costume change</label>
-      <label class="so-check"><input name="hairResetAtIntermission" type="checkbox"> Hair can be put back up during intermission</label>
-      <p class="muted small">Hair: once a dancer has done a hair-down dance, she can't do a hair-up dance later that night.</p>
+      <label class="so-check"><input name="hairResetAtIntermission" type="checkbox"> A hair change during intermission doesn't count as the night's one change</label>
+      <p class="muted small">Hair: a dancer can change her hair (up → down or down → up) at most once a night, and a hair change needs one more dance in between than a costume change.</p>
 
       <h3>Preferences <span class="muted small">(weight = how much it matters)</span></h3>
       <table class="so-prefs">
         <tr><td>Keep dancers with <input name="dancerSameNightMax" type="text" inputmode="numeric" class="tiny"> dances or fewer on one night</td><td><input name="w.dancerSplit" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per dancer</span></td></tr>
         <tr><td>Keep families with <input name="familySameNightMax" type="text" inputmode="numeric" class="tiny"> dances or fewer on one night</td><td><input name="w.familySplit" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per family</span></td></tr>
-        <tr><td>Younger to older through each night</td><td><input name="w.ageOrder" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per year out of order</span></td></tr>
         <tr><td>Roomier costume changes (more than the minimum gap)</td><td><input name="w.tight" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per tight change</span></td></tr>
         <tr><td>Nights the same length</td><td><input name="w.nightBalance" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per minute</span></td></tr>
         <tr><td>Acts the same length</td><td><input name="w.actBalance" type="text" inputmode="decimal" class="tiny" aria-label="weight"> <span class="muted small">per minute</span></td></tr>

@@ -308,8 +308,12 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.match(await html('/home'), /MTGO Collection Manager/);
   });
 
-  await t.test('show order: page, save and load a project', async () => {
-    assert.match(await html('/home'), /Show Order/);
+  await t.test('dance recital scheduler: page, save and load a project', async () => {
+    assert.match(await html('/home'), /Dance Recital Scheduler/);
+    // the MTGO card search is only in the MTGO site's nav bar
+    assert.doesNotMatch(await html('/showorder'), /id="nav-search"/);
+    assert.doesNotMatch(await html('/swg/ships'), /id="nav-search"/);
+    assert.doesNotMatch(await html('/home'), /id="nav-search"/);
     assert.match(await html('/showorder'), /Find schedules/);
     const empty = await (await req('/showorder/api/project', { headers: { accept: 'application/json' } })).json();
     assert.strictEqual(empty.project, null);

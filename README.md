@@ -6,7 +6,7 @@ Two deployables that share one MongoDB database:
 mtgo-manager/
 ├── web/         Express website (Azure App Service)
 │                login → landing page → MTGO manager (highlights, collection browser, CSV upload)
-│                                     → Show Order (dance recital running-order planner)
+│                                     → Dance Recital Scheduler (recital running-order planner)
 └── functions/   Azure Functions app (timer triggers)
                  watchers      – one 30-second tick; each page is checked every tick near its
                                  expected update, lazily otherwise:                               → Telegram
@@ -54,7 +54,7 @@ hobbymini (home PC) – "Vault home runner" scheduled task (functions/scripts/ho
 | `sheet_trades`  | web                  | Entries from the spreadsheet import (as typed, resolved card name, duplicate/date-range info) |
 | `import_staging`| web                  | A spreadsheet import waiting for review |
 | `sessions`      | web                  | Login sessions |
-| `showorder`     | web                  | One doc (`_id: 'project'`): Show Order lists, rules, saved schedules and their locks |
+| `showorder`     | web                  | One doc (`_id: 'project'`): Dance Recital Scheduler lists, rules, saved schedules and their locks |
 | `swg_builds`    | web                  | SWG Ship Builder saved builds: ship, overloads, components |
 | `swg_components`| web                  | SWG saved components: looted parts and RE projects (`kind`), their stat values and ship-builder fields |
 
@@ -385,7 +385,7 @@ cd web && npm test          # + login, upload, card search, watch lists, targets
 cd functions && npm test    # + daily job, Treasure Chest scenarios (stale / wrong / late CHANGELIST), reprint watcher
 ```
 
-## Show Order — recital running-order planner (`/showorder`)
+## Dance Recital Scheduler — recital running-order planner (`/showorder`)
 
 Plans the running order of a multi-night dance recital. Everything is solved in the browser (`web/public/showorder-solver.js`); the server only renders the page and saves the project.
 
@@ -397,15 +397,15 @@ Plans the running order of a multi-night dance recital. Everything is solved in 
 | Class lists | `class`, `dancer` — one row per dancer per class (or `class` + `dancers` separated by `;`) |
 | Dances | `dance`, `class` (several separated by `;`), `hair` (`up` / `down` / blank = either), optional `minutes` (default 3), `night`, `act`, `position` (`first`, `last` or a number) |
 
-A dance's dancers are everyone in its class(es). **Generate** makes a simulated studio (≈200 dancers, ≈40 classes, siblings, Company opening each night) from a seed, and the lists can be downloaded as CSV templates.
+A dance's dancers are everyone in its class(es). **Generate** makes a simulated studio (≈200 dancers, ≈40 classes, siblings, Company opening each night; younger dancers mostly take 1–3 classes, older ones are likelier to take several; the company classes are for ages 12–14 and 15–18) from a seed, and the lists can be downloaded as CSV templates.
 
 **Firm rules** (each break costs 1000 points, so a schedule shows ✓ only when none are broken):
 - at least *N* dances between two of a dancer's dances (default 2; the intermission counts as enough time unless unticked);
-- hair: once a dancer has been in a hair-down dance, no hair-up dance for her later that night (optionally reset at intermission);
+- hair: at most one hair change per dancer per night (up → down or down → up), with one more dance between those two numbers than the costume-change minimum (an intermission between them is enough when it counts for costume changes; optionally a change at intermission doesn't count as the night's one change);
 - dancers under the age limit (default 7) only before intermission;
 - fixed `night` / `act` / `position` from the dances file, and locked dances.
 
-**Preferences** (weights editable on the page): dancers with ≤ 2 dances on one night, families with ≤ 4 dances on one night, younger → older through each night (years away from a perfectly sorted night), roomier costume changes than the minimum, nights and acts the same length.
+**Preferences** (weights editable on the page): dancers with ≤ 2 dances on one night, families with ≤ 4 dances on one night, roomier costume changes than the minimum, nights the same length (3 points per minute between the longest and shortest night), acts the same length.
 
 **Search**: simulated annealing (swaps, moves between nights/acts, short reversals, intermission shifts) run several times from different random starts; the best different schedules are kept and ranked. About half a second per run at *Normal* effort for a 47-dance show.
 
@@ -428,7 +428,7 @@ Star Wars Galaxies starship loadouts. Tabs: **Ship Builder** · **Loot** · **Cr
 - **Overloads** (reactor / engine / capacitor / weapon, levels 1–4, from `overload.txt`): engine and weapon energy values are divisors (0.1 = 10× the energy use). Capacitor overload is applied to the capacitor recharge rate.
 - **Summary formulas** (first pass, all in `web/public/swg-calc.js` → `shipStats`): speed = engine speed × chassis `maxSpeed` × engine overload; boost speed adds the booster's speed; DPS = guns only (no missiles or countermeasures), average of min/max damage ÷ refire time × weapon overload; gun drain = drain per shot ÷ refire × weapon energy use; sustained fire = capacitor energy ÷ (gun drain − recharge). Values changed by overloads are shown in gold; hover for the value without overloads.
 - **Save / Load** keeps named builds in MongoDB `swg_builds` (`_id` = lower-case name).
-- **Swapping components**: click a component tile for a menu: *New looted component* (opens Loot for that slot), *New crafted component* (Crafting, later), *Put the default part back*, or load a saved component that fits the slot (newest first; names in red would put the ship over its mass limit). The build in progress is kept in the browser tab (sessionStorage) while you visit the Loot page. **Reactor load** = the energy the components require (the engine's × the engine overload's energy use) / reactor generation.
+- **Swapping components**: click a component tile for a menu: *New looted component* (opens Loot for that slot), *New crafted component* (Crafting, later), *Put the default part back*, or load a saved component that fits the slot (newest first; names in red would put the ship over its mass limit). The build in progress is kept in the browser tab (sessionStorage) while you visit the Loot page. **Reactor load** = the energy the components require (the engine’s and weapons’ × their overloads’ energy use) / reactor generation.
 
 ### Loot (`/swg/loot`)
 

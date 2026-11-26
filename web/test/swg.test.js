@@ -116,3 +116,17 @@ test('every ship gets a droid interface slot, empty, before the weapons', () => 
   assert.strictEqual(C.shipStats(ship, b).speed, null);
   assert.strictEqual(C.massUsage(ship, b).total, 8);
 });
+
+test('reactor load: engine and weapon overloads multiply their energy required', () => {
+  const ship = { id: 'test', ...L.parseShipLua(LUA) };
+  const b = C.defaultBuild(ship);
+  b.components.engine.energyMaintenance = 100;
+  b.components.weapon_0.energyMaintenance = 50;
+  b.components.shield_0.energyMaintenance = 30;
+  assert.strictEqual(C.shipStats(ship, b).energyUse, 180);
+  b.overloads.engine = { on: true, level: 2 }; // energy value 0.6 → ×1/0.6
+  b.overloads.weapon = { on: true, level: 4 }; // 0.1 → ×10
+  const st = C.shipStats(ship, b);
+  assert.ok(Math.abs(st.energyUse - (100 / 0.6 + 500 + 30)) < 1e-9);
+  assert.strictEqual(st.gunDrain, (10 * 10) / 0.5 + (10 * 10) / 0.5); // energy per shot too
+});

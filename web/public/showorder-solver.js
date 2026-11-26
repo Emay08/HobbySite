@@ -1,5 +1,5 @@
 /*
- * Show Order solver — orders the dances of a multi-night recital.
+ * Dance Recital Scheduler solver — orders the dances of a multi-night recital.
  *
  * Runs in the browser (window.ShowSolver) and in Node (require) so it can be tested.
  *
@@ -24,13 +24,12 @@
     minGap: 2, // at least this many other dances between two of a dancer's dances (firm)
     gapResetAtIntermission: true, // the intermission counts as enough time to change
     youngAge: 7, // dancers younger than this only dance before intermission (firm)
-    hairResetAtIntermission: false, // true: hair can be put back up during intermission
+    hairResetAtIntermission: false, // true: a hair change during intermission doesn't count as the night's one change
     dancerSameNightMax: 2, // dancers in this many dances or fewer: keep them on one night
     familySameNightMax: 4, // families whose children dance this many dances or fewer: one night
     weights: {
       dancerSplit: 10, // per dancer whose few dances are spread over two nights
       familySplit: 15, // per family spread over two nights
-      ageOrder: 1, // per year a dance's average age is away from a strictly youngest → oldest night
       tight: 1, // per dancer with exactly the minimum gap between two dances
       nightBalance: 3, // per minute of difference between the longest and shortest night
       actBalance: 1.5, // per minute of difference between act 1 and act 2 of a night
@@ -43,7 +42,9 @@
   function mergeSettings(s) {
     s = s || {};
     const out = Object.assign({}, DEFAULTS, s);
-    out.weights = Object.assign({}, DEFAULTS.weights, s.weights || {});
+    // only known weights (older saved projects may carry ones that no longer exist)
+    out.weights = {};
+    for (const k of Object.keys(DEFAULTS.weights)) out.weights[k] = s.weights && s.weights[k] != null ? s.weights[k] : DEFAULTS.weights[k];
     for (const k of ['nights', 'minGap', 'youngAge', 'dancerSameNightMax', 'familySameNightMax', 'runs', 'keep', 'iterations']) {
       out[k] = Number(out[k]);
       if (!Number.isFinite(out[k])) out[k] = DEFAULTS[k];
@@ -251,7 +252,10 @@
       _nightOf: new Int8Array(n),
       _actOf: new Int8Array(n),
       _posOf: new Int16Array(n),
-      _downStamp: new Int32Array(dancers.length),
+      _hairStamp: new Int32Array(dancers.length), // which night/act the hair state below belongs to
+      _hairState: new Int8Array(dancers.length), // 1 = up, 2 = down
+      _hairChanges: new Int8Array(dancers.length),
+      _hairPos: new Int16Array(dancers.length), // position of the dancer's last hair-up/down dance
       _stamp: 0,
     };
     return { problem, issues };
@@ -271,10 +275,10 @@
     const nightOf = P._nightOf;
     const actOf = P._actOf;
     const posOf = P._posOf;
-    const downStamp = P._downStamp;
+    const hairStamp = P._hairStamp, hairState = P._hairState, hairChanges = P._hairChanges, hairPos = P._hairPos;
     const out = detail ? [] : null;
     let hardGap = 0, hardHair = 0, hardYoung = 0, hardPin = 0, hardMissing = 0;
-    let tight = 0, ageBack = 0, actDiff = 0;
+    let tight = 0, actDiff = 0;
     let nightMin = Infinity, nightMax = -Infinity;
     const minutes = [];
     let placed = 0;
@@ -287,8 +291,6 @@
       let m1 = 0, m2 = 0;
       placed += L;
       let stamp = ++P._stamp;
-      const ages = [];
-      const ageIdx = [];
       for (let i = 0; i < L; i++) {
         const di = seq[i];
         const d = D[di];
@@ -316,17 +318,39 @@
           }
         }
 
-        // hair: nobody goes from a "down" dance back to an "up" dance on the same night
+        // hair: at most one change (up → down or down → up) per dancer per night, and a change
+        // needs one more dance in between than a costume change
         if (S.hairResetAtIntermission && i === split) stamp = ++P._stamp;
-        if (d.hair === 'up') {
-          let bad = 0;
-          for (const m of d.roster) if (downStamp[m] === stamp) bad++;
-          if (bad) {
-            hardHair += bad;
-            if (out) out.push({ type: 'hair', hard: true, dances: [di], dancers: d.roster.filter((m) => downStamp[m] === stamp) });
+        if (d.hair === 'up' || d.hair === 'down') {
+          const h = d.hair === 'up' ? 1 : 2;
+          let second = null, quick = null;
+          for (const m of d.roster) {
+            if (hairStamp[m] !== stamp) {
+              hairStamp[m] = stamp;
+              hairState[m] = h;
+              hairChanges[m] = 0;
+              hairPos[m] = i;
+              continue;
+            }
+            if (hairState[m] !== h) {
+              hairChanges[m]++;
+              if (hairChanges[m] > 1) {
+                hardHair++;
+                if (out) (second || (second = [])).push(m);
+              } else {
+                const p = hairPos[m];
+                const acrossBreak = S.gapResetAtIntermission && p < split && i >= split;
+                if (!acrossBreak && i - p - 1 < gap + 1) {
+                  hardHair++;
+                  if (out) (quick || (quick = [])).push({ m, from: seq[p], between: i - p - 1 });
+                }
+              }
+              hairState[m] = h;
+            }
+            hairPos[m] = i;
           }
-        } else if (d.hair === 'down') {
-          for (const m of d.roster) downStamp[m] = stamp;
+          if (second) out.push({ type: 'hair', hard: true, dances: [di], dancers: second });
+          if (quick) for (const q of quick) out.push({ type: 'hairGap', hard: true, dances: [q.from, di], dancers: [q.m], between: q.between, need: gap + 1 });
         }
 
         // young dancers before intermission
@@ -334,20 +358,6 @@
           hardYoung += d.young;
           if (out) out.push({ type: 'young', hard: true, dances: [di], dancers: d.roster.filter((m) => P.dancers[m].age != null && P.dancers[m].age < S.youngAge) });
         }
-
-        // younger → older; opening/closing numbers are left out of the comparison
-        if (d.age != null && !(d.pin && (d.pin.position === 'first' || d.pin.position === 'last'))) {
-          ages.push(d.age);
-          ageIdx.push(di);
-        }
-      }
-      // How far each dance's average age is from where it would sit if the night ran
-      // strictly youngest → oldest (in years, summed over the night).
-      const sorted = ages.slice().sort((a, b) => a - b);
-      for (let k = 0; k < ages.length; k++) {
-        const off = ages[k] - sorted[k];
-        ageBack += off < 0 ? -off : off;
-        if (out && off >= 4) out.push({ type: 'age', hard: false, dances: [ageIdx[k]], off });
       }
       actDiff += Math.abs(m1 - m2);
       minutes.push([m1, m2]);
@@ -392,12 +402,12 @@
     const hard = hardGap + hardHair + hardYoung + hardPin + hardMissing;
     const nightDiff = sch.nights.length > 1 ? nightMax - nightMin : 0;
     const soft =
-      groupPenalty + W.ageOrder * ageBack + W.tight * tight + W.nightBalance * nightDiff + W.actBalance * actDiff;
+      groupPenalty + W.tight * tight + W.nightBalance * nightDiff + W.actBalance * actDiff;
     const res = {
       score: hard * HARD + soft,
       hard,
       soft,
-      parts: { hardGap, hardHair, hardYoung, hardPin, dancerSplit, familySplit, tight, ageBack, nightDiff, actDiff },
+      parts: { hardGap, hardHair, hardYoung, hardPin, dancerSplit, familySplit, tight, nightDiff, actDiff },
       minutes,
     };
     if (out) res.items = out;

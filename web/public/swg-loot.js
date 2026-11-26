@@ -671,6 +671,9 @@
     if (qs.get('slot')) {
       target = { slot: qs.get('slot') };
       session.set('lootTarget', target);
+      // a new looted component for a ship slot starts with a fresh RE project
+      project = { name: '', type: null, tier: null, components: [] };
+      saveProject();
       history.replaceState(null, '', location.pathname);
     }
     const fromSlot = target && target.slot ? L.typeForSlot(target.slot) : null;

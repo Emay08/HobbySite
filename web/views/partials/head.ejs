@@ -15,7 +15,8 @@
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8.5 5v10L12 22 3.5 17V7z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7l4.3 2.5v5L12 17l-4.3-2.5v-5z" fill="currentColor"/></svg>
     Vault
   </a>
-  <% if (path && path.startsWith('/mtgo') || (typeof section !== 'undefined' && section === 'mtgo')) { %>
+  <% const isMtgo = !!(path && path.startsWith('/mtgo')) || (typeof section !== 'undefined' && section === 'mtgo'); %>
+  <% if (isMtgo) { %>
   <nav class="subnav">
     <% const navItems = [['/mtgo', 'Highlights', true], ['/mtgo/chest', 'Chest'], ['/mtgo/collection', 'Collection'], ['/mtgo/watch/short', 'Short watch'], ['/mtgo/watch/long', 'Long watch'], ['/mtgo/targets', 'Targets'], ['/mtgo/swaps', 'Swaps'], ['/mtgo/trades', 'Trades'], ['/mtgo/upload', 'Update']]; %>
     <% for (const [href, label, exact] of navItems) { const active = exact ? (path === href || path === href + '/') : path.startsWith(href); %>
@@ -29,10 +30,12 @@
     <% } %>
   </nav>
   <% } %>
+  <% if (isMtgo) { %>
   <form id="nav-search" class="nav-search" method="get" action="/mtgo/go" role="search" autocomplete="off">
     <input type="search" name="q" placeholder="Search cards…  /" aria-label="Search cards" role="combobox" aria-expanded="false" aria-controls="nav-suggest" spellcheck="false">
     <ul id="nav-suggest" class="nav-suggest" role="listbox" hidden></ul>
   </form>
+  <% } %>
   <form method="post" action="/logout" class="logout">
     <button type="submit" class="link">Sign out</button>
   </form>

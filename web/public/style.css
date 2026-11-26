@@ -685,7 +685,8 @@ form.inline { display: inline; }
 .swg-slot { cursor: pointer; transition: border-color .15s; }
 .swg-slot:hover, .swg-slot:focus-visible { border-color: var(--accent); outline: none; }
 .swg-slot.picked { box-shadow: 0 0 0 2px var(--accent); }
-.swg-menu { position: fixed; z-index: 55; width: min(340px, calc(100vw - 2rem)); max-height: min(70vh, 520px); overflow: auto; padding: .7rem; box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+.swg-menu { position: absolute; z-index: 55; width: min(340px, calc(100vw - 2rem)); padding: .7rem; box-shadow: 0 18px 50px rgba(0,0,0,.6); }
+.swg-menu .swg-build-list { max-height: 60vh; overflow-y: auto; }
 .swg-menu h3 { margin: 0 0 .5rem; font-size: .95rem; }
 .swg-menu-actions { display: grid; gap: .35rem; margin-bottom: .6rem; }
 .swg-menu-actions .btn { text-align: left; }

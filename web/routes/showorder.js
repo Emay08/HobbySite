@@ -2,7 +2,7 @@ const express = require('express');
 const { getDb } = require('../lib/db');
 
 /**
- * Show Order — recital running-order planner.
+ * Dance Recital Scheduler (formerly Show Order) — recital running-order planner.
  *
  * All solving happens in the browser (public/showorder-*.js). The server only renders the
  * page and keeps one saved project: the data lists, the rules, the schedules found (each
@@ -14,7 +14,7 @@ const COLLECTION = 'showorder';
 const PROJECT_ID = 'project';
 const MAX_BYTES = 2 * 1024 * 1024;
 
-router.get('/', (req, res) => res.render('showorder/index', { title: 'Show order', section: 'showorder' }));
+router.get('/', (req, res) => res.render('showorder/index', { title: 'Dance Recital Scheduler', section: 'showorder' }));
 
 router.get('/api/project', async (req, res, next) => {
   try {

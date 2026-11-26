@@ -65,7 +65,9 @@ test('evaluate: gap, hair, young and pin rules', () => {
   // Opener first; Jazz (down) then Ballet (up) with Ann+Cal in both, back to back; Tap after intermission.
   const bad = S.evaluate(P, sched(P, [[['Opener', 'Jazz', 'Ballet', 'HipHop', 'Extra', 'Tap'], 3]]), true);
   assert.strictEqual(bad.parts.hardGap, 2 + 1 + 1 + 1); // Jazz→Ballet ×2, Opener→Jazz (Cal), Opener→Ballet (Cal), HipHop→Extra (Dot)
-  assert.strictEqual(bad.parts.hardHair, 2 + 1); // Ann, Cal after Jazz; Dot after HipHop
+  // hair changes need minGap + 1 = 3 dances between: Cal (Opener up → Jazz down), Ann (Jazz → Ballet),
+  // Dot (HipHop → Extra) change too quickly, and Cal changes a second time (Jazz down → Ballet up)
+  assert.strictEqual(bad.parts.hardHair, 4);
   assert.strictEqual(bad.parts.hardYoung, 1);
   assert.strictEqual(bad.parts.hardPin, 0);
   assert.ok(bad.items.some((x) => x.type === 'hair' && x.dances[0] === idx(P, 'Ballet')));
@@ -74,6 +76,35 @@ test('evaluate: gap, hair, young and pin rules', () => {
   const good = S.evaluate(P, sched(P, [[['Opener', 'Tap', 'Extra', 'Ballet', 'HipHop', 'Jazz'], 4]]), true);
   assert.strictEqual(good.hard, 0, JSON.stringify(good.items.filter((x) => x.hard)));
   assert.strictEqual(good.parts.tight, 1); // Opener → Ballet (Cal) has exactly the minimum 2 between
+});
+
+test('evaluate: one hair change a night, with one more dance between than a costume change', () => {
+  const { problem: P } = S.build(tiny(), { nights: 1, minGap: 1, gapResetAtIntermission: false });
+  // down → up with 2 dances between is fine (Ann, Cal: Jazz → Ballet; Dot: HipHop → Extra)
+  const ok = S.evaluate(P, sched(P, [[['Jazz', 'Tap', 'HipHop', 'Ballet', 'Opener', 'Extra'], 5]]), true);
+  assert.strictEqual(ok.parts.hardHair, 0);
+  // too quick: Ann + Cal back to back, Dot with only 1 between
+  const quick = S.evaluate(P, sched(P, [[['Jazz', 'Ballet', 'Tap', 'HipHop', 'Opener', 'Extra'], 5]]), true);
+  assert.strictEqual(quick.parts.hardHair, 3);
+  const hg = quick.items.filter((x) => x.type === 'hairGap');
+  assert.strictEqual(hg.length, 3);
+  assert.ok(hg.every((x) => x.need === 2));
+  // a second change: Cal goes up (Opener) → down (Jazz) → up (Ballet)
+  const twice = S.evaluate(P, sched(P, [[['Opener', 'Tap', 'HipHop', 'Jazz', 'Extra', 'Ballet'], 5]]), true);
+  const second = twice.items.filter((x) => x.type === 'hair');
+  assert.strictEqual(second.length, 1);
+  assert.deepStrictEqual(second[0].dancers.map((m) => P.dancers[m].name), ['Cal']);
+  assert.strictEqual(twice.parts.hardHair, 3); // + Ann (Jazz → Ballet) and Dot (HipHop → Extra) too quick
+  // with the intermission reset, a change across the break doesn't count as the night's one change
+  const { problem: R } = S.build(tiny(), { nights: 1, minGap: 1, gapResetAtIntermission: true, hairResetAtIntermission: true });
+  const reset = S.evaluate(R, sched(R, [[['Opener', 'Tap', 'HipHop', 'Jazz', 'Ballet', 'Extra'], 4]]), true);
+  assert.ok(!reset.items.some((x) => x.type === 'hair'), JSON.stringify(reset.items.filter((x) => x.hard)));
+});
+
+test('settings: the age-order preference is gone; old saved weights are ignored', () => {
+  const { problem: P } = S.build(tiny(), { nights: 1, weights: { ageOrder: 5, tight: 2 } });
+  assert.deepStrictEqual(Object.keys(P.settings.weights).sort(), ['actBalance', 'dancerSplit', 'familySplit', 'nightBalance', 'tight']);
+  assert.strictEqual(P.settings.weights.tight, 2);
 });
 
 test('evaluate: intermission resets the gap unless told otherwise', () => {
@@ -112,7 +143,8 @@ test('solver: simulated studio comes out with no firm rule broken', () => {
 
 test('solver: locked dances stay put when re-solving', () => {
   const { problem: P } = S.build(G.generate({ seed: 2 }), {});
-  const [first] = S.solve(P, { runs: 1, iterations: 60000, seed: 3 });
+  const [first] = S.solve(P, { runs: 2, iterations: 60000, seed: 3 });
+  assert.strictEqual(first.eval.hard, 0);
   // lock three dances where they are, then re-solve from that schedule
   const locks = [first.schedule.nights[0].seq[3], first.schedule.nights[1].seq[5], first.schedule.nights[1].seq[9]];
   const where = locks.map((di) => {

@@ -134,7 +134,7 @@
       [th('Chassis HP'), cell('chassisHitpoints', 0), th('Mass', 'Component mass / chassis maximum'),
         el('td', { class: 'swg-v' + (mass.over ? ' bad' : '') }, (mass.known ? fmt(mass.used, 0) : '—') + ' / ' + fmt(mass.max, 0))],
       [th('Armor F / B'), pair('armorFront', 'armorBack', 0), th('Shield F / B'), pair('shieldFront', 'shieldBack', 0)],
-      [th('Shield regen'), cell('shieldRegen', 2), th('Reactor load', 'Energy the components require (engine × engine overload energy use) / reactor generation × reactor overload'), (() => {
+      [th('Shield regen'), cell('shieldRegen', 2), th('Reactor load', 'Energy the components require (engine and weapons × their overload energy use) / reactor generation × reactor overload'), (() => {
         const td = pair('energyUse', 'reactorOutput', 0);
         if (st.energyUse != null && st.reactorOutput != null && st.energyUse > st.reactorOutput) td.classList.add('bad');
         return td;
@@ -328,9 +328,11 @@
       list);
     document.body.append(menuEl);
     const r = anchor.getBoundingClientRect();
-    const w = menuEl.offsetWidth, h = menuEl.offsetHeight;
-    menuEl.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left)) + 'px';
-    menuEl.style.top = (r.bottom + 8 + h < window.innerHeight ? r.bottom + 8 : Math.max(12, r.top - h - 8)) + 'px';
+    const w = menuEl.offsetWidth;
+    // anchored to the tile in page coordinates: it scrolls with the page, so a long menu can be
+    // scrolled into view
+    menuEl.style.left = window.scrollX + Math.max(12, Math.min(document.documentElement.clientWidth - w - 12, r.left)) + 'px';
+    menuEl.style.top = window.scrollY + r.bottom + 8 + 'px';
     renderSlots();
     fillSavedList(slot, type, list, launcher);
   }

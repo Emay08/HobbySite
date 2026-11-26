@@ -1,5 +1,5 @@
 /*
- * Simulated studio data for trying the Show Order tool before the real lists exist.
+ * Simulated studio data for trying the Dance Recital Scheduler before the real lists exist.
  * Same shape as the three CSVs: dancers, enrollments (class rosters) and dances.
  * Seeded, so the same seed always gives the same studio.
  */
@@ -98,8 +98,9 @@
     for (const [lvl, lo, hi, styles] of LEVELS) for (const st of styles) classes.push({ name: `${lvl} ${st}`, style: st, lo, hi, cap: 18, kind: 'regular' });
     classes.push({ name: 'Pointe', style: 'Pointe', lo: 12, hi: 18, cap: 12, kind: 'special' });
     classes.push({ name: 'Boys Hip Hop', style: 'Hip Hop', lo: 7, hi: 14, cap: 10, kind: 'special' });
-    classes.push({ name: 'Junior Company', style: 'Jazz', lo: 10, hi: 13, cap: 14, kind: 'company' });
-    classes.push({ name: 'Company', style: 'Contemporary', lo: 14, hi: 18, cap: 16, kind: 'company' });
+    // company classes are for the older dancers only: 12–14 and 15–18
+    classes.push({ name: 'Junior Company', style: 'Jazz', lo: 12, hi: 14, cap: 14, kind: 'company' });
+    classes.push({ name: 'Company', style: 'Contemporary', lo: 15, hi: 18, cap: 16, kind: 'company' });
     classes.push({ name: 'Junior Trio', style: 'Small Group', lo: 9, hi: 12, cap: 3, kind: 'small' });
     classes.push({ name: 'Teen Quartet', style: 'Small Group', lo: 13, hi: 16, cap: 4, kind: 'small' });
     classes.push({ name: 'Senior Duet', style: 'Small Group', lo: 16, hi: 18, cap: 3, kind: 'small' });
@@ -111,13 +112,16 @@
     const boys = new Set(['Lucas', 'Noah', 'Eli', 'Owen', 'Leo', 'Max', 'Theo', 'Sam', 'Finn', 'Jack', 'Ben', 'Kai']);
     const isBoy = (d) => boys.has(d.name.split(' ')[0]);
 
-    // how many classes each dancer takes: little ones 1–2, teens up to 6
+    // how many classes each dancer takes: the younger ones mostly 1–3, older ones more and more
+    // likely to take several (teens up to 6)
+    //            [max classes, chance of each extra class]
+    const LOAD = (age) => (age <= 5 ? [2, 0.3] : age <= 8 ? [3, 0.4] : age <= 11 ? [4, 0.5] : age <= 14 ? [6, 0.7] : [6, 0.78]);
     const order = shuffle(dancers.map((d, i) => i));
     for (const i of order) {
       const d = dancers[i];
-      const max = d.age <= 5 ? 2 : d.age <= 8 ? 3 : d.age <= 11 ? 4 : 5;
+      const [max, more] = LOAD(d.age);
       let want = 1;
-      while (want < max && rnd() < (d.age <= 5 ? 0.35 : 0.55)) want++;
+      while (want < max && rnd() < more) want++;
       const options = shuffle(
         classes
           .map((c, ci) => ({ c, ci }))

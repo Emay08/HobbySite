@@ -1,5 +1,5 @@
 /*
- * Show Order page: loads the lists, runs the solver in small slices (so the page stays
+ * Dance Recital Scheduler page: loads the lists, runs the solver in small slices (so the page stays
  * responsive), shows the schedules, and lets you drag, lock, export and save.
  */
 (function () {
@@ -462,7 +462,7 @@
     const dancerGroups = P.groups.filter((g) => g.kind === 'dancer').length;
     const famGroups = P.groups.filter((g) => g.kind === 'family').length;
     const firm = ev.hard
-      ? [p.hardGap && `${p.hardGap} too-quick change${p.hardGap > 1 ? 's' : ''}`, p.hardHair && `${p.hardHair} hair up after down`, p.hardYoung && `${p.hardYoung} young dancer${p.hardYoung > 1 ? 's' : ''} after intermission`, p.hardPin && `${p.hardPin} locked/fixed dance${p.hardPin > 1 ? 's' : ''} moved`].filter(Boolean).join(' · ')
+      ? [p.hardGap && `${p.hardGap} too-quick change${p.hardGap > 1 ? 's' : ''}`, p.hardHair && `${p.hardHair} hair change${p.hardHair > 1 ? 's' : ''} too many or too quick`, p.hardYoung && `${p.hardYoung} young dancer${p.hardYoung > 1 ? 's' : ''} after intermission`, p.hardPin && `${p.hardPin} locked/fixed dance${p.hardPin > 1 ? 's' : ''} moved`].filter(Boolean).join(' · ')
       : 'all met';
     const tile = (label, value, sub, cls) => el('div', { class: 'stat ' + (cls || '') }, el('span', { class: 'stat-label', text: label }), el('span', { class: 'stat-value', text: value }), sub ? el('span', { class: 'stat-sub muted', text: sub }) : null);
     $('so-scorecard').replaceChildren(
@@ -470,7 +470,6 @@
       tile('Dancers on both nights', P.settings.nights > 1 ? String(p.dancerSplit) : '–', `of ${dancerGroups} with ≤ ${P.settings.dancerSameNightMax} dances`),
       tile('Families on both nights', P.settings.nights > 1 ? String(p.familySplit) : '–', `of ${famGroups} with ≤ ${P.settings.familySameNightMax} dances`),
       tile('Tight changes', String(p.tight), `exactly ${P.settings.minGap} dance${P.settings.minGap === 1 ? '' : 's'} between`),
-      tile('Age order', `${Math.round(p.ageBack)} yrs`, 'out of order (0 = youngest → oldest)'),
       tile('Length', ev.minutes.map((m) => fmtMin(m[0] + m[1])).join(' · '), ev.minutes.map((m) => `${fmtMin(m[0])} + ${fmtMin(m[1])}`).join(' · ')),
       tile('Score', String(Math.round(ev.score)), 'lower is better')
     );
@@ -479,7 +478,8 @@
   const ITEM_TEXT = {
     gap: (x) => `${nameList(x.dancers)}: ${x.between === 0 ? 'back to back' : `only ${plural(x.between, 'dance')} between`}`,
     tight: (x) => `${nameList(x.dancers)}: ${plural(x.between, 'dance')} between`,
-    hair: (x) => `${nameList(x.dancers)}: already in a hair-down dance tonight`,
+    hair: (x) => `${nameList(x.dancers)}: second hair change tonight (only one allowed)`,
+    hairGap: (x) => `${nameList(x.dancers)}: hair change with ${x.between === 0 ? 'no dances' : `only ${plural(x.between, 'dance')}`} between (needs ${x.need})`,
     young: (x) => `${nameList(x.dancers)}: under ${P.settings.youngAge}, should be before intermission`,
     pin: (x) => `should be ${pinText(P.dances[x.dances[0]].pin)}`,
   };
@@ -501,13 +501,12 @@
       flags.get(di).push({ cls, text });
     };
     for (const x of ev.items) {
-      if (x.type === 'gap' || x.type === 'tight') {
+      if (x.type === 'gap' || x.type === 'tight' || x.type === 'hairGap') {
         const [a, b] = x.dances;
-        const cls = x.type === 'gap' ? 'so-flag-bad' : 'so-flag-tight';
+        const cls = x.type === 'tight' ? 'so-flag-tight' : 'so-flag-bad';
         flag(a, cls, `→ ${slotLabel(loc[b])} ${ITEM_TEXT[x.type](x)}`);
         flag(b, cls, `← ${slotLabel(loc[a])} ${ITEM_TEXT[x.type](x)}`);
       } else if (x.type === 'hair' || x.type === 'young' || x.type === 'pin') flag(x.dances[0], 'so-flag-bad', ITEM_TEXT[x.type](x));
-      else if (x.type === 'age') flag(x.dances[0], 'so-flag-age', `${fmtNum(x.off)} yrs out of age order`);
     }
 
     const shared = new Map();
