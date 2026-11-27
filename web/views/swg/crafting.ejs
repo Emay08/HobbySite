@@ -1,0 +1,122 @@
+<%- include('../partials/head') %>
+<div class="page-head swg-head">
+  <div>
+    <p class="eyebrow">Star Wars Galaxies</p>
+    <h1>Crafting</h1>
+  </div>
+  <div class="swg-head-actions">
+    <span id="cr-item-name" class="muted small" aria-live="polite"></span>
+    <button id="cr-saveload" class="btn" type="button" aria-haspopup="dialog" aria-controls="cr-panel">Saved Items</button>
+  </div>
+</div>
+
+<div class="cr-profs" role="tablist" aria-label="Crafting profession" id="cr-profs"></div>
+
+<div class="cr-layout">
+  <section class="card cr-list-card" aria-label="Schematics">
+    <input id="cr-search" type="search" placeholder="Search schematics" aria-label="Search schematics" autocomplete="off">
+    <label class="cr-check small"><input type="checkbox" id="cr-show-all"> Include schematics whose stats don’t depend on materials</label>
+    <p id="cr-count" class="muted small"></p>
+    <div id="cr-list" class="cr-list" role="listbox" aria-label="Schematics"></div>
+  </section>
+
+  <div class="cr-work">
+    <section id="cr-empty" class="card">
+      <p class="muted">Pick a schematic on the left. Every stat is worked out the way the server does it, from the schematic and item files of the NFS server.</p>
+    </section>
+
+    <div id="cr-schematic" hidden>
+      <section class="card cr-title-card">
+        <div class="cr-title-row">
+          <div>
+            <h2 id="cr-name"></h2>
+            <p id="cr-meta" class="muted small"></p>
+          </div>
+          <button id="cr-save-quick" class="btn primary" type="button">Save Item</button>
+        </div>
+        <p id="cr-notes" class="small cr-notes" hidden></p>
+      </section>
+
+      <section class="card">
+        <div class="cr-section-head">
+          <h3>Resources</h3>
+          <div class="cr-mode" role="radiogroup" aria-label="How to enter resources">
+            <label><input type="radio" name="cr-mode" value="uniform" checked> One value for every stat</label>
+            <label><input type="radio" name="cr-mode" value="manual"> Each resource’s stats</label>
+          </div>
+        </div>
+        <div id="cr-uniform" class="cr-uniform">
+          <label for="cr-uniform-range">Averaged value of every relevant stat</label>
+          <div class="cr-uniform-row">
+            <input id="cr-uniform-range" type="range" min="1" max="1000" step="1" value="900">
+            <input id="cr-uniform-num" class="cr-num" type="number" min="1" max="1000" step="1" value="900" aria-label="Averaged value">
+          </div>
+        </div>
+        <div id="cr-manual" hidden>
+          <div class="cr-table-wrap"><table class="cr-table" id="cr-res-table"></table></div>
+          <p class="muted small">Leave a stat blank if the resource doesn’t have it — the server leaves it out of that stat’s average. Averages are weighted by each slot’s quantity.</p>
+        </div>
+        <p id="cr-averages" class="small cr-averages"></p>
+      </section>
+
+      <section class="card" id="cr-comp-card" hidden>
+        <h3>Components</h3>
+        <div id="cr-comps" class="cr-comps"></div>
+        <p class="muted small">Only the first component in a slot counts (identical slots need identical components). “Simulate” crafts the component here with the value you give it and full experimentation; saved items keep their actual stats.</p>
+      </section>
+
+      <section class="card">
+        <div class="cr-section-head">
+          <h3>Assembly &amp; experimentation</h3>
+        </div>
+        <div class="cr-settings">
+          <label>Assembly result
+            <select id="cr-assembly"></select>
+          </label>
+          <div class="cr-mode" role="radiogroup" aria-label="Experimentation">
+            <label><input type="radio" name="cr-exp" value="none"> Assembly only</label>
+            <label><input type="radio" name="cr-exp" value="custom"> Spend points</label>
+            <label><input type="radio" name="cr-exp" value="max" checked> Fully experimented</label>
+          </div>
+        </div>
+        <div id="cr-exp-rows" class="cr-exp-rows" hidden></div>
+        <p id="cr-exp-note" class="muted small"></p>
+      </section>
+
+      <section class="card">
+        <div class="cr-section-head">
+          <h3>Result</h3>
+          <label class="cr-check small"><input type="checkbox" id="cr-show-fixed"> Show fixed values</label>
+        </div>
+        <div class="cr-table-wrap"><table class="cr-table cr-result" id="cr-result"></table></div>
+        <div id="cr-armor" hidden>
+          <h3 class="cr-sub">Armor protection</h3>
+          <table class="cr-table cr-armor" id="cr-armor-table"></table>
+          <p class="muted small">Base = base effectiveness; special types use special effectiveness when it has a range, otherwise base effectiveness; types the armor is vulnerable to only get what layers add. Capped at 80%, before condition loss and slicing.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div id="cr-panel" class="swg-panel card" role="dialog" aria-label="Saved items" hidden>
+  <div class="swg-panel-head">
+    <h2>Saved items</h2>
+    <button type="button" class="link" data-close aria-label="Close">✕</button>
+  </div>
+  <form id="cr-save-form" class="swg-save-form" autocomplete="off">
+    <input id="cr-save-name" type="text" maxlength="80" placeholder="Name" aria-label="Name">
+    <button class="btn primary" type="submit">Save</button>
+  </form>
+  <p id="cr-panel-msg" class="small muted" aria-live="polite"></p>
+  <input id="cr-saved-filter" type="search" placeholder="Filter" aria-label="Filter saved items" autocomplete="off">
+  <ul id="cr-saved-list" class="swg-build-list"></ul>
+  <div class="cr-panel-foot">
+    <button id="cr-export" class="link small" type="button">Export all (JSON)</button>
+    <label class="link small cr-import">Import… <input id="cr-import" type="file" accept="application/json,.json" hidden></label>
+  </div>
+</div>
+
+<script src="/static/swg-craft-calc.js?v=<%= assetV %>" defer></script>
+<script src="/static/swg-craft.js?v=<%= assetV %>" defer></script>
+<%- include('../partials/foot') %>

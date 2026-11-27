@@ -4,19 +4,22 @@ const express = require('express');
 const { getDb } = require('../lib/db');
 
 /**
- * SWG tools — Ship Builder, Loot, Crafting (later).
+ * SWG tools — Ship Builder, Loot, Crafting.
  *
  * All the math runs in the browser (public/swg-calc.js, public/swg-loot-calc.js). The server
  * renders the pages, serves the chassis list (data/swg-ships.json, scripts/swg-import-ships.js)
  * and the loot data (data/swg-loot.json, scripts/swg-import-loot.js), and keeps saved builds in
  * `swg_builds` and saved components (looted parts and RE projects) in `swg_components`,
- * one doc per name.
+ * one doc per name. The Crafting page reads data/swg-crafting.json (scripts/swg-import-crafting.js)
+ * and keeps crafted items in `swg_crafted`, one doc per name.
  */
 const router = express.Router();
 const COLLECTION = 'swg_builds';
 const COMPONENTS = 'swg_components';
 const SHIPS_FILE = path.join(__dirname, '..', 'data', 'swg-ships.json');
 const LOOT_FILE = path.join(__dirname, '..', 'data', 'swg-loot.json');
+const CRAFTING_FILE = path.join(__dirname, '..', 'data', 'swg-crafting.json');
+const CRAFTED = 'swg_crafted';
 const COMPONENT_TYPES = ['armor', 'booster', 'droid_interface', 'engine', 'reactor', 'shield_generator', 'weapon', 'weapon_capacitor'];
 const COMPONENT_KINDS = ['loot', 're', 'crafted'];
 
@@ -32,17 +35,33 @@ function lootJson() {
   return lootCache;
 }
 
+let craftingCache = null;
+function craftingJson() {
+  if (!craftingCache) craftingCache = fs.readFileSync(CRAFTING_FILE, 'utf8');
+  return craftingCache;
+}
+let schematicIds = null;
+function schematicTargets() {
+  if (!schematicIds) schematicIds = new Map(JSON.parse(craftingJson()).schematics.map((s) => [s.id, s.t]));
+  return schematicIds;
+}
+
 const page = (view, title, tab) => (req, res) => res.render('swg/' + view, { title, section: 'swg', tab });
 
 router.get('/', (req, res) => res.redirect('/swg/ships'));
 router.get('/ships', page('ships', 'Ship builder', 'ships'));
 router.get('/loot', page('loot', 'Loot', 'loot'));
-router.get('/crafting', page('soon', 'Crafting', 'crafting'));
+router.get('/crafting', page('crafting', 'Crafting', 'crafting'));
 
 router.get('/api/ships', (req, res) => res.json({ ships: ships() }));
 router.get('/api/loot', (req, res) => {
   res.set('Cache-Control', 'private, max-age=3600');
   res.type('json').send(lootJson());
+});
+
+router.get('/api/crafting', (req, res) => {
+  res.set('Cache-Control', 'private, max-age=3600');
+  res.type('json').send(craftingJson());
 });
 
 router.get('/api/builds', async (req, res, next) => {
@@ -202,6 +221,73 @@ router.put('/api/components/:name', async (req, res, next) => {
 router.delete('/api/components/:name', async (req, res, next) => {
   try {
     const r = await getDb().collection(COMPONENTS).deleteOne({ _id: nameKey(req.params.name) });
+    res.json({ ok: true, deleted: r.deletedCount });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------- crafted items (Crafting page) ----------
+
+const MAX_INPUTS = 15000; // characters of JSON; the body limit is 20 kB
+
+/** [[name, value, precision, group, hidden], …] — the stats a crafted item carries into other schematics */
+function cleanProps(list) {
+  if (!Array.isArray(list)) return null;
+  const out = [];
+  for (const p of list.slice(0, 80)) {
+    if (!Array.isArray(p) || !/^[A-Za-z0-9_]{1,60}$/.test(String(p[0])) || !num(p[1])) return null;
+    const prec = Number.isInteger(p[2]) && p[2] >= 0 && p[2] <= 20 ? p[2] : 0;
+    out.push([p[0], p[1], prec, typeof p[3] === 'string' ? p[3].slice(0, 60) : '', !!p[4]]);
+  }
+  return out;
+}
+
+router.get('/api/crafted', async (req, res, next) => {
+  try {
+    const list = await getDb()
+      .collection(CRAFTED)
+      .find({}, { projection: { name: 1, schematic: 1, target: 1, updatedAt: 1 } })
+      .sort({ updatedAt: -1 })
+      .toArray();
+    res.json({ items: list.map((c) => ({ name: c.name, schematic: c.schematic, target: c.target, updatedAt: c.updatedAt })) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/api/crafted/:name', async (req, res, next) => {
+  try {
+    const doc = await getDb().collection(CRAFTED).findOne({ _id: nameKey(req.params.name) });
+    if (!doc) return res.status(404).json({ error: 'No saved item with that name' });
+    const { _id, ...item } = doc;
+    res.json({ item });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/api/crafted/:name', async (req, res, next) => {
+  try {
+    const name = cleanName(req.params.name);
+    if (!name) return res.status(400).json({ error: 'Give the item a name' });
+    const b = req.body || {};
+    const target = schematicTargets().get(b.schematic);
+    if (!target) return res.status(400).json({ error: 'Unknown schematic' });
+    const props = cleanProps(b.props);
+    if (!props) return res.status(400).json({ error: 'props must be a list of [stat, value, precision, group, hidden]' });
+    if (b.inputs != null && (!isObj(b.inputs) || JSON.stringify(b.inputs).length > MAX_INPUTS)) return res.status(400).json({ error: 'inputs must be a small object' });
+    const doc = { name, schematic: b.schematic, target, props, inputs: b.inputs || {}, updatedAt: new Date() };
+    await getDb().collection(CRAFTED).replaceOne({ _id: nameKey(name) }, doc, { upsert: true });
+    res.json({ ok: true, name, updatedAt: doc.updatedAt });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/api/crafted/:name', async (req, res, next) => {
+  try {
+    const r = await getDb().collection(CRAFTED).deleteOne({ _id: nameKey(req.params.name) });
     res.json({ ok: true, deleted: r.deletedCount });
   } catch (err) {
     next(err);

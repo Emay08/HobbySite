@@ -460,6 +460,31 @@ Looted ship components, which NPC ships drop them and how likely a good roll is.
 
 Tests: `web/test/swg.test.js` (LUA parsing, name list, stat math, mass), `web/test/swg-loot.test.js` (loot files, drop odds, roll distribution, RE projects).
 
+## SWG Crafting simulator (`/swg/crafting`)
+
+Simulates crafting on the NFS server: pick a profession tab (Artisan schematics show on every tab except Doctor and Combat Medic, which show Medic's), pick a schematic, enter resources and components, and read the stats after assembly, after the experimentation you choose, and at the experimentation cap. All math runs in the browser (`web/public/swg-craft-calc.js`, comments at the top explain it).
+
+**Data** — `web/data/swg-crafting.json`, built from the server scripts:
+
+```bash
+cd web
+node scripts/swg-import-crafting.js "C:\SWG\NFS source\swgnfs-nfs_unstable\swgnfs-nfs_unstable\MMOCoreORB\bin\scripts" ["<Core3>\MMOCoreORB\bin\scripts"]
+```
+
+It reads `managers/crafting/schematics.lua` (the schematics the server actually loads), each `object/draft_schematic/…` file (slots, resource classes, quantities, contributions, target) and the target object file (experimental properties: weights, min/max, precision, combine type). With public Core3 as the second folder, items whose stat ranges NFS changed get an **NFS** tag. Rerun after pulling server changes. Profession comes from the schematic's assembly skill / XP type (bio-engineer, spices, instruments, scout and Jedi are left out); Medic's schematics (basic medical components, Stimpacks A–D, Wound Medpacks A–B) are a fixed list in `lib/swgCrafting.js`. Schematics whose stats don't depend on materials are hidden unless ticked.
+
+**How the server combines things** (Core3 `ResourceLabratory` / `CraftingValues`, unchanged on NFS):
+- per resource stat, the quantity-weighted average over the resource slots (a resource without the stat is left out of that average);
+- per item stat, `weightedSum = Σ share × average` using the item's weights (e.g. rifle barrel 66 % CD / 33 % SR); experimentation cap = weightedSum / 1000; assembly % = weightedSum × (0.000015 × weightedSum + 0.015) / 100 × assembly modifier (Great success 1.0, Amazing 1.05, then −0.1 per step); value = min + % × (max − min);
+- components: the first component in each slot adds its stats × the slot's contribution (linear stats move min, max and value together); stats the item doesn't have are added as fixed values; armor layers and segments carry `<type>effectiveness` for their special types, which ends up in the armor piece's protection table;
+- experimentation: each point adds +8 / 7 / 5.5 / 1.5 / 1 / 0 / −4 / −7 / −8 % (Amazing … Critical failure) to every stat in its row, up to the cap.
+
+**Inputs**: one averaged value for every relevant stat, or each resource's stats per slot. Component slots take a saved item, a simulated component (crafted here at a value you give it), or stats entered by hand.
+
+**Saved items** (Mongo `swg_crafted`, one doc per name): the stats the item carries into other schematics plus the inputs, so loading one puts the whole setup back. Saved items show up in matching component slots of other schematics (matched by template name; "Other saved items" lists the rest). Export / import as JSON from the Saved Items panel.
+
+Tests: `web/test/swg-crafting.test.js`.
+
 ## Adding more tools later
 
 The landing page (`web/views/home.ejs`) is a grid of tiles. Add a new tile, a router under `web/routes/`, and mount it in `server.js` behind `requireLogin` — everything else (auth, layout, DB) is shared.
