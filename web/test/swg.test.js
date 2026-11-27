@@ -155,6 +155,12 @@ test('ship fixes: empty ordnance slots, the Dunelizard\u2019s second gun, turret
   assert.deepStrictEqual(layout(byId('hutt_light_s01')), ['weapon_0:gun', 'weapon_1:missile', 'weapon_2:countermeasure']);
   assert.deepStrictEqual(layout(byId('hutt_heavy_s02')), ['weapon_0:gun', 'weapon_1:gun', 'weapon_2:gun', 'weapon_3:missile', 'weapon_4:countermeasure']);
   assert.deepStrictEqual(layout(byId('hutt_medium_s01')), ['weapon_0:gun', 'weapon_1:gun', 'weapon_2:missile', 'weapon_3:countermeasure']);
+  for (const n of [1, 2, 3, 4]) {
+    assert.deepStrictEqual(layout(byId('blacksun_medium_s0' + n)), ['weapon_0:gun', 'weapon_1:gun', 'weapon_2:missile', 'weapon_3:countermeasure']);
+    assert.deepStrictEqual(layout(byId('blacksun_heavy_s0' + n)).slice(3), ['weapon_3:missile', 'weapon_4:countermeasure']);
+  }
+  assert.strictEqual(byId('blacksun_medium_s01').slots.weapon_3.name, 'wpn_std_countermeasure'); // stock countermeasures
+  assert.ok(byId('blacksun_heavy_s02').slots.weapon_3.name.includes('missile')); // Styles 2–4 keep their launcher
   // an empty ordnance slot starts empty in a new build
   assert.deepStrictEqual(C.defaultBuild(byId('tieaggressor')).components.weapon_2, { source: 'empty' });
   // turrets (weapon index from ship_turret.lua = slot number)

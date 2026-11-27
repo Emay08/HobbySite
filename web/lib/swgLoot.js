@@ -124,18 +124,22 @@ const shortStat = (k) => k.replace(/^ship_component_/, '');
  *   items:  [{ id, type, tier, stats: { stat: [listed min, listed max, precision] } }]
  *   groups: { leafGroup: [[itemIndex, chance], ...] }          chance = weight / 10,000,000
  *   tables: { table: { g: [[leafGroup, p], ...], i: [[itemIndex, p], ...] } }
- *   npcs:   [[id, lootChance, lootRolls, table, faction], ...]
+ *   npcs:   [[id, lootChance, lootRolls, table, faction, nfsOnly (1/0)], ...]
  * }
  * Only ship-component items, tables that can give one, and ships that roll loot are kept.
  */
-function buildLootData({ items, groups, ships }) {
+function buildLootData({ items, groups, ships, publicList }) {
+  // publicList (data/swg-public.json): ids in public SWGEmu; anything else is flagged NFS-only
+  const pub = publicList ? { items: new Set(publicList.items), npcs: new Set(publicList.npcs) } : null;
   const outItems = [];
   for (const { type, text } of items) {
     const it = parseLootItem(text);
     if (!it || !TYPES.includes(type) || !(it.tier >= 1)) continue;
     const stats = {};
     for (const [k, v] of Object.entries(it.stats)) stats[shortStat(k)] = v;
-    outItems.push({ id: it.id, type, tier: it.tier, stats });
+    const item = { id: it.id, type, tier: it.tier, stats };
+    if (pub && !pub.items.has(it.id)) item.nfs = true;
+    outItems.push(item);
   }
   outItems.sort((a, b) => a.type.localeCompare(b.type) || a.tier - b.tier || a.id.localeCompare(b.id));
   const index = new Map(outItems.map((it, i) => [it.id, i]));
@@ -172,7 +176,7 @@ function buildLootData({ items, groups, ships }) {
       if (!g.length && !i.length) continue;
       tables[s.lootTable] = { g, i };
     }
-    npcs.push([s.id, s.lootChance, s.lootRolls, s.lootTable, s.faction]);
+    npcs.push([s.id, s.lootChance, s.lootRolls, s.lootTable, s.faction, pub && !pub.npcs.has(s.id) ? 1 : 0]);
   }
   npcs.sort((a, b) => a[0].localeCompare(b[0]));
   return { items: outItems, groups: leafGroups, tables, npcs, unknownTables: [...unknownTables].sort() };

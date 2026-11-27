@@ -124,6 +124,11 @@ function parseShipNames(text) {
  *   ordnance slot in weapon_2 and the countermeasures move to weapon_3.
  */
 const ORDNANCE = () => ({ empty: true, launcher: 'missile' });
+// a typical stock countermeasure launcher (the player templates' own vary by a few points)
+const COUNTERMEASURE = () => ({
+  name: 'wpn_std_countermeasure', hitpoints: 245, armor: 245, rate: 0.1, drain: 23, maxDamage: 97,
+  shieldEfficiency: 0, minDamage: 24.5, ammo: 25, ammo_type: 6, armorEfficiency: 0,
+});
 const SHIP_FIXES = {
   xwing(ship) {
     if (!ship.slots.weapon_2 && ship.slots.weapon_1) ship.slots.weapon_2 = { ...ship.slots.weapon_1 };
@@ -137,7 +142,27 @@ const SHIP_FIXES = {
   hutt_heavy_s02: kimogila,
   hutt_medium_s01: dunelizard,
   hutt_medium_s02: dunelizard,
+  // Ixiyen: the NPC versions (object/ship/blacksun_medium_s0N*.lua) carry a missile launcher in
+  // weapon_2 and countermeasures in weapon_3; the player templates stop at weapon_1
+  blacksun_medium_s01: ixiyen,
+  blacksun_medium_s02: ixiyen,
+  blacksun_medium_s03: ixiyen,
+  blacksun_medium_s04: ixiyen,
+  // Rihkxyrk: NPCs have a missile launcher in weapon_3 and countermeasures in weapon_4; the player
+  // Style 1 template has neither, Styles 2–4 lack the countermeasures
+  blacksun_heavy_s01: rihkxyrk,
+  blacksun_heavy_s02: rihkxyrk,
+  blacksun_heavy_s03: rihkxyrk,
+  blacksun_heavy_s04: rihkxyrk,
 };
+function ixiyen(ship) {
+  if (!ship.slots.weapon_2) ship.slots.weapon_2 = ORDNANCE();
+  if (!ship.slots.weapon_3) ship.slots.weapon_3 = COUNTERMEASURE();
+}
+function rihkxyrk(ship) {
+  if (!ship.slots.weapon_3) ship.slots.weapon_3 = ORDNANCE();
+  if (!ship.slots.weapon_4) ship.slots.weapon_4 = COUNTERMEASURE();
+}
 function scyk(ship) {
   if (!ship.slots.weapon_1) ship.slots.weapon_1 = ORDNANCE();
 }
@@ -179,7 +204,7 @@ function applyFixes(ship) {
   return ship;
 }
 
-function buildShipData(namesText, luaFiles) {
+function buildShipData(namesText, luaFiles, publicList) {
   const names = parseShipNames(namesText);
   const ships = [];
   const missing = [];
@@ -193,7 +218,9 @@ function buildShipData(namesText, luaFiles) {
       continue;
     }
     used.add(file);
-    ships.push(applyFixes({ id: n.iff.replace(/\.iff$/, ''), name: n.name, faction: n.faction, ...parsed }));
+    const ship = applyFixes({ id: n.iff.replace(/\.iff$/, ''), name: n.name, faction: n.faction, ...parsed });
+    if (publicList && !publicList.ships.includes(ship.id)) ship.nfs = true; // not in public SWGEmu
+    ships.push(ship);
   }
   const unnamed = Object.keys(luaFiles).filter((f) => /^player_.*\.lua$/.test(f) && !used.has(f)).sort();
   return { ships, missing, unnamed };

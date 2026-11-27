@@ -96,7 +96,7 @@
   }
   function renderShipSelect() {
     const sel = $('#swg-ship');
-    const list = ships.filter((s) => !faction || s.faction === faction);
+    const list = ships.filter((s) => (!faction || s.faction === faction) && (window.SwgNfs.on() || !s.nfs));
     sel.replaceChildren();
     const groups = faction ? [faction] : ['rebel', 'imperial', 'freelancer'];
     for (const g of groups) {
@@ -631,6 +631,7 @@
       selectShip(e.target.value);
     });
     wireDragging($('#swg-slots'));
+    document.addEventListener('swg:nfs', () => renderShipSelect()); // NFS content switched on / off
     $('#swg-layout-reset').addEventListener('click', () => saveLayout(null));
     // the server copy of the tile layouts wins (it follows you between computers)
     api('/prefs').then((p) => {

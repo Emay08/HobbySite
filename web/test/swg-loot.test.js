@@ -51,7 +51,7 @@ test('buildLootData: nested groups, weights out of 10,000,000, ships without loo
   assert.deepStrictEqual(d.items[0].stats.mass, [3000, 1000, 0]); // prefix dropped
   assert.deepStrictEqual(d.tables.faction_t1, { g: [['comp_t1', 0.5]], i: [] });
   assert.deepStrictEqual(d.groups.comp_t1, [[0, 0.25], [1, 0.75]]);
-  assert.deepStrictEqual(d.npcs, [['pirate', 0.2, 1, 'faction_t1', 'pirate']]);
+  assert.deepStrictEqual(d.npcs, [['pirate', 0.2, 1, 'faction_t1', 'pirate', 0]]);
   assert.deepStrictEqual(d.unknownTables, ['missing_table']);
 
   const drops = L.makeDropIndex(d);
@@ -120,4 +120,18 @@ test('data/swg-loot.json: components of every type and tier, every NPC table res
   for (const [, , , table] of d.npcs) assert.ok(d.tables[table], table);
   for (const t of Object.values(d.tables)) for (const [g] of t.g) assert.ok(d.groups[g], g);
   for (const it of d.items) for (const k of Object.keys(it.stats)) assert.ok(L.STATS[k], 'stat ' + k + ' has a label');
+});
+
+test('NFS-only content: flagged against the public SWGEmu list', () => {
+  const d = G.buildLootData({
+    items: [{ type: 'weapon_capacitor', text: ITEM('cap_a', 5, [3000, 1000]) }, { type: 'weapon_capacitor', text: ITEM('cap_nfs', 5, [3000, 1000]) }],
+    groups: [GROUP('t', [['item', 'cap_a', 5000000], ['item', 'cap_nfs', 5000000]])],
+    ships: [SHIP('pub_ship', 0.2, 't'), SHIP('nfs_ship', 0.2, 't')],
+    publicList: { ships: [], items: ['cap_a'], npcs: ['pub_ship'] },
+  });
+  assert.deepStrictEqual(d.items.map((i) => [i.id, !!i.nfs]), [['cap_a', false], ['cap_nfs', true]]);
+  assert.deepStrictEqual(d.npcs.map((n) => [n[0], n[5]]), [['nfs_ship', 1], ['pub_ship', 0]]);
+  // the shipped data: no NFS-only components, some NFS-only NPC ships
+  const real = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'swg-loot.json'), 'utf8'));
+  assert.ok(real.npcs.some((n) => n[5] === 1) && real.npcs.some((n) => n[5] === 0));
 });

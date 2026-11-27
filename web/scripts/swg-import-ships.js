@@ -19,7 +19,9 @@ const namesFile = process.argv[3] || path.join(__dirname, '..', 'data', 'swg-shi
 const files = {};
 for (const f of fs.readdirSync(dir)) if (/^player_.*\.lua$/.test(f)) files[f] = fs.readFileSync(path.join(dir, f), 'utf8');
 
-const { ships, missing, unnamed } = buildShipData(fs.readFileSync(namesFile, 'utf8'), files);
+const publicFile = path.join(__dirname, '..', 'data', 'swg-public.json');
+const publicList = fs.existsSync(publicFile) ? JSON.parse(fs.readFileSync(publicFile, 'utf8')) : null;
+const { ships, missing, unnamed } = buildShipData(fs.readFileSync(namesFile, 'utf8'), files, publicList);
 const out = path.join(__dirname, '..', 'data', 'swg-ships.json');
 fs.writeFileSync(out, JSON.stringify({ generatedAt: new Date().toISOString(), ships }, null, 1) + '\n');
 console.log(`${ships.length} ships → ${path.relative(process.cwd(), out)}`);

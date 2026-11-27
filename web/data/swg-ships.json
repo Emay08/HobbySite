@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-26T18:11:56.615Z",
+ "generatedAt": "2026-11-27T20:32:01.175Z",
  "ships": [
   {
    "id": "awing",
@@ -2431,6 +2431,23 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
     }
    }
   },
@@ -2538,6 +2555,23 @@
      "minDamage": 117.2669,
      "ammo": 0,
      "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
      "armorEfficiency": 0
     }
    }
@@ -2647,6 +2681,23 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
     }
    }
   },
@@ -2754,6 +2805,23 @@
      "minDamage": 117.2194,
      "ammo": 0,
      "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_2": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_3": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
      "armorEfficiency": 0
     }
    }
@@ -2875,6 +2943,23 @@
      "minDamage": 22.86555,
      "ammo": 0,
      "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_3": {
+     "empty": true,
+     "launcher": "missile"
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
      "armorEfficiency": 0
     }
    }
@@ -3010,6 +3095,19 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
     }
    }
   },
@@ -3144,6 +3242,19 @@
      "ammo": 0,
      "ammo_type": 0,
      "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
+     "armorEfficiency": 0
     }
    }
   },
@@ -3277,6 +3388,19 @@
      "minDamage": 0,
      "ammo": 0,
      "ammo_type": 0,
+     "armorEfficiency": 0
+    },
+    "weapon_4": {
+     "name": "wpn_std_countermeasure",
+     "hitpoints": 245,
+     "armor": 245,
+     "rate": 0.1,
+     "drain": 23,
+     "maxDamage": 97,
+     "shieldEfficiency": 0,
+     "minDamage": 24.5,
+     "ammo": 25,
+     "ammo_type": 6,
      "armorEfficiency": 0
     }
    }

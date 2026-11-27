@@ -28,7 +28,9 @@
     <% for (const [href, label] of [['/swg/ships', 'Ship Builder'], ['/swg/loot', 'Loot'], ['/swg/crafting', 'Crafting']]) { %>
       <a href="<%= href %>" class="<%= path.startsWith(href) ? 'active' : '' %>"><%= label %></a>
     <% } %>
+    <label class="swg-nfs-toggle" title="Off: only ships, components and NPC ships that exist in public SWGEmu"><input type="checkbox" id="swg-nfs" checked> Include NFS content</label>
   </nav>
+  <script src="/static/swg-common.js?v=<%= assetV %>"></script>
   <% } %>
   <% if (isMtgo) { %>
   <form id="nav-search" class="nav-search" method="get" action="/mtgo/go" role="search" autocomplete="off">

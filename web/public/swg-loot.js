@@ -72,7 +72,8 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
   // ---------- the model ----------
   function compute() {
     const all = [];
-    data.items.forEach((it, idx) => { if (it.type === state.type && it.tier === state.tier) all.push([idx, it]); });
+    const nfs = window.SwgNfs.on();
+    data.items.forEach((it, idx) => { if (it.type === state.type && it.tier === state.tier && (nfs || !it.nfs)) all.push([idx, it]); });
     const base = state.sel.size ? all.filter(([, it]) => state.sel.has(it.id)) : all;
     const keys = L.statKeysForType(state.type, all.map(([, it]) => it));
     const constraints = Object.entries(state.values);
@@ -85,6 +86,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
     const npcRows = [];
     if (effIdx.length) {
       for (const n of npcs) {
+        if (n.nfs && !nfs) continue; // NFS-only ship, NFS content switched off
         const p = L.killChance(n, drops.tableProbs(n.table), effIdx);
         if (p > 0) npcRows.push({ npc: n, p });
       }
@@ -162,7 +164,8 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
         title: npc.id + ' · loot table ' + npc.table + ' · loot chance ' + Math.round(npc.chance * 1000) / 10 + '%',
         onclick: () => pickNpc(npc.id),
         onkeydown: (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); pickNpc(npc.id); } },
-      }, el('span', { class: 'lt-row-name' }, prettyNpc(npc.id)), el('span', { class: 'muted small lt-faction' }, npc.faction), el('span', { class: 'lt-odds' }, L.oneIn(p))));
+      }, el('span', { class: 'lt-row-name' }, prettyNpc(npc.id)), npc.nfs ? el('span', { class: 'swg-nfs-tag', title: 'Only on NFS, not in public SWGEmu' }, 'NFS') : null,
+        el('span', { class: 'muted small lt-faction' }, npc.faction), el('span', { class: 'lt-odds' }, L.oneIn(p))));
     }
     const n = view.npcRows.length;
     $('#lt-npcs-note').textContent = n ? n.toLocaleString() + ' ship' + (n === 1 ? '' : 's') + (n > MAX_NPCS_SHOWN ? ', top ' + MAX_NPCS_SHOWN + ' shown' : '') : '';
@@ -364,7 +367,7 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
 
   function saveProject() { session.set('reProject', project); }
   /** Default RE project name: "R8 Weapon"; RE level 10 is "R0". */
-  const reName = (type, tier) => 'R' + (tier % 10) + ' ' + typeLabel(type);
+  const reName = (type, tier) => 'R' + (tier % 10) + ' ' + (type === 'shield_generator' ? 'Shield' : typeLabel(type));
 
   function addToProject() {
     const msg = $('#re-msg');
@@ -717,7 +720,8 @@ const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="
       $('#lt-items').replaceChildren(el('li', { class: 'bad' }, 'Could not load the loot data: ' + err.message));
       return;
     }
-    npcs = data.npcs.map(([id, chance, rolls, table, faction]) => ({ id, chance, rolls, table, faction }));
+    npcs = data.npcs.map(([id, chance, rolls, table, faction, nfsOnly]) => ({ id, chance, rolls, table, faction, nfs: !!nfsOnly }));
+    document.addEventListener('swg:nfs', () => { state.sel.clear(); state.npc = null; update(); });
     drops = L.makeDropIndex(data);
     update();
     renderProject();

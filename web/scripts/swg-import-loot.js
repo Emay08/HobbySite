@@ -25,7 +25,10 @@ for (const type of TYPES) for (const f of walk(path.join(root, 'loot', 'items', 
 const groups = walk(path.join(root, 'loot', 'groups')).map(read);
 const ships = walk(path.join(root, 'ship_mobile', 'ships')).map(read);
 
-const data = buildLootData({ items, groups, ships });
+const publicFile = path.join(__dirname, '..', 'data', 'swg-public.json');
+const publicList = fs.existsSync(publicFile) ? JSON.parse(fs.readFileSync(publicFile, 'utf8')) : null;
+const data = buildLootData({ items, groups, ships, publicList });
+if (!publicList) console.log('No data/swg-public.json: nothing is flagged NFS-only (see scripts/swg-public-list.js).');
 const out = path.join(__dirname, '..', 'data', 'swg-loot.json');
 const { unknownTables, ...save } = data;
 fs.writeFileSync(out, JSON.stringify({ generatedAt: new Date().toISOString(), ...save }) + '\n');
