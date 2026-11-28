@@ -20,15 +20,15 @@ const loginLimiter = rateLimit({
 });
 
 router.get('/', (req, res) => {
-  if (req.session.user) return res.redirect('/home');
+  if (req.user) return res.redirect('/home');
   res.render('login', { title: 'Sign in', error: null, username: '' });
 });
 
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const ok = await verifyCredentials(username, password);
-    if (!ok) {
+    const name = await verifyCredentials(username, password);
+    if (!name) {
       return res.status(401).render('login', {
         title: 'Sign in',
         error: 'Wrong username or password.',
@@ -38,7 +38,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
     const returnTo = req.session.returnTo;
     req.session.regenerate((err) => {
       if (err) return next(err);
-      req.session.user = { username };
+      req.session.user = { username: name };
       const dest = typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/home';
       req.session.save(() => res.redirect(dest));
     });

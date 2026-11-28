@@ -3,7 +3,9 @@
 (function () {
   'use strict';
   const KEY = 'swg.nfs';
-  const read = () => { try { return localStorage.getItem(KEY) !== 'off'; } catch { return true; } };
+  // an admin can turn NFS content off for a user: then there's no switch and it's always off
+  const locked = !!document.querySelector('meta[name="swg-nfs"][content="off"]');
+  const read = () => { if (locked) return false; try { return localStorage.getItem(KEY) !== 'off'; } catch { return true; } };
   window.SwgNfs = { on: read };
   function wire() {
     const box = document.getElementById('swg-nfs');

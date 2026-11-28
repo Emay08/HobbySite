@@ -53,22 +53,33 @@ router.get('/ships', page('ships', 'Ship builder', 'ships'));
 router.get('/loot', page('loot', 'Loot', 'loot'));
 router.get('/crafting', page('crafting', 'Crafting', 'crafting'));
 
-router.get('/api/ships', (req, res) => res.json({ ships: ships() }));
+// Users an admin has turned NFS content off for don't get NFS-only ships or schematics at all.
+const nfsOn = (req) => !req.user || req.user.nfs;
+
+router.get('/api/ships', (req, res) => res.json({ ships: nfsOn(req) ? ships() : ships().filter((s) => !s.nfs) }));
 router.get('/api/loot', (req, res) => {
   res.set('Cache-Control', 'private, max-age=3600');
   res.type('json').send(lootJson());
 });
 
+let craftingPublicCache = null;
 router.get('/api/crafting', (req, res) => {
   res.set('Cache-Control', 'private, max-age=3600');
-  res.type('json').send(craftingJson());
+  if (nfsOn(req)) return res.type('json').send(craftingJson());
+  if (!craftingPublicCache) {
+    const d = JSON.parse(craftingJson());
+    d.schematics = d.schematics.filter((s) => !s.nfs);
+    for (const t of Object.values(d.targets)) delete t.nfs;
+    craftingPublicCache = JSON.stringify(d);
+  }
+  res.type('json').send(craftingPublicCache);
 });
 
 router.get('/api/builds', async (req, res, next) => {
   try {
     const list = await getDb()
       .collection(COLLECTION)
-      .find({}, { projection: { name: 1, ship: 1, updatedAt: 1 } })
+      .find(mine(req), { projection: { name: 1, ship: 1, updatedAt: 1 } })
       .sort({ updatedAt: -1 })
       .toArray();
     res.json({ builds: list.map((b) => ({ name: b.name, ship: b.ship, updatedAt: b.updatedAt })) });
@@ -81,11 +92,20 @@ const cleanName = (s) => String(s || '').trim().replace(/\s+/g, ' ').slice(0, 80
 const nameKey = (s) => cleanName(s).toLowerCase();
 const isObj = (x) => x && typeof x === 'object' && !Array.isArray(x);
 
+// Saved builds, components, crafted items and layouts belong to whoever saved them. The owner's
+// (ADMIN_USERNAME) keep their original ids and have no `owner` field, so nothing saved before
+// users existed moves; everyone else's ids are prefixed with their name and carry `owner`.
+const ownerOf = (req) => (req.user && !req.user.owner ? req.user.username.toLowerCase() : null);
+const docId = (req, name) => (ownerOf(req) ? 'u:' + ownerOf(req) + ':' : '') + nameKey(name);
+const mine = (req) => (ownerOf(req) ? { owner: ownerOf(req) } : { owner: { $exists: false } });
+const withOwner = (req, doc) => (ownerOf(req) ? { ...doc, owner: ownerOf(req) } : doc);
+const prefsId = (req) => (ownerOf(req) ? 'layout:' + ownerOf(req) : 'layout');
+
 router.get('/api/builds/:name', async (req, res, next) => {
   try {
-    const doc = await getDb().collection(COLLECTION).findOne({ _id: nameKey(req.params.name) });
+    const doc = await getDb().collection(COLLECTION).findOne({ _id: docId(req, req.params.name) });
     if (!doc) return res.status(404).json({ error: 'No saved build with that name' });
-    const { _id, ...build } = doc;
+    const { _id, owner, ...build } = doc;
     res.json({ build });
   } catch (err) {
     next(err);
@@ -101,7 +121,7 @@ router.put('/api/builds/:name', async (req, res, next) => {
     if (!isObj(b.overloads) || !isObj(b.components)) return res.status(400).json({ error: 'overloads and components must be objects' });
     if (Object.keys(b.components).length > 40) return res.status(400).json({ error: 'Too many components' });
     const doc = { name, ship: b.ship, shipName: cleanName(b.shipName), overloads: b.overloads, components: b.components, updatedAt: new Date() };
-    await getDb().collection(COLLECTION).replaceOne({ _id: nameKey(name) }, doc, { upsert: true });
+    await getDb().collection(COLLECTION).replaceOne({ _id: docId(req, name) }, withOwner(req, doc), { upsert: true });
     res.json({ ok: true, name, updatedAt: doc.updatedAt });
   } catch (err) {
     next(err);
@@ -110,7 +130,7 @@ router.put('/api/builds/:name', async (req, res, next) => {
 
 router.delete('/api/builds/:name', async (req, res, next) => {
   try {
-    const r = await getDb().collection(COLLECTION).deleteOne({ _id: nameKey(req.params.name) });
+    const r = await getDb().collection(COLLECTION).deleteOne({ _id: docId(req, req.params.name) });
     res.json({ ok: true, deleted: r.deletedCount });
   } catch (err) {
     next(err);
@@ -122,7 +142,7 @@ const PREFS = 'swg_prefs';
 
 router.get('/api/prefs', async (req, res, next) => {
   try {
-    const doc = await getDb().collection(PREFS).findOne({ _id: 'layout' });
+    const doc = await getDb().collection(PREFS).findOne({ _id: prefsId(req) });
     res.json({ layouts: (doc && doc.ships) || {} });
   } catch (err) {
     next(err);
@@ -135,7 +155,7 @@ router.put('/api/prefs/layout/:ship', async (req, res, next) => {
     if (!ships().some((s) => s.id === id)) return res.status(400).json({ error: 'Unknown ship' });
     const order = Array.isArray(req.body && req.body.order) ? req.body.order.filter((k) => typeof k === 'string' && /^[a-z_0-9]{1,40}$/.test(k)).slice(0, 40) : [];
     const update = order.length ? { $set: { ['ships.' + id]: order } } : { $unset: { ['ships.' + id]: '' } };
-    await getDb().collection(PREFS).updateOne({ _id: 'layout' }, update, { upsert: true });
+    await getDb().collection(PREFS).updateOne({ _id: prefsId(req) }, update, { upsert: true });
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -154,7 +174,7 @@ function cleanNumbers(obj, max = 60) {
 
 router.get('/api/components', async (req, res, next) => {
   try {
-    const q = {};
+    const q = mine(req);
     if (COMPONENT_KINDS.includes(req.query.kind)) q.kind = req.query.kind;
     if (COMPONENT_TYPES.includes(req.query.type)) q.type = req.query.type;
     const list = await getDb()
@@ -172,9 +192,9 @@ router.get('/api/components', async (req, res, next) => {
 
 router.get('/api/components/:name', async (req, res, next) => {
   try {
-    const doc = await getDb().collection(COMPONENTS).findOne({ _id: nameKey(req.params.name) });
+    const doc = await getDb().collection(COMPONENTS).findOne({ _id: docId(req, req.params.name) });
     if (!doc) return res.status(404).json({ error: 'No saved component with that name' });
-    const { _id, ...component } = doc;
+    const { _id, owner, ...component } = doc;
     res.json({ component });
   } catch (err) {
     next(err);
@@ -211,7 +231,7 @@ router.put('/api/components/:name', async (req, res, next) => {
         typical: cleanNumbers(c && c.typical),
       }));
     }
-    await getDb().collection(COMPONENTS).replaceOne({ _id: nameKey(name) }, doc, { upsert: true });
+    await getDb().collection(COMPONENTS).replaceOne({ _id: docId(req, name) }, withOwner(req, doc), { upsert: true });
     res.json({ ok: true, name, updatedAt: doc.updatedAt });
   } catch (err) {
     next(err);
@@ -220,7 +240,7 @@ router.put('/api/components/:name', async (req, res, next) => {
 
 router.delete('/api/components/:name', async (req, res, next) => {
   try {
-    const r = await getDb().collection(COMPONENTS).deleteOne({ _id: nameKey(req.params.name) });
+    const r = await getDb().collection(COMPONENTS).deleteOne({ _id: docId(req, req.params.name) });
     res.json({ ok: true, deleted: r.deletedCount });
   } catch (err) {
     next(err);
@@ -247,7 +267,7 @@ router.get('/api/crafted', async (req, res, next) => {
   try {
     const list = await getDb()
       .collection(CRAFTED)
-      .find({}, { projection: { name: 1, schematic: 1, target: 1, updatedAt: 1 } })
+      .find(mine(req), { projection: { name: 1, schematic: 1, target: 1, updatedAt: 1 } })
       .sort({ updatedAt: -1 })
       .toArray();
     res.json({ items: list.map((c) => ({ name: c.name, schematic: c.schematic, target: c.target, updatedAt: c.updatedAt })) });
@@ -258,9 +278,9 @@ router.get('/api/crafted', async (req, res, next) => {
 
 router.get('/api/crafted/:name', async (req, res, next) => {
   try {
-    const doc = await getDb().collection(CRAFTED).findOne({ _id: nameKey(req.params.name) });
+    const doc = await getDb().collection(CRAFTED).findOne({ _id: docId(req, req.params.name) });
     if (!doc) return res.status(404).json({ error: 'No saved item with that name' });
-    const { _id, ...item } = doc;
+    const { _id, owner, ...item } = doc;
     res.json({ item });
   } catch (err) {
     next(err);
@@ -278,7 +298,7 @@ router.put('/api/crafted/:name', async (req, res, next) => {
     if (!props) return res.status(400).json({ error: 'props must be a list of [stat, value, precision, group, hidden]' });
     if (b.inputs != null && (!isObj(b.inputs) || JSON.stringify(b.inputs).length > MAX_INPUTS)) return res.status(400).json({ error: 'inputs must be a small object' });
     const doc = { name, schematic: b.schematic, target, props, inputs: b.inputs || {}, updatedAt: new Date() };
-    await getDb().collection(CRAFTED).replaceOne({ _id: nameKey(name) }, doc, { upsert: true });
+    await getDb().collection(CRAFTED).replaceOne({ _id: docId(req, name) }, withOwner(req, doc), { upsert: true });
     res.json({ ok: true, name, updatedAt: doc.updatedAt });
   } catch (err) {
     next(err);
@@ -287,7 +307,7 @@ router.put('/api/crafted/:name', async (req, res, next) => {
 
 router.delete('/api/crafted/:name', async (req, res, next) => {
   try {
-    const r = await getDb().collection(CRAFTED).deleteOne({ _id: nameKey(req.params.name) });
+    const r = await getDb().collection(CRAFTED).deleteOne({ _id: docId(req, req.params.name) });
     res.json({ ok: true, deleted: r.deletedCount });
   } catch (err) {
     next(err);

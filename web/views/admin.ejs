@@ -1,0 +1,90 @@
+<%- include('partials/head') %>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Admin</p>
+    <h1>Users</h1>
+  </div>
+</div>
+<%- include('partials/flash') %>
+
+<section class="card">
+  <div class="adm-table-wrap">
+    <table class="adm-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>NFS content</th>
+          <th>Shared sub-sites</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row"><%= owner %> <span class="adm-tag">owner</span></th>
+          <td>Admin</td>
+          <td>Shown</td>
+          <td class="muted">All</td>
+          <td class="muted small">Set in the app settings</td>
+        </tr>
+        <% for (const u of list) { const formId = 'u-' + u._id.replace(/[^a-z0-9]/g, '_'); %>
+        <tr>
+          <th scope="row"><%= u.username %><div class="muted small">since <%= new Date(u.createdAt).toLocaleDateString('en-CA') %></div></th>
+          <td>
+            <select name="role" form="<%= formId %>" aria-label="Role for <%= u.username %>">
+              <% for (const r of roles) { %><option value="<%= r %>"<%= u.role === r ? ' selected' : '' %>><%= r === 'admin' ? 'Admin' : 'User' %></option><% } %>
+            </select>
+          </td>
+          <td><label class="adm-check"><input type="checkbox" name="nfs" value="on" form="<%= formId %>"<%= u.nfs ? ' checked' : '' %>> Shown</label></td>
+          <td>
+            <div class="adm-sites">
+              <% for (const s of sites) { %>
+              <label class="adm-check"><input type="checkbox" name="sites" value="<%= s.id %>" form="<%= formId %>"<%= (u.sites || []).includes(s.id) ? ' checked' : '' %>> <%= s.label %></label>
+              <% } %>
+            </div>
+            <p class="muted small adm-hint">Admins see everything, whatever is ticked.</p>
+          </td>
+          <td class="adm-actions">
+            <form id="<%= formId %>" method="post" action="/admin/users/<%= encodeURIComponent(u.username) %>"><button class="btn primary" type="submit">Save</button></form>
+            <details class="adm-more">
+              <summary class="link small">More</summary>
+              <form method="post" action="/admin/users/<%= encodeURIComponent(u.username) %>/password" class="adm-inline">
+                <input type="password" name="password" minlength="10" maxlength="200" placeholder="New password" aria-label="New password for <%= u.username %>" autocomplete="new-password" required>
+                <button class="btn" type="submit">Set</button>
+              </form>
+              <form method="post" action="/admin/users/<%= encodeURIComponent(u.username) %>/delete" class="adm-delete" data-confirm="Delete <%= u.username %>? Their saved SWG items stay in the database.">
+                <button class="link small bad" type="submit">Delete user</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+        <% } %>
+        <% if (!list.length) { %>
+        <tr><td colspan="5" class="muted">No other users yet.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="adm-h2">Add a user</h2>
+  <form method="post" action="/admin/users" class="adm-add" autocomplete="off">
+    <label>Username <input type="text" name="username" required minlength="3" maxlength="40" pattern="[A-Za-z0-9._\-]{3,40}"></label>
+    <label>Password <input type="password" name="password" required minlength="10" maxlength="200" autocomplete="new-password"></label>
+    <label>Role
+      <select name="role"><option value="user" selected>User</option><option value="admin">Admin</option></select>
+    </label>
+    <label class="adm-check"><input type="checkbox" name="nfs" value="on"> Show NFS content</label>
+    <fieldset class="adm-sites">
+      <legend class="small muted">Share</legend>
+      <% for (const s of sites) { %>
+      <label class="adm-check"><input type="checkbox" name="sites" value="<%= s.id %>"> <%= s.label %></label>
+      <% } %>
+    </fieldset>
+    <button class="btn primary" type="submit">Add user</button>
+  </form>
+  <p class="muted small">Give them the password yourself; they sign in on the same page you do. Their SWG builds, components and crafted items are their own. MTGO and the recital scheduler show your data, so share those only with people you’d let edit it.</p>
+</section>
+<script src="/static/admin.js?v=<%= assetV %>" defer></script>
+<%- include('partials/foot') %>

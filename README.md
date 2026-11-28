@@ -54,6 +54,7 @@ hobbymini (home PC) – "Vault home runner" scheduled task (functions/scripts/ho
 | `sheet_trades`  | web                  | Entries from the spreadsheet import (as typed, resolved card name, duplicate/date-range info) |
 | `import_staging`| web                  | A spreadsheet import waiting for review |
 | `sessions`      | web                  | Login sessions |
+| `users`         | web                  | Accounts other than the owner: password hash, role, NFS on/off, shared sub-sites (Admin page) |
 | `showorder`     | web                  | One doc (`_id: 'project'`): Dance Recital Scheduler lists, rules, saved schedules and their locks |
 | `swg_builds`    | web                  | SWG Ship Builder saved builds: ship, overloads, components |
 | `swg_prefs`     | web                  | SWG Ship Builder tile order per ship type |
@@ -80,7 +81,15 @@ npm run hash-password          # paste the output into ADMIN_PASSWORD_HASH (in s
 npm run dev                    # http://localhost:3000
 ```
 
-There is no sign-up page and no users table: the one allowed username and its bcrypt hash live in environment variables. Login attempts are rate-limited (10 per 15 min), sessions last 14 days, cookies are `httpOnly` + `SameSite=Strict` (+ `Secure` in production), and pages send `noindex`.
+There is no sign-up page. The owner account (you) is the username and bcrypt hash in environment variables; it is always an admin and can't be locked out. Login attempts are rate-limited (10 per 15 min), sessions last 14 days, cookies are `httpOnly` + `SameSite=Strict` (+ `Secure` in production), and pages send `noindex`.
+
+### Users and sharing — **Admin** (gavel icon, top right)
+Other people get accounts from the admin page (`/admin`, admins only): username + a starting password you give them, and per user:
+- **Role** — *User*, or *Admin* (sees every sub-site and NFS content, and can open the admin page);
+- **NFS content** — when off, the SWG pages have no "Include NFS content" switch at all, NFS-only ships and schematics aren't sent to their browser, and loot is shown without NFS items;
+- **Shared sub-sites** — MTGO, the recital scheduler and/or the SWG tools. Only shared ones appear on their home page; the rest answer "not shared with you".
+
+Changes apply on their next click (the user record is read on every request); deleting a user signs them out. Users are in the `users` collection (`lib/users.js`); the owner isn't stored there. SWG builds, saved components, crafted items and tile layouts belong to whoever saved them (`owner` field; yours keep their old ids). MTGO and the recital scheduler are single-owner: anyone you share them with sees and can edit your data.
 
 ### Updating your collection
 MTGO client → **Collection** → select all cards in your full collection → right-click → **Export** → **CSV**. Drag the file onto **MTGO → Update**. Each upload replaces the stored collection and shows what was added/removed. Headers are matched loosely, so exports from other tools that have *name* + *quantity* columns also work (cards without an MTGO ID won't get prices, though).

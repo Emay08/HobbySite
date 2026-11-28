@@ -640,7 +640,8 @@
   // ---------- start ----------
   async function start() {
     try {
-      const res = await fetch('/swg/api/crafting', { headers: { accept: 'application/json' } });
+      // the query keeps the browser's cached copy apart for accounts with NFS content turned off
+      const res = await fetch('/swg/api/crafting' + (nfsOn() ? '' : '?public=1'), { headers: { accept: 'application/json' } });
       if (!res.ok) throw new Error('Could not load the schematics (' + res.status + ')');
       data = await res.json();
     } catch (e) {

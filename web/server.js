@@ -15,7 +15,7 @@ const MongoStore = require('connect-mongo');
 const helmet = require('helmet');
 
 const db = require('./lib/db');
-const { requireLogin } = require('./lib/auth');
+const { requireLogin, requireSite, requireAdmin, loadUser } = require('./lib/auth');
 const authRoutes = require('./routes/auth');
 const mtgoRoutes = require('./routes/mtgo');
 const { router: listRoutes } = require('./routes/lists');
@@ -25,6 +25,7 @@ const { router: historyRoutes } = require('./routes/history');
 const { router: importRoutes } = require('./routes/import');
 const { router: showOrderRoutes } = require('./routes/showorder');
 const { router: swgRoutes } = require('./routes/swg');
+const { router: adminRoutes } = require('./routes/admin');
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -103,9 +104,9 @@ async function main() {
     next();
   });
 
-  // Make the logged-in user and current path available to every view
+  // Make the logged-in user (role, NFS, shared sub-sites; lib/auth.js) and current path available to every view
+  app.use(loadUser);
   app.use((req, res, next) => {
-    res.locals.user = req.session.user || null;
     res.locals.path = req.path;
     next();
   });
@@ -113,14 +114,15 @@ async function main() {
   app.get('/healthz', (req, res) => res.send('ok'));
   app.use('/', authRoutes);
   app.get('/home', requireLogin, (req, res) => res.render('home', { title: 'Home' }));
-  app.use('/mtgo', requireLogin, mtgoRoutes);
-  app.use('/mtgo', requireLogin, listRoutes);
-  app.use('/mtgo', requireLogin, cardRoutes);
-  app.use('/mtgo', requireLogin, tradeRoutes);
-  app.use('/mtgo', requireLogin, historyRoutes);
-  app.use('/mtgo', requireLogin, importRoutes);
-  app.use('/showorder', requireLogin, showOrderRoutes);
-  app.use('/swg', requireLogin, swgRoutes);
+  app.use('/mtgo', requireLogin, requireSite('mtgo'), mtgoRoutes);
+  app.use('/mtgo', requireLogin, requireSite('mtgo'), listRoutes);
+  app.use('/mtgo', requireLogin, requireSite('mtgo'), cardRoutes);
+  app.use('/mtgo', requireLogin, requireSite('mtgo'), tradeRoutes);
+  app.use('/mtgo', requireLogin, requireSite('mtgo'), historyRoutes);
+  app.use('/mtgo', requireLogin, requireSite('mtgo'), importRoutes);
+  app.use('/showorder', requireLogin, requireSite('showorder'), showOrderRoutes);
+  app.use('/swg', requireLogin, requireSite('swg'), swgRoutes);
+  app.use('/admin', requireLogin, requireAdmin, adminRoutes);
 
   app.use((req, res) => res.status(404).render('error', { title: 'Not found', message: 'Page not found.' }));
   app.use((err, req, res, _next) => {

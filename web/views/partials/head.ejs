@@ -28,8 +28,11 @@
     <% for (const [href, label] of [['/swg/ships', 'Ship Builder'], ['/swg/loot', 'Loot'], ['/swg/crafting', 'Crafting']]) { %>
       <a href="<%= href %>" class="<%= path.startsWith(href) ? 'active' : '' %>"><%= label %></a>
     <% } %>
+    <% if (user.nfs) { %>
     <label class="swg-nfs-toggle" title="Off: only ships, components and NPC ships that exist in public SWGEmu"><input type="checkbox" id="swg-nfs" checked> Include NFS content</label>
+    <% } %>
   </nav>
+  <% if (!user.nfs) { %><meta name="swg-nfs" content="off"><% } %>
   <script src="/static/swg-common.js?v=<%= assetV %>"></script>
   <% } %>
   <% if (isMtgo) { %>
@@ -38,9 +41,18 @@
     <ul id="nav-suggest" class="nav-suggest" role="listbox" hidden></ul>
   </form>
   <% } %>
-  <form method="post" action="/logout" class="logout">
-    <button type="submit" class="link">Sign out</button>
-  </form>
+  <div class="topbar-end">
+    <% if (user.isAdmin) { %>
+    <a href="/admin" class="icon-link<%= path && path.startsWith('/admin') ? ' active' : '' %>" title="Admin" aria-label="Admin">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(-45 11 10)" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"><rect x="5.5" y="3" width="11" height="5.5" rx="1.2"/><path d="M8 3v5.5M14 3v5.5"/><path d="M11 8.5v11"/></g><path d="M13.5 21h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </a>
+    <% } %>
+    <form method="post" action="/logout" class="logout">
+      <button type="submit" class="icon-link" title="Sign out (<%= user.username %>)" aria-label="Sign out">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M6 21V3.5h9V21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6 3.5l6.5 2.2V21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="10.4" cy="12.5" r=".95" fill="currentColor"/><path d="M15 12h5m-2-2l2 2-2 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+  </div>
 </header>
 <% } %>
 <main class="<%= user ? 'container' : '' %>">
