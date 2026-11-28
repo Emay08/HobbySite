@@ -345,7 +345,7 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     assert.match(page, /<h1>Ship Builder<\/h1>/);
     assert.match(page, /Ship Builder[\s\S]*Loot[\s\S]*Crafting/);
     assert.match(await html('/swg/loot'), /Add to RE Project/);
-    assert.match(await html('/swg/crafting'), /Coming later/);
+    assert.match(await html('/swg/crafting'), /<h1>Crafting<\/h1>/);
     const json = { 'content-type': 'application/json', accept: 'application/json' };
     const { ships } = await (await req('/swg/api/ships', { headers: json })).json();
     assert.ok(ships.length >= 30);
@@ -393,5 +393,61 @@ test('website end to end', { skip: !URI && 'TEST_MONGODB_URI not set' }, async (
     const weapons = (await (await req('/swg/api/components?type=weapon', { headers: json })).json()).components;
     assert.deepStrictEqual(weapons.map((c) => [c.name, c.launcher]), [['Chaff', 'countermeasure']]);
     for (const n of ['Cap%20one', 'My%20RE', 'Chaff']) assert.strictEqual((await req('/swg/api/components/' + n, { method: 'DELETE', headers: json })).status, 200);
+  });
+  await t.test('swg crafting: schematic data, save / load / delete a crafted item', async () => {
+    const json = { 'content-type': 'application/json', accept: 'application/json' };
+    const data = await (await req('/swg/api/crafting', { headers: json })).json();
+    assert.ok(data.schematics.length > 1000);
+    const s = data.schematics.find((x) => x.id === 'armor/component/armor_layer_energy');
+    assert.ok(s && data.targets[s.t]);
+    const item = { schematic: s.id, props: [['armor_special_type', 2, 0, '', true], ['energyeffectiveness', 12.5, 10, 'exp_resistance', false]], inputs: { mode: 'uniform', uniform: 900 } };
+    assert.strictEqual((await req('/swg/api/crafted/Energy%20layer', { method: 'PUT', headers: json, body: JSON.stringify(item) })).status, 200);
+    assert.strictEqual((await req('/swg/api/crafted/Bad', { method: 'PUT', headers: json, body: JSON.stringify({ ...item, schematic: 'nope' }) })).status, 400);
+    const list = (await (await req('/swg/api/crafted', { headers: json })).json()).items;
+    assert.deepStrictEqual(list.map((x) => [x.name, x.target]), [['Energy layer', s.t]]);
+    const got = (await (await req('/swg/api/crafted/energy%20layer', { headers: json })).json()).item;
+    assert.deepStrictEqual(got.props, item.props);
+    assert.strictEqual((await req('/swg/api/crafted/Energy%20layer', { method: 'DELETE', headers: json })).status, 200);
+  });
+
+  await t.test('users: admin page, shared sub-sites, NFS off, own saves', async () => {
+    const json = { 'content-type': 'application/json', accept: 'application/json' };
+    assert.match(await html('/admin'), /<h1>Users<\/h1>/);
+    const add = await form('/admin/users', { username: 'friend', password: 'a long password', role: 'user', sites: 'swg' });
+    assert.strictEqual(add.status, 302);
+    assert.match(await html('/admin'), /Added friend/);
+    // the owner's build stays the owner's
+    assert.strictEqual((await req('/swg/api/builds/Mine', { method: 'PUT', headers: json, body: JSON.stringify({ ship: 'xwing', overloads: {}, components: {} }) })).status, 200);
+
+    // a second browser for the friend
+    let jar = '';
+    const as = async (p, opts = {}) => {
+      const res = await fetch(BASE + p, { redirect: 'manual', ...opts, headers: { cookie: jar, ...(opts.headers || {}) } });
+      const sc = res.headers.get('set-cookie');
+      if (sc) jar = sc.split(';')[0];
+      const body = await res.arrayBuffer();
+      return new Response(body, { status: res.status, headers: res.headers });
+    };
+    const login = await as('/login', { method: 'POST', body: new URLSearchParams({ username: 'friend', password: 'a long password' }), headers: { 'content-type': 'application/x-www-form-urlencoded' } });
+    assert.strictEqual(login.status, 302);
+    const home = await (await as('/home')).text();
+    assert.match(home, /SWG Ship Builder/);
+    assert.doesNotMatch(home, /MTGO Collection Manager|href="\/admin"/);
+    assert.strictEqual((await as('/mtgo')).status, 403);
+    assert.strictEqual((await as('/admin')).status, 403);
+    const ships = await (await as('/swg/ships')).text();
+    assert.doesNotMatch(ships, /Include NFS content/);
+    assert.match(ships, /name="swg-nfs" content="off"/);
+    assert.deepStrictEqual((await (await as('/swg/api/builds', { headers: json })).json()).builds, []);
+
+    // the owner turns NFS on and shares MTGO: applies on the friend's next request
+    assert.strictEqual((await form('/admin/users/friend', [['role', 'user'], ['nfs', 'on'], ['sites', 'swg'], ['sites', 'mtgo']])).status, 302);
+    assert.match(await (await as('/swg/ships')).text(), /Include NFS content/);
+    assert.strictEqual((await as('/mtgo')).status, 200);
+
+    // deleting the user signs them out
+    assert.strictEqual((await form('/admin/users/friend/delete', {})).status, 302);
+    assert.strictEqual((await as('/home')).status, 302);
+    assert.strictEqual((await req('/swg/api/builds/Mine', { method: 'DELETE', headers: json })).status, 200);
   });
 });
